@@ -40,8 +40,8 @@ fn main() {
             let mut rate_limiter = RateLimiterActor::new(rx);
             let api_handle = ApiHandle::new(tx);
             
-            // Spawn the actor
-            tokio::spawn(async move {
+            // Spawn the actor using Tauri's async runtime
+            tauri::async_runtime::spawn(async move {
                 rate_limiter.run().await;
             });
 
