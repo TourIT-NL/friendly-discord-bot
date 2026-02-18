@@ -20,6 +20,9 @@ tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt", "registry", "std"] }
 tracing-appender = "0.2.3"
 chrono = { version = "0.4.43", features = ["serde"] }
+sysinfo = "0.38.2"
+tokio-tungstenite = { version = "0.28.0", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3.32"
 
 [build-dependencies]
 tauri-build = { version = "2.5.5", features = [] }

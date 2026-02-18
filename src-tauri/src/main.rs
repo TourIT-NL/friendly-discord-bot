@@ -53,6 +53,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             auth::start_oauth_flow,
             auth::save_discord_credentials,
+            auth::check_discord_status,
+            auth::login_with_token,
+            auth::start_qr_login_flow,
             api::discord::fetch_guilds,
             api::discord::fetch_channels,
             api::discord::bulk_delete_messages
