@@ -19,6 +19,7 @@ url = "2.5.8"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt", "registry", "std"] }
 tracing-appender = "0.2.3"
+chrono = { version = "0.4.43", features = ["serde"] }
 
 [build-dependencies]
 tauri-build = { version = "2.5.5", features = [] }

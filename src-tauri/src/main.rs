@@ -52,7 +52,9 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             auth::start_oauth_flow,
-            api::discord::fetch_guilds
+            api::discord::fetch_guilds,
+            api::discord::fetch_channels,
+            api::discord::bulk_delete_messages
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
