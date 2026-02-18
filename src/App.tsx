@@ -31,7 +31,20 @@ interface DeletionProgress {
 }
 
 function App() {
-  const { isAuthenticated, user, guilds, isLoading, error, setAuthenticated, setUnauthenticated, setLoading, setError, setGuilds } = useAuthStore();
+  const { 
+    isAuthenticated, 
+    needsCredentials, 
+    user, 
+    guilds, 
+    isLoading, 
+    error, 
+    setAuthenticated, 
+    setUnauthenticated, 
+    setLoading, 
+    setError, 
+    setGuilds, 
+    setNeedsCredentials 
+  } = useAuthStore();
   
   const [selectedGuild, setSelectedGuild] = useState<Guild | null>(null);
   const [channels, setChannels] = useState<Channel[] | null>(null);
@@ -41,6 +54,10 @@ function App() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | 'all'>('all');
+
+  // Credentials Setup State
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
 
   const fetchGuilds = async () => {
     try {
@@ -144,8 +161,29 @@ function App() {
       await fetchGuilds();
     } catch (err: any) {
       console.error("Error during OAuth flow:", err);
-      setUnauthenticated();
-      setError(err.message || "An unknown error occurred during login.");
+      if (err.error_code === 'credentials_missing') {
+        setNeedsCredentials(true);
+      } else {
+        setUnauthenticated();
+        setError(err.message || "An unknown error occurred during login.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      await invoke('save_discord_credentials', { clientId, clientSecret });
+      setNeedsCredentials(false);
+      // Automatically trigger login after saving credentials
+      handleLogin();
+    } catch (err: any) {
+      console.error("Failed to save credentials:", err);
+      setError(err.message || "Failed to save credentials.");
     } finally {
       setLoading(false);
     }
@@ -188,7 +226,51 @@ function App() {
         </motion.div>
       )}
 
-      {!isAuthenticated && !isLoading ? (
+      {needsCredentials ? (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-800/50 border border-gray-700 p-8 rounded-3xl shadow-2xl max-w-md w-full"
+        >
+          <h2 className="text-2xl font-bold mb-6 text-center">Initial Setup</h2>
+          <p className="text-gray-400 mb-8 text-sm text-center">
+            You need to provide your Discord application credentials. These will be stored securely in your system's keyring.
+          </p>
+          <form onSubmit={handleSaveCredentials} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Client ID</label>
+              <input
+                type="text"
+                required
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                placeholder="123456789012345678"
+                className="w-full bg-gray-900 border border-gray-700 p-4 rounded-xl focus:outline-none focus:border-blue-500/50 transition-colors"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Client Secret</label>
+              <input
+                type="password"
+                required
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
+                placeholder="••••••••••••••••"
+                className="w-full bg-gray-900 border border-gray-700 p-4 rounded-xl focus:outline-none focus:border-blue-500/50 transition-colors"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-xl shadow-blue-500/10 transition-all active:scale-95"
+            >
+              Save & Continue
+            </button>
+            <p className="text-[10px] text-gray-600 text-center mt-4">
+              Find these in the <a href="https://discord.com/developers/applications" target="_blank" className="text-blue-500 underline">Discord Developer Portal</a> under 'OAuth2' -&gt; 'General'.
+            </p>
+          </form>
+        </motion.div>
+      ) : !isAuthenticated && !isLoading ? (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -17,29 +17,59 @@ use crate::api::rate_limiter::ApiHandle;
 use tracing::{info, warn, error};
 
 // Placeholder for client ID and secret - these will need to be configured
-// Client ID and secret will be read from environment variables at runtime
+// Client ID and secret will be read from environment variables or keyring at runtime
 fn get_discord_client_id() -> Result<String, AppError> {
-    std::env::var("DISCORD_CLIENT_ID")
-        .map_err(|e| {
-            error!("DISCORD_CLIENT_ID environment variable not set.");
-            AppError {
-                user_message: "Discord Client ID environment variable not set.".to_string(),
-                error_code: "env_var_missing".to_string(),
-                technical_details: Some(e.to_string()),
-            }
-        })
+    if let Ok(id) = std::env::var("DISCORD_CLIENT_ID") {
+        return Ok(id);
+    }
+    
+    // Check keyring as fallback
+    let entry = Entry::new("discord_privacy_util", "client_id")
+        .map_err(AppError::from)?;
+    
+    entry.get_password().map_err(|e| {
+        error!("Discord Client ID not set in environment or keyring: {}", e);
+        AppError {
+            user_message: "Discord Client ID not configured. Please enter it in the settings.".to_string(),
+            error_code: "credentials_missing".to_string(),
+            technical_details: Some(e.to_string()),
+        }
+    })
 }
 
 fn get_discord_client_secret() -> Result<String, AppError> {
-    std::env::var("DISCORD_CLIENT_SECRET")
-        .map_err(|e| {
-            error!("DISCORD_CLIENT_SECRET environment variable not set.");
-            AppError {
-                user_message: "Discord Client Secret environment variable not set.".to_string(),
-                error_code: "env_var_missing".to_string(),
-                technical_details: Some(e.to_string()),
-            }
-        })
+    if let Ok(secret) = std::env::var("DISCORD_CLIENT_SECRET") {
+        return Ok(secret);
+    }
+
+    // Check keyring as fallback
+    let entry = Entry::new("discord_privacy_util", "client_secret")
+        .map_err(AppError::from)?;
+
+    entry.get_password().map_err(|e| {
+        error!("Discord Client Secret not set in environment or keyring: {}", e);
+        AppError {
+            user_message: "Discord Client Secret not configured. Please enter it in the settings.".to_string(),
+            error_code: "credentials_missing".to_string(),
+            technical_details: Some(e.to_string()),
+        }
+    })
+}
+
+#[tauri::command]
+pub async fn save_discord_credentials(client_id: String, client_secret: String) -> Result<(), AppError> {
+    info!("Saving Discord API credentials to secure keyring...");
+    
+    let id_entry = Entry::new("discord_privacy_util", "client_id")
+        .map_err(AppError::from)?;
+    id_entry.set_password(&client_id).map_err(AppError::from)?;
+
+    let secret_entry = Entry::new("discord_privacy_util", "client_secret")
+        .map_err(AppError::from)?;
+    secret_entry.set_password(&client_secret).map_err(AppError::from)?;
+
+    info!("Credentials saved successfully.");
+    Ok(())
 }
 const DISCORD_REDIRECT_PATH: &str = "/auth/callback";
 
