@@ -13,7 +13,7 @@ pub struct ApiRequest {
     pub url: String,
     pub body: Option<serde_json::Value>,
     pub auth_token: String,
-    pub is_bearer: bool, // true for OAuth2, false for User Tokens
+    pub is_bearer: bool, // true for OAuth2 (Bearer), false for User Tokens (Direct)
     pub response_tx: oneshot::Sender<Result<reqwest::Response, AppError>>,
 }
 
@@ -63,7 +63,7 @@ impl RateLimiterActor {
             }
             drop(info);
 
-            // Build request with correct Authorization header
+            // Execute the request with correct auth header
             let mut req_builder = self.client.request(request.method.clone(), &request.url);
             
             if request.is_bearer {
