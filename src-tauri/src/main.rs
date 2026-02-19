@@ -47,6 +47,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             auth::start_oauth_flow,
+            auth::get_current_user,
             auth::save_discord_credentials,
             auth::check_discord_status,
             auth::login_with_user_token,
@@ -54,7 +55,8 @@ fn main() {
             auth::login_with_rpc,
             api::discord::fetch_guilds,
             api::discord::fetch_channels,
-            api::discord::bulk_delete_messages
+            api::discord::bulk_delete_messages,
+            api::discord::bulk_leave_guilds
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -61,6 +61,43 @@ pub async fn fetch_channels(app_handle: AppHandle, guild_id: String) -> Result<V
 }
 
 #[tauri::command]
+pub async fn bulk_leave_guilds(
+    app_handle: AppHandle,
+    window: tauri::Window,
+    guild_ids: Vec<String>,
+) -> Result<(), AppError> {
+    let (token, is_bearer) = get_stored_token()?;
+    let api_handle = app_handle.state::<ApiHandle>();
+
+    for (i, guild_id) in guild_ids.iter().enumerate() {
+        let url = format!("https://discord.com/api/users/@me/guilds/{}", guild_id);
+        
+        let response = api_handle.send_request(reqwest::Method::DELETE, &url, None, &token, is_bearer).await?;
+        
+        if response.status().is_success() || response.status() == reqwest::StatusCode::NOT_FOUND {
+            let _ = window.emit("leave_progress", serde_json::json!({
+                "current": i + 1,
+                "total": guild_ids.len(),
+                "guild_id": guild_id,
+                "status": "left"
+            }));
+        } else {
+            let _ = window.emit("leave_progress", serde_json::json!({
+                "current": i + 1,
+                "total": guild_ids.len(),
+                "guild_id": guild_id,
+                "status": "failed"
+            }));
+        }
+        
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    }
+
+    let _ = window.emit("leave_complete", ());
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn bulk_delete_messages(
     app_handle: AppHandle,
     window: tauri::Window,
@@ -88,24 +125,35 @@ pub async fn bulk_delete_messages(
 
             for msg in messages {
                 let timestamp = chrono::DateTime::parse_from_rfc3339(msg["timestamp"].as_str().unwrap_or_default()).map(|dt| dt.timestamp_millis() as u64).unwrap_or(0);
-                if let (Some(start), Some(end)) = (start_time, end_time) { if !(timestamp >= start && timestamp <= end) { continue; }}
-                if let (Some(start), None) = (start_time, end_time) { if timestamp < start { if last_message_id.is_some() { break 'message_loop; } else { continue; } }}
-                if let (None, Some(end)) = (start_time, end_time) { if timestamp > end { continue; }}
+                
+                if let Some(start) = start_time {
+                    if timestamp < start {
+                        if last_message_id.is_some() { break 'message_loop; }
+                        else { continue; }
+                    }
+                }
+                
+                if let Some(end) = end_time {
+                    if timestamp > end { continue; }
+                }
 
                 let del_url = format!("https://discord.com/api/channels/{}/messages/{}", channel_id, msg["id"].as_str().unwrap_or_default());
-                let _ = api_handle.send_request(reqwest::Method::DELETE, &del_url, None, &token, is_bearer).await;
-                deleted_total += 1;
-
-                if deleted_total % 10 == 0 {
-                    let _ = window.emit("deletion_progress", serde_json::json!({
-                        "current_channel": i + 1,
-                        "total_channels": channel_ids.len(),
-                        "channel_id": channel_id,
-                        "deleted_count": deleted_total,
-                        "status": "purging"
-                    }));
+                let del_res = api_handle.send_request(reqwest::Method::DELETE, &del_url, None, &token, is_bearer).await?;
+                
+                if del_res.status().is_success() || del_res.status() == reqwest::StatusCode::NOT_FOUND {
+                    deleted_total += 1;
+                    if deleted_total % 10 == 0 {
+                        let _ = window.emit("deletion_progress", serde_json::json!({
+                            "current_channel": i + 1,
+                            "total_channels": channel_ids.len(),
+                            "channel_id": channel_id,
+                            "deleted_count": deleted_total,
+                            "status": "purging"
+                        }));
+                    }
                 }
             }
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
     }
     let _ = window.emit("deletion_complete", ());
