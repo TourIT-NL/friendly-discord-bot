@@ -1,3 +1,5 @@
+// src-tauri/src/main.rs
+
 mod auth;
 mod core;
 mod api;
@@ -9,20 +11,14 @@ use tokio::sync::mpsc;
 use crate::api::rate_limiter::{RateLimiterActor, ApiHandle};
 
 fn main() {
-    // Install the `ring` crypto provider for rustls before any TLS connections are made.
-    let _ = rustls::crypto::CryptoProvider::install_default(rustls::crypto::ring::default_provider());
+    let _ = rustls::crypto::ring::default_provider().install_default();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            // Initialize logging
-            let app_data_dir = app.path().app_local_data_dir()
-                .expect("failed to get app local data directory");
-            
-            // Ensure the directory exists
-            std::fs::create_dir_all(&app_data_dir)
-                .expect("failed to create app local data directory");
+            let app_data_dir = app.path().app_local_data_dir().expect("failed to get app dir");
+            std::fs::create_dir_all(&app_data_dir).expect("failed to create app dir");
 
             let file_appender = tracing_appender::rolling::daily(&app_data_dir, "app.log");
             let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
@@ -30,25 +26,21 @@ fn main() {
             app.manage(_guard);
 
             tracing_subscriber::registry()
-                .with(tracing_subscriber::EnvFilter::try_from_default_env()
-                    .unwrap_or_else(|_| "info".into()))
+                .with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
                 .with(tracing_subscriber::fmt::layer().with_writer(std::io::stdout))
                 .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
                 .init();
 
             info!("Application starting up...");
 
-            // Initialize the RateLimiterActor
             let (tx, rx) = mpsc::channel(100);
             let mut rate_limiter = RateLimiterActor::new(rx);
             let api_handle = ApiHandle::new(tx);
             
-            // Spawn the actor using Tauri's async runtime
             tauri::async_runtime::spawn(async move {
                 rate_limiter.run().await;
             });
 
-            // Store the handle in app state
             app.manage(api_handle);
 
             Ok(())
@@ -57,7 +49,7 @@ fn main() {
             auth::start_oauth_flow,
             auth::save_discord_credentials,
             auth::check_discord_status,
-            auth::login_with_token,
+            auth::login_with_user_token,
             auth::start_qr_login_flow,
             auth::login_with_rpc,
             api::discord::fetch_guilds,

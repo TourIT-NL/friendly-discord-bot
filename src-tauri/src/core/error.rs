@@ -111,5 +111,22 @@ impl From<oauth2::RequestTokenError<oauth2::reqwest::Error<reqwest::Error>, oaut
     }
 }
 
+impl From<tokio_tungstenite::tungstenite::Error> for AppError {
+    fn from(e: tokio_tungstenite::tungstenite::Error) -> Self {
+        Self {
+            user_message: "WebSocket communication error.".to_string(),
+            error_code: "websocket_error".to_string(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}
 
-
+impl Default for AppError {
+    fn default() -> Self {
+        Self {
+            user_message: "An unexpected error occurred.".to_string(),
+            error_code: "unknown_error".to_string(),
+            technical_details: None,
+        }
+    }
+}

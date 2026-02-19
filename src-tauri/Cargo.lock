@@ -4012,6 +4012,7 @@ dependencies = [
  "tracing-appender",
  "tracing-subscriber",
  "url",
+ "uuid",
 ]
 
 [[package]]
