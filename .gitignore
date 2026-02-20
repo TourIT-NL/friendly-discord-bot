@@ -25,6 +25,3 @@ Thumbs.db
 
 # VSCode
 .vscode/
-
-# Gemini CLI temp files
-.gemini/
