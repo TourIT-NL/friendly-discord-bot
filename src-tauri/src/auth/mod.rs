@@ -20,8 +20,17 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use futures_util::{StreamExt, SinkExt};
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
-use tracing::info;
+use tracing::{info, error, warn};
 use uuid::Uuid;
+use socket2::{Socket, Domain, Type, Protocol};
+use std::net::SocketAddr;
+use tokio_util::sync::CancellationToken;
+use tokio::sync::Mutex;
+
+#[derive(Default)]
+pub struct AuthState {
+    qr_cancel_token: Mutex<Option<CancellationToken>>,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DiscordStatus {
@@ -61,12 +70,14 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
         "nonce": nonce
     });
     
-    write.send(Message::Text(auth_payload.to_string().into())).await?;
+    let _ = write.send(Message::Text(auth_payload.to_string().into())).await;
     let code = match timeout(Duration::from_secs(30), async {
-        while let Some(Ok(Message::Text(text))) = read.next().await {
-            if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
-                if p["nonce"].as_str() == Some(&nonce) {
-                    return p["data"]["code"].as_str().map(|s| s.to_string());
+        while let Some(msg) = read.next().await {
+            if let Ok(Message::Text(text)) = msg {
+                if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if p["nonce"].as_str() == Some(&nonce) {
+                        return p["data"]["code"].as_str().map(|s| s.to_string());
+                    }
                 }
             }
         }
@@ -75,6 +86,10 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
         Ok(res) => res,
         _ => return Err(AppError { user_message: "RPC authorization timed out.".into(), ..Default::default() }),
     };
+
+    // Explicitly join and close to avoid "sending after closing" errors on drop
+    let mut ws_stream = write.reunite(read).map_err(|_| AppError { user_message: "Stream internal error.".into(), ..Default::default() })?;
+    let _ = timeout(Duration::from_secs(1), ws_stream.close(None)).await;
 
     let code = code.ok_or_else(|| AppError { user_message: "RPC authorization was denied.".into(), ..Default::default() })?;
     let client_secret = Vault::get_credential(&app_handle, "client_secret")?;
@@ -95,7 +110,16 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
 }
 
 #[tauri::command]
-pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window) -> Result<(), AppError> {
+pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window, state: tauri::State<'_, AuthState>) -> Result<(), AppError> {
+    let cancel_token = CancellationToken::new();
+    {
+        let mut token_guard = state.qr_cancel_token.lock().await;
+        if let Some(old_token) = token_guard.take() {
+            old_token.cancel();
+        }
+        *token_guard = Some(cancel_token.clone());
+    }
+
     let url = "wss://remote-auth-gateway.discord.gg/?v=2";
     let mut request = url.into_client_request().unwrap();
     request.headers_mut().insert("Origin", "https://discord.com".parse().unwrap());
@@ -106,25 +130,48 @@ pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window) -> Resul
     let app_handle_clone = app_handle.clone();
 
     tauri::async_runtime::spawn(async move {
-        while let Some(Ok(Message::Text(text))) = read.next().await {
-            if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
-                match p["op"].as_str() {
-                    Some("fingerprint") => {
-                        if let Some(fp) = p["fingerprint"].as_str() {
-                            let _ = window_clone.emit("qr_code_ready", format!("https://discord.com/ra/{}", fp));
+        loop {
+            tokio::select! {
+                _ = cancel_token.cancelled() => {
+                    info!("[QR] Cancellation signal received.");
+                    break;
+                }
+                msg = read.next() => {
+                    match msg {
+                        Some(Ok(Message::Text(text))) => {
+                            if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
+                                match p["op"].as_str() {
+                                    Some("fingerprint") => {
+                                        if let Some(fp) = p["fingerprint"].as_str() {
+                                            let _ = window_clone.emit("qr_code_ready", format!("https://discord.com/ra/{}", fp));
+                                        }
+                                    },
+                                    Some("finish") => {
+                                        if let Some(token) = p["token"].as_str() {
+                                            let _ = login_with_token_internal(app_handle_clone.clone(), window_clone.clone(), token.to_string(), false).await;
+                                        }
+                                        break;
+                                    },
+                                    _ => {}
+                                }
+                            }
                         }
-                    },
-                    Some("finish") => {
-                        if let Some(token) = p["token"].as_str() {
-                            let _ = login_with_token_internal(app_handle_clone.clone(), window_clone.clone(), token.to_string(), false).await;
-                        }
-                        break;
-                    },
-                    _ => {}
+                        None => break, // Connection closed
+                        _ => {}
+                    }
                 }
             }
         }
     });
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn cancel_qr_login(state: tauri::State<'_, AuthState>) -> Result<(), AppError> {
+    let mut token_guard = state.qr_cancel_token.lock().await;
+    if let Some(token) = token_guard.take() {
+        token.cancel();
+    }
     Ok(())
 }
 
@@ -217,7 +264,15 @@ pub async fn start_oauth_flow(app_handle: AppHandle, window: Window) -> Result<D
 
     let (tx, rx) = oneshot::channel::<String>();
     let csrf_secret = csrf.secret().clone();
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", port))?;
+    
+    let addr = format!("127.0.0.1:{}", port).parse::<SocketAddr>().map_err(|e| AppError { user_message: "Invalid bind address.".into(), technical_details: Some(e.to_string()), ..Default::default() })?;
+    let socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
+    socket.set_reuse_address(true)?;
+    #[cfg(not(windows))]
+    socket.set_reuse_port(true)?;
+    socket.bind(&addr.into())?;
+    socket.listen(128)?;
+    let listener: std::net::TcpListener = socket.into();
 
     tauri::async_runtime::spawn(async move {
         let listener = tokio::net::TcpListener::from_std(listener)?;

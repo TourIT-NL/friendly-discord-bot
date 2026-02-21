@@ -49,6 +49,9 @@ fn main() {
             let op_manager = OperationManager::new();
             app.manage(op_manager);
 
+            let auth_state = auth::AuthState::default();
+            app.manage(auth_state);
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -57,6 +60,7 @@ fn main() {
             auth::check_discord_status,
             auth::login_with_user_token,
             auth::start_qr_login_flow,
+            auth::cancel_qr_login,
             auth::login_with_rpc,
             auth::get_current_user,
             auth::list_identities,

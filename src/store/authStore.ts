@@ -1,18 +1,20 @@
 import { create } from 'zustand';
 
-interface AuthState {
+export interface AuthState {
   isAuthenticated: boolean;
   needsCredentials: boolean;
   user: { id: string; username: string; avatar?: string; email?: string } | null;
   guilds: any[] | null;
   isLoading: boolean;
   error: string | null;
+  view: 'manual' | 'auth' | 'setup' | 'qr' | 'token' | 'dashboard';
   setAuthenticated: (user: AuthState['user']) => void;
   setUnauthenticated: () => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setGuilds: (guilds: any[]) => void;
   setNeedsCredentials: (needs: boolean) => void;
+  setView: (view: AuthState['view']) => void;
   reset: () => void;
 }
 
@@ -23,11 +25,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   guilds: null,
   isLoading: false,
   error: null,
+  view: 'manual',
   setAuthenticated: (user) => set({ isAuthenticated: true, user, isLoading: false, error: null, needsCredentials: false }),
   setUnauthenticated: () => set({ isAuthenticated: false, user: null, guilds: null, isLoading: false, error: null }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error, isLoading: false }),
   setGuilds: (guilds) => set({ guilds, isLoading: false }),
   setNeedsCredentials: (needs) => set({ needsCredentials: needs, isLoading: false }),
-  reset: () => set({ isAuthenticated: false, needsCredentials: false, user: null, guilds: null, isLoading: false, error: null }),
+  setView: (view) => set({ view }),
+  reset: () => set({ isAuthenticated: false, needsCredentials: false, user: null, guilds: null, isLoading: false, error: null, view: 'manual' }),
 }));
