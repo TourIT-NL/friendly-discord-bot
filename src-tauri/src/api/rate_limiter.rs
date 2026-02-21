@@ -8,6 +8,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, mpsc, oneshot};
 
+use super::discord_routes::{get_discord_route, DiscordApiRoute}; // NEW
+
 /// Represents a pending API request
 pub struct ApiRequest {
     pub method: Method,
@@ -64,38 +66,7 @@ impl RateLimiterActor {
     }
 
     fn get_route(url: &str) -> String {
-        let parsed_url = match url::Url::parse(url) {
-            Ok(u) => u,
-            Err(_) => return "default".to_string(),
-        };
-        let path = parsed_url.path();
-        let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-
-        if let Some(pos) = segments.iter().position(|&s| s == "channels")
-            && let Some(id) = segments.get(pos + 1) {
-                if segments.get(pos + 2) == Some(&"messages") {
-                    return format!("channels/{}/messages", id);
-                }
-                return format!("channels/{}", id);
-        }
-        if let Some(pos) = segments.iter().position(|&s| s == "guilds")
-            && let Some(id) = segments.get(pos + 1) {
-                return format!("guilds/{}", id);
-        }
-        if segments.contains(&"relationships") {
-            return "relationships".to_string();
-        }
-        if segments.contains(&"@me") {
-            if segments.contains(&"guilds") {
-                return "users/@me/guilds".into();
-            }
-            if segments.contains(&"channels") {
-                return "users/@me/channels".into();
-            }
-            return "users/@me".to_string();
-        }
-
-        "default".to_string()
+        get_discord_route(url).to_string()
     }
 
     pub async fn run(&mut self) {
