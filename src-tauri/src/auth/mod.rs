@@ -3,7 +3,6 @@
 use tauri::{AppHandle, Window, Emitter, Manager};
 use tokio::{sync::oneshot, io::{AsyncReadExt, AsyncWriteExt}, time::{timeout, Duration}};
 use url::Url;
-use std::net::TcpListener;
 use std::collections::HashMap;
 use oauth2::{
     basic::BasicClient,
@@ -20,7 +19,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use futures_util::{StreamExt, SinkExt};
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
-use tracing::{info, error, warn};
+use tracing::info;
 use uuid::Uuid;
 use socket2::{Socket, Domain, Type, Protocol};
 use std::net::SocketAddr;
@@ -88,8 +87,10 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
     };
 
     // Explicitly join and close to avoid "sending after closing" errors on drop
-    let mut ws_stream = write.reunite(read).map_err(|_| AppError { user_message: "Stream internal error.".into(), ..Default::default() })?;
-    let _ = timeout(Duration::from_secs(1), ws_stream.close(None)).await;
+    // We ignore the error here because the connection might already be closed by the peer
+    if let Ok(mut ws_stream) = write.reunite(read) {
+        let _ = timeout(Duration::from_secs(1), ws_stream.close(None)).await;
+    }
 
     let code = code.ok_or_else(|| AppError { user_message: "RPC authorization was denied.".into(), ..Default::default() })?;
     let client_secret = Vault::get_credential(&app_handle, "client_secret")?;
@@ -266,12 +267,27 @@ pub async fn start_oauth_flow(app_handle: AppHandle, window: Window) -> Result<D
     let csrf_secret = csrf.secret().clone();
     
     let addr = format!("127.0.0.1:{}", port).parse::<SocketAddr>().map_err(|e| AppError { user_message: "Invalid bind address.".into(), technical_details: Some(e.to_string()), ..Default::default() })?;
-    let socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
-    socket.set_reuse_address(true)?;
-    #[cfg(not(windows))]
-    socket.set_reuse_port(true)?;
-    socket.bind(&addr.into())?;
-    socket.listen(128)?;
+    
+    // Try to bind with a few retries in case the port is in TIME_WAIT
+    let mut socket = None;
+    for _ in 0..3 {
+        let s = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
+        s.set_reuse_address(true)?;
+        #[cfg(not(windows))]
+        s.set_reuse_port(true)?;
+        if s.bind(&addr.into()).is_ok() {
+            s.listen(128)?;
+            socket = Some(s);
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    let socket = socket.ok_or_else(|| AppError { 
+        user_message: "Authorization port (58123) is already in use. Please wait a moment and try again.".into(), 
+        ..Default::default() 
+    })?;
+
     let listener: std::net::TcpListener = socket.into();
 
     tauri::async_runtime::spawn(async move {

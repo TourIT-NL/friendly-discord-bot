@@ -18,6 +18,7 @@ fn main() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let app_data_dir = app.path().app_local_data_dir().expect("failed to get app dir");
             std::fs::create_dir_all(&app_data_dir).expect("failed to create app dir");

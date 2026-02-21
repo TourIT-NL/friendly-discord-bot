@@ -66,7 +66,6 @@ export const useDiscordAuth = () => {
 
   const handleLoginQR = async () => { 
     setView('qr'); 
-    setLoading(true); 
     setQrUrl(null); 
     setQrScanned(false); 
     try { 
