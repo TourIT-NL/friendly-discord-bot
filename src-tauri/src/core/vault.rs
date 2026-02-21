@@ -1,6 +1,7 @@
 // src-tauri/src/core/vault.rs
 
 use crate::core::error::AppError;
+use crate::core::logger::Logger;
 use keyring::Entry;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -26,12 +27,25 @@ impl Vault {
     const SERVICE_NAME: &'static str = "com.discordprivacy.util";
 
     fn get_fallback_path(app: &AppHandle, key: &str) -> Option<PathBuf> {
-        app.path().app_local_data_dir().ok().map(|p| p.join(format!("{}.secure", key)))
+        match app.path().app_local_data_dir() {
+            Ok(p) => {
+                let secure_path = p.join(format!("{}.secure", key));
+                Some(secure_path)
+            },
+            Err(e) => {
+                Logger::error(app, &format!("[Vault] Failed to resolve data dir: {}", e), None);
+                None
+            }
+        }
     }
 
     fn write_fallback(app: &AppHandle, key: &str, value: &str) -> Result<(), AppError> {
         if let Some(path) = Self::get_fallback_path(app, key) {
-            fs::write(path, value).map_err(AppError::from)?;
+            if let Err(e) = fs::write(&path, value) {
+                Logger::error(app, &format!("[Vault] File write failed for {}: {}", key, e), None);
+                return Err(AppError::from(e));
+            }
+            Logger::debug(app, &format!("[Vault] Saved {} to disk fallback", key), None);
             Ok(())
         } else {
             Err(AppError { user_message: "Failed to resolve storage path.".into(), ..Default::default() })
@@ -41,7 +55,15 @@ impl Vault {
     fn read_fallback(app: &AppHandle, key: &str) -> Result<String, AppError> {
         if let Some(path) = Self::get_fallback_path(app, key) {
             if path.exists() {
-                return fs::read_to_string(path).map_err(AppError::from);
+                match fs::read_to_string(&path) {
+                    Ok(s) => return Ok(s),
+                    Err(e) => {
+                        Logger::error(app, &format!("[Vault] File read failed for {}: {}", key, e), None);
+                        return Err(AppError::from(e));
+                    }
+                }
+            } else {
+                Logger::warn(app, &format!("[Vault] File not found: {:?}", path), None);
             }
         }
         Err(AppError { 
@@ -65,12 +87,19 @@ impl Vault {
         let key = format!("account_{}", identity.id);
         let secret = serde_json::to_string(&identity)?;
 
-        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, &key) {
-            if entry.set_password(&secret).is_err() {
+        match Entry::new(Self::SERVICE_NAME, &key) {
+            Ok(entry) => {
+                if let Err(e) = entry.set_password(&secret) {
+                    Logger::warn(app, &format!("[Vault] Keyring write failed: {}. Using fallback.", e), None);
+                    Self::write_fallback(app, &key, &secret)?;
+                } else {
+                    Logger::debug(app, "[Vault] Saved to OS Keyring", None);
+                }
+            },
+            Err(e) => {
+                Logger::warn(app, &format!("[Vault] Keyring access error: {}. Using fallback.", e), None);
                 Self::write_fallback(app, &key, &secret)?;
             }
-        } else {
-            Self::write_fallback(app, &key, &secret)?;
         }
         
         // Track active account
@@ -138,9 +167,19 @@ impl Vault {
 
         let index: Vec<String> = serde_json::from_str(&index_str).unwrap_or_default();
         
-        index.into_iter()
+        let results: Vec<DiscordIdentity> = index.into_iter()
             .filter_map(|id| Self::get_identity(app, &id).ok())
-            .collect()
+            .collect();
+
+        // Fallback: If index is empty but we have an active account, try to recover it
+        if results.is_empty() {
+             if let Ok((_token, _is_oauth)) = Self::get_active_token(app) {
+                 // We could potentially try to read the active account details here if we had the ID
+                 // but get_active_token already calls get_identity, so if that succeeds, we have valid data.
+                 // We can't reconstruct the whole list easily without the index, but we can at least return nothing.
+             }
+        }
+        results
     }
 
     /// Removes an identity.
@@ -173,12 +212,19 @@ impl Vault {
 
     /// Stores a raw application credential (fallback enabled).
     pub fn set_credential(app: &AppHandle, key: &str, value: &str) -> Result<(), AppError> {
-        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key) {
-            if entry.set_password(value).is_err() {
+        match Entry::new(Self::SERVICE_NAME, key) {
+            Ok(entry) => {
+                if let Err(e) = entry.set_password(value) {
+                    Logger::warn(app, &format!("[Vault] Credential keyring write failed: {}. Using fallback.", e), None);
+                    Self::write_fallback(app, key, value)?;
+                } else {
+                    Logger::debug(app, &format!("[Vault] Saved {} to Keyring", key), None);
+                }
+            },
+            Err(e) => {
+                Logger::warn(app, &format!("[Vault] Credential keyring access failed: {}. Using fallback.", e), None);
                 Self::write_fallback(app, key, value)?;
             }
-        } else {
-            Self::write_fallback(app, key, value)?;
         }
         Ok(())
     }
