@@ -82,53 +82,74 @@ impl Vault {
         Ok(())
     }
 
-    /// Persists a Discord identity. Tries Keyring first, falls back to File.
+    /// Persists a Discord identity. Tries Keyring first, verified, then falls back to File.
     pub fn save_identity(app: &AppHandle, identity: DiscordIdentity) -> Result<(), AppError> {
         let key = format!("account_{}", identity.id);
         let secret = serde_json::to_string(&identity)?;
 
-        match Entry::new(Self::SERVICE_NAME, &key) {
-            Ok(entry) => {
-                if let Err(e) = entry.set_password(&secret) {
-                    Logger::warn(app, &format!("[Vault] Keyring write failed: {}. Using fallback.", e), None);
-                    Self::write_fallback(app, &key, &secret)?;
-                } else {
-                    Logger::debug(app, "[Vault] Saved to OS Keyring", None);
+        // Strategy: Write Keyring -> Read Verify -> If Fail, Write File
+        let mut saved_to_keyring = false;
+        
+        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, &key) {
+            if let Err(e) = entry.set_password(&secret) {
+                Logger::warn(app, &format!("[Vault] Keyring write error for {}: {}. Using fallback.", key, e), None);
+            } else {
+                // Verify write
+                match entry.get_password() {
+                    Ok(stored) if stored == secret => {
+                        Logger::debug(app, &format!("[Vault] Verified Keyring storage for {}", key), None);
+                        saved_to_keyring = true;
+                    },
+                    Ok(_) => Logger::warn(app, &format!("[Vault] Keyring verification mismatch for {}", key), None),
+                    Err(e) => Logger::warn(app, &format!("[Vault] Keyring verification read failed for {}: {}", key, e), None),
                 }
-            },
-            Err(e) => {
-                Logger::warn(app, &format!("[Vault] Keyring access error: {}. Using fallback.", e), None);
-                Self::write_fallback(app, &key, &secret)?;
             }
+        }
+
+        if !saved_to_keyring {
+            Self::write_fallback(app, &key, &secret)?;
         }
         
         // Track active account
         let active_key = "active_account";
+        let mut active_saved = false;
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, active_key) {
-            if entry.set_password(&identity.id).is_err() {
-                Self::write_fallback(app, active_key, &identity.id)?;
+            if entry.set_password(&identity.id).is_ok() {
+                if let Ok(stored) = entry.get_password() {
+                    if stored == identity.id {
+                        active_saved = true;
+                        Logger::debug(app, "[Vault] Active account pointer updated in Keyring", None);
+                    }
+                }
             }
-        } else {
+        }
+        if !active_saved {
+            Logger::warn(app, "[Vault] Active account keyring failed. Writing to file fallback.", None);
             Self::write_fallback(app, active_key, &identity.id)?;
         }
 
         // Update index
         let index_key = "identity_index";
-        let mut index = Self::get_credential(app, index_key)
-            .and_then(|s| serde_json::from_str::<Vec<String>>(&s).map_err(AppError::from))
-            .unwrap_or_default();
-            
+        let mut index = Self::list_identities(app).iter().map(|i| i.id.clone()).collect::<Vec<_>>();
         if !index.contains(&identity.id) {
             index.push(identity.id.clone());
-            let index_json = serde_json::to_string(&index)?;
-            if let Ok(entry) = Entry::new(Self::SERVICE_NAME, index_key) {
-                if entry.set_password(&index_json).is_err() {
-                    Self::write_fallback(app, index_key, &index_json)?;
+        }
+        
+        let index_json = serde_json::to_string(&index)?;
+        let mut index_saved = false;
+        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, index_key) {
+            if entry.set_password(&index_json).is_ok() {
+                if let Ok(stored) = entry.get_password() {
+                    if stored == index_json {
+                        index_saved = true;
+                    }
                 }
-            } else {
-                Self::write_fallback(app, index_key, &index_json)?;
             }
         }
+        if !index_saved {
+            Self::write_fallback(app, index_key, &index_json)?;
+        }
+        
         Ok(())
     }
 
@@ -136,11 +157,14 @@ impl Vault {
     pub fn get_active_token(app: &AppHandle) -> Result<(String, bool), AppError> {
         let id = match Entry::new(Self::SERVICE_NAME, "active_account").and_then(|e| e.get_password()) {
             Ok(p) => p,
-            Err(_) => Self::read_fallback(app, "active_account").map_err(|_| AppError {
-                user_message: "No active session found. Please login.".into(),
-                error_code: "no_active_session".into(),
-                ..Default::default()
-            })?
+            Err(e) => {
+                Logger::debug(app, &format!("[Vault] Keyring read failed for active_account: {}. Checking fallback.", e), None);
+                Self::read_fallback(app, "active_account").map_err(|_| AppError {
+                    user_message: "No active session found. Please login.".into(),
+                    error_code: "no_active_session".into(),
+                    ..Default::default()
+                })?
+            }
         };
 
         let identity = Self::get_identity(app, &id)?;

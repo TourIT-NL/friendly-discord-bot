@@ -87,12 +87,15 @@ pub async fn start_qr_login_flow(
                     match msg {
                         Some(Ok(Message::Text(text))) => {
                             if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
-                                match p["op"].as_str() {
-                                    Some("hello") => {
+                                let op = p["op"].as_str().unwrap_or("unknown");
+                                Logger::trace(&app_handle_clone, &format!("[QR] Opcode: {}", op), None);
+                                
+                                match op {
+                                    "hello" => {
                                         interval_ms = p["heartbeat_interval"].as_u64().unwrap_or(30000);
                                         heartbeat_interval = tokio::time::interval(Duration::from_millis(interval_ms));
-                                        heartbeat_interval.tick().await;
-
+                                        heartbeat_interval.tick().await; 
+                                        
                                         let init_payload = serde_json::json!({
                                             "op": "init",
                                             "encoded_public_key": pub_key_base64
@@ -100,7 +103,7 @@ pub async fn start_qr_login_flow(
                                         let _ = write.send(Message::Text(init_payload.to_string().into())).await;
                                         Logger::debug(&app_handle_clone, "[QR] Secure handshake initiated", None);
                                     },
-                                    Some("nonce_proof") => {
+                                    "nonce_proof" => {
                                         let encrypted_nonce = p["encrypted_nonce"].as_str().unwrap_or_default();
                                         if let Ok(encrypted_bytes) = general_purpose::STANDARD.decode(encrypted_nonce)
                                             && let Ok(decrypted) = priv_key.decrypt(Pkcs1v15Encrypt, &encrypted_bytes) {
@@ -111,17 +114,17 @@ pub async fn start_qr_login_flow(
                                                 let _ = write.send(Message::Text(serde_json::json!({"op": "nonce_proof", "proof": proof}).to_string().into())).await;
                                         }
                                     },
-                                    Some("fingerprint") => {
+                                    "fingerprint" => {
                                         if let Some(fp) = p["fingerprint"].as_str() {
                                             Logger::info(&app_handle_clone, "[QR] Signature generated", None);
                                             let _ = window_clone.emit("qr_code_ready", format!("https://discord.com/ra/{}", fp));
                                         }
                                     },
-                                    Some("pending_remote_init") => {
+                                    "pending_remote_init" => {
                                         Logger::info(&app_handle_clone, "[QR] Remote scan detected. Awaiting confirmation...", None);
                                         let _ = window_clone.emit("qr_scanned", ());
                                     },
-                                    Some("finish") => {
+                                    "finish" => {
                                         Logger::info(&app_handle_clone, "[QR] Handshake finalized", None);
                                         let encrypted_token = p["encrypted_token"].as_str().unwrap_or_default();
                                         if let Ok(encrypted_bytes) = general_purpose::STANDARD.decode(encrypted_token)
