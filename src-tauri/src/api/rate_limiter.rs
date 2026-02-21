@@ -49,9 +49,15 @@ pub struct RateLimiterActor {
 
 impl RateLimiterActor {
     pub fn new(inbox: mpsc::Receiver<ApiRequest>, app_handle: tauri::AppHandle) -> Self {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(30))
+            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+            .build()
+            .expect("Failed to build reqwest client");
+
         Self {
             inbox,
-            client: Client::new(),
+            client,
             buckets: Arc::new(Mutex::new(HashMap::new())),
             global_reset_at: Arc::new(Mutex::new(Instant::now())),
             app_handle,
@@ -92,7 +98,7 @@ impl RateLimiterActor {
     }
 
     pub async fn run(&mut self) {
-        Logger::info(&self.app_handle, "[LIM] Engine Dispatcher active", None);
+        Logger::info(&self.app_handle, "[LIM] Engine Dispatcher active and resilient", None);
         
         while let Some(request) = self.inbox.recv().await {
             let client = self.client.clone();
@@ -133,9 +139,8 @@ impl RateLimiterActor {
                         if bucket.remaining == 0 {
                             let wait = bucket.reset_at.saturating_duration_since(now);
                             if !wait.is_zero() {
-                                Logger::trace(&app_handle, &format!("[LIM] Delaying for bucket '{}'", route), None);
                                 drop(bucket);
-                                tokio::time::sleep(wait + Duration::from_millis(50)).await;
+                                tokio::time::sleep(wait + Duration::from_millis(100)).await;
                                 continue;
                             }
                         }
@@ -145,18 +150,13 @@ impl RateLimiterActor {
                     // 3. Execution
                     let mut req_builder = client.request(request.method.clone(), &request.url);
                     if request.is_bearer {
-                        req_builder = req_builder.bearer_auth(&request.auth_token);
+                        req_builder = req_builder.header(header::AUTHORIZATION, format!("Bearer {}", request.auth_token));
                     } else {
                         req_builder = req_builder.header(header::AUTHORIZATION, &request.auth_token);
                     }
+                    
                     if let Some(body) = request.body.clone() {
                         req_builder = req_builder.json(&body);
-                    }
-
-                    // Strategic Jitter for non-GET requests
-                    if request.method != Method::GET {
-                        let jitter = rand::thread_rng().gen_range(150..400);
-                        tokio::time::sleep(Duration::from_millis(jitter)).await;
                     }
 
                     match req_builder.send().await {
@@ -167,7 +167,7 @@ impl RateLimiterActor {
                             Self::process_headers(&app_handle, &route, &response, &bucket_arc, &global_throttle, is_429).await;
 
                             if is_429 {
-                                Logger::warn(&app_handle, &format!("[LIM] Rate limit hit on {}", route), None);
+                                Logger::warn(&app_handle, &format!("[LIM] 429 received for {}", route), None);
                                 continue; 
                             }
 

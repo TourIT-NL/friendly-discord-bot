@@ -25,7 +25,9 @@ use socket2::{Socket, Domain, Type, Protocol};
 use std::net::SocketAddr;
 use tokio_util::sync::CancellationToken;
 use tokio::sync::Mutex;
-use tracing::{debug, trace};
+use tracing::trace;
+use rsa::{RsaPrivateKey, RsaPublicKey, pkcs1::EncodeRsaPublicKey, Pkcs1v15Encrypt};
+use base64::{Engine as _, engine::general_purpose};
 
 #[derive(Default)]
 pub struct AuthState {
@@ -145,13 +147,28 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
 
 #[tauri::command]
 pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window, state: tauri::State<'_, AuthState>) -> Result<(), AppError> {
-    Logger::info(&app_handle, "[QR] Initializing gateway...", None);
+    Logger::info(&app_handle, "[QR] Initializing secure handshake...", None);
+    
+    // Generate RSA Keypair (ensure rng is not held across await)
+    let priv_key = {
+        let mut rng = rand::thread_rng();
+        RsaPrivateKey::new(&mut rng, 2048).map_err(|_| AppError { user_message: "RSA generation failed.".into(), ..Default::default() })?
+    };
+    let pub_key = RsaPublicKey::from(&priv_key);
+    
+    let pub_key_pem = pub_key.to_pkcs1_pem(rsa::pkcs1::LineEnding::LF).map_err(|_| AppError { user_message: "PEM encoding failed.".into(), ..Default::default() })?;
+    let pub_key_base64 = general_purpose::STANDARD.encode(
+        pub_key_pem
+            .replace("-----BEGIN RSA PUBLIC KEY-----", "")
+            .replace("-----END RSA PUBLIC KEY-----", "")
+            .replace("\n", "")
+            .replace("\r", "")
+    );
+
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = state.qr_cancel_token.lock().await;
-        if let Some(old_token) = token_guard.take() {
-            old_token.cancel();
-        }
+        if let Some(old_token) = token_guard.take() { old_token.cancel(); }
         *token_guard = Some(cancel_token.clone());
     }
 
@@ -159,18 +176,21 @@ pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window, state: t
     let mut request = url.into_client_request().unwrap();
     request.headers_mut().insert("Origin", "https://discord.com".parse().unwrap());
 
-    Logger::debug(&app_handle, &format!("[QR] Connecting: {}", url), None);
+    Logger::debug(&app_handle, "[QR] Establishing WebSocket link", None);
     let (ws_stream, _) = timeout(Duration::from_secs(10), connect_async(request)).await??;
     let (mut write, mut read) = ws_stream.split();
+    
     let window_clone = window.clone();
     let app_handle_clone = app_handle.clone();
 
     tauri::async_runtime::spawn(async move {
-        let mut heartbeat_interval = tokio::time::interval(Duration::from_secs(30));
+        let mut interval_ms = 30000;
+        let mut heartbeat_interval = tokio::time::interval(Duration::from_millis(interval_ms));
+        
         loop {
             tokio::select! {
                 _ = cancel_token.cancelled() => {
-                    Logger::info(&app_handle_clone, "[QR] Session cancelled", None);
+                    Logger::info(&app_handle_clone, "[QR] Session aborted by user", None);
                     break;
                 }
                 _ = heartbeat_interval.tick() => {
@@ -182,20 +202,44 @@ pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window, state: t
                             if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
                                 match p["op"].as_str() {
                                     Some("hello") => {
-                                        let interval = p["heartbeat_interval"].as_u64().unwrap_or(30000);
-                                        heartbeat_interval = tokio::time::interval(Duration::from_millis(interval));
-                                        Logger::debug(&app_handle_clone, "[QR] Handshake complete", None);
+                                        interval_ms = p["heartbeat_interval"].as_u64().unwrap_or(30000);
+                                        heartbeat_interval = tokio::time::interval(Duration::from_millis(interval_ms));
+                                        heartbeat_interval.tick().await; 
+                                        
+                                        let init_payload = serde_json::json!({
+                                            "op": "init",
+                                            "encoded_public_key": pub_key_base64
+                                        });
+                                        let _ = write.send(Message::Text(init_payload.to_string().into())).await;
+                                        Logger::debug(&app_handle_clone, "[QR] Secure handshake initiated", None);
+                                    },
+                                    Some("nonce_proof") => {
+                                        let encrypted_nonce = p["encrypted_nonce"].as_str().unwrap_or_default();
+                                        if let Ok(encrypted_bytes) = general_purpose::STANDARD.decode(encrypted_nonce) {
+                                            if let Ok(decrypted) = priv_key.decrypt(Pkcs1v15Encrypt, &encrypted_bytes) {
+                                                let proof = general_purpose::URL_SAFE_NO_PAD.encode(&decrypted);
+                                                let _ = write.send(Message::Text(serde_json::json!({"op": "nonce_proof", "proof": proof}).to_string().into())).await;
+                                            }
+                                        }
                                     },
                                     Some("fingerprint") => {
                                         if let Some(fp) = p["fingerprint"].as_str() {
-                                            Logger::debug(&app_handle_clone, "[QR] Fingerprint generated", None);
+                                            Logger::info(&app_handle_clone, "[QR] Signature generated", None);
                                             let _ = window_clone.emit("qr_code_ready", format!("https://discord.com/ra/{}", fp));
                                         }
                                     },
+                                    Some("pending_remote_init") => {
+                                        Logger::info(&app_handle_clone, "[QR] Remote scan detected. Awaiting confirmation...", None);
+                                        let _ = window_clone.emit("qr_scanned", ());
+                                    },
                                     Some("finish") => {
-                                        Logger::info(&app_handle_clone, "[QR] Authorized via mobile", None);
-                                        if let Some(token) = p["token"].as_str() {
-                                            let _ = login_with_token_internal(app_handle_clone.clone(), window_clone.clone(), token.to_string(), false).await;
+                                        Logger::info(&app_handle_clone, "[QR] Handshake finalized", None);
+                                        let encrypted_token = p["encrypted_token"].as_str().unwrap_or_default();
+                                        if let Ok(encrypted_bytes) = general_purpose::STANDARD.decode(encrypted_token) {
+                                            if let Ok(decrypted) = priv_key.decrypt(Pkcs1v15Encrypt, &encrypted_bytes) {
+                                                let token = String::from_utf8_lossy(&decrypted).to_string();
+                                                let _ = login_with_token_internal(app_handle_clone.clone(), window_clone.clone(), token, false).await;
+                                            }
                                         }
                                         break;
                                     },
@@ -345,35 +389,47 @@ pub async fn start_oauth_flow(app_handle: AppHandle, window: Window) -> Result<D
     tauri::async_runtime::spawn(async move {
         let listener = tokio::net::TcpListener::from_std(listener)?;
         if let Ok(Ok((mut stream, _))) = timeout(Duration::from_secs(120), listener.accept()).await {
-            let mut buffer = [0; 2048];
+            let mut buffer = [0; 4096];
             let n = stream.read(&mut buffer).await?;
             let req = String::from_utf8_lossy(&buffer[..n]);
-            if let Some(url) = req.split_whitespace().nth(1).and_then(|p| Url::parse(&format!("http://localhost{}", p)).ok()) {
-                let query: HashMap<String, String> = url.query_pairs().into_owned().collect();
-                if query.get("state").map(|s| s == &csrf_secret).unwrap_or(false) {
-                    if let Some(code) = query.get("code") { let _ = tx.send(code.clone()); }
-                } else {
-                    Logger::warn(&app_clone, "[OAuth] CSRF state mismatch!", None);
+            
+            // Robust request parsing
+            let first_line = req.lines().next().unwrap_or_default();
+            if let Some(path) = first_line.split_whitespace().nth(1) {
+                if let Ok(url) = Url::parse(&format!("http://127.0.0.1{}", path)) {
+                    let query: HashMap<String, String> = url.query_pairs().into_owned().collect();
+                    if query.get("state").map(|s| s == &csrf_secret).unwrap_or(false) {
+                        if let Some(code) = query.get("code") {
+                             let _ = tx.send(code.clone()); 
+                        }
+                    } else {
+                        Logger::warn(&app_clone, "[OAuth] CSRF state mismatch or missing", None);
+                    }
                 }
             }
-            let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body style='font-family:sans-serif; text-align:center; padding-top:50px; background:#0a0a0a; color:white;'><h1>Handshake Successful</h1><p>You can close this tab.</p></body></html>";
-            let _ = stream.write_all(response.as_bytes()).await;
+            
+            let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body style='font-family:sans-serif; text-align:center; padding-top:100px; background:#0a0a0a; color:white;'><h1>Handshake Successful</h1><p>Auth signature verified. You can return to the application.</p></body></html>";
+            if let Err(e) = stream.write_all(response.as_bytes()).await {
+                Logger::error(&app_clone, "[OAuth] Failed to send success response", Some(serde_json::json!({"error": e.to_string()})));
+            }
+            let _ = stream.flush().await;
+            let _ = stream.shutdown().await;
         }
         Ok::<_, AppError>(())
     });
 
-    Logger::debug(&app_handle, "[OAuth] Opening browser...", None);
+    Logger::debug(&app_handle, "[OAuth] Opening browser gateway...", None);
     app_handle.opener().open_url(auth_url.to_string(), None::<&str>)?;
     
     let code = match timeout(Duration::from_secs(120), rx).await {
         Ok(Ok(c)) => c,
         _ => {
-            Logger::error(&app_handle, "[OAuth] Timeout waiting for callback", None);
+            Logger::error(&app_handle, "[OAuth] Authorization timed out (User cancelled or network blocked callback)", None);
             return Err(AppError { user_message: "Authorization timed out.".into(), ..Default::default() });
         }
     };
     
-    debug!("[OAuth] Exchanging code...");
+    Logger::debug(&app_handle, "[OAuth] Code received. Verifying PKCE and exchanging...", None);
     let token_res = client.exchange_code(oauth2::AuthorizationCode::new(code))
         .set_pkce_verifier(PkceCodeVerifier::new(pkce_ver.secret().to_string()))
         .request_async(oauth2::reqwest::async_http_client).await;
@@ -385,7 +441,7 @@ pub async fn start_oauth_flow(app_handle: AppHandle, window: Window) -> Result<D
         },
         Err(e) => {
             Logger::error(&app_handle, "[OAuth] Token exchange failed", Some(serde_json::json!({ "error": format!("{:?}", e) })));
-            Err(AppError { user_message: "Failed to exchange code.".into(), ..Default::default() })
+            Err(AppError { user_message: "Exchange protocol failure.".into(), ..Default::default() })
         }
     }
 }

@@ -28,6 +28,7 @@ rustls = { version = "0.23.36", features = ["ring"] }
 uuid = { version = "1.21.0", features = ["v4"] }
 socket2 = { version = "0.5.7", features = ["all"] }
 tokio-util = { version = "0.7.11" }
+rsa = "0.9.7"
 
 [build-dependencies]
 tauri-build = { version = "2.5.5", features = [] }

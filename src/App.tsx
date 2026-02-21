@@ -50,6 +50,14 @@ function App() {
 
   // --- Global Listeners ---
   useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        await invoke('get_current_user');
+      } catch (err) {
+        console.log("No active session to restore.");
+      }
+    };
+    restoreSession();
     checkStatus(); fetchIdentities();
     const interval = setInterval(checkStatus, 5000); 
     const opInterval = setInterval(getOperationStatus, 1000); 
