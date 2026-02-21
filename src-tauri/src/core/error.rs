@@ -41,9 +41,23 @@ impl From<std::io::Error> for AppError {
 
 impl From<reqwest::Error> for AppError {
     fn from(e: reqwest::Error) -> Self {
+        let (error_code, user_message) = if e.is_timeout() {
+            ("network_timeout".to_string(), "Network request timed out.".to_string())
+        } else if e.is_connect() {
+            ("network_connect_error".to_string(), "Failed to connect to network host.".to_string())
+        } else if e.is_decode() {
+            ("network_decode_error".to_string(), "Failed to decode network response.".to_string())
+        } else if e.is_status() {
+            (format!("network_http_{}", e.status().unwrap_or_default().as_u16()),
+             format!("HTTP error: {}", e.status().unwrap_or_default()))
+        } else if e.is_builder() {
+            ("network_request_build_error".to_string(), "Failed to build network request.".to_string())
+        } else {
+            ("network_error".to_string(), "Network request failed.".to_string())
+        };
         Self {
-            user_message: "Network request failed.".into(),
-            error_code: "network_error".into(),
+            user_message,
+            error_code,
             technical_details: Some(e.to_string()),
         }
     }
@@ -61,9 +75,26 @@ impl From<keyring::Error> for AppError {
 
 impl From<tauri::Error> for AppError {
     fn from(e: tauri::Error) -> Self {
+        let (error_code, user_message) = match e {
+            tauri::Error::Io(io_err) => {
+                // Delegate to existing From<std::io::Error>
+                return AppError::from(io_err);
+            },
+            tauri::Error::Json(json_err) => {
+                // Delegate to existing From<serde_json::Error>
+                return AppError::from(json_err);
+            },
+            tauri::Error::TauriPlugin(plugin_err) => {
+                ("tauri_plugin_error".to_string(), format!("Tauri plugin error: {}", plugin_err))
+            },
+            tauri::Error::Window(win_err) => {
+                ("tauri_window_error".to_string(), format!("Tauri window error: {}", win_err))
+            },
+            _ => ("tauri_error".to_string(), "Application bridge error.".to_string()),
+        };
         Self {
-            user_message: "Application bridge error.".into(),
-            error_code: "tauri_error".into(),
+            user_message,
+            error_code,
             technical_details: Some(e.to_string()),
         }
     }
