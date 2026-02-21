@@ -41,9 +41,19 @@ jobs:
         working-directory: discord-privacy-util
         run: npm run lint
 
+      - name: check formatting
+        working-directory: discord-privacy-util
+        run: npm run format:check
+
       - name: test frontend
         working-directory: discord-privacy-util
         run: npm test
+
+      - name: Upload Frontend coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: discord-privacy-util/coverage/frontend/
 
       - name: rust fmt check
         working-directory: discord-privacy-util/src-tauri
@@ -53,9 +63,33 @@ jobs:
         working-directory: discord-privacy-util/src-tauri
         run: cargo clippy -- -D warnings
 
-      - name: test backend
+      - name: install llvm-tools-preview
         working-directory: discord-privacy-util/src-tauri
+        run: rustup component add llvm-tools-preview
+
+      - name: install grcov
+        working-directory: discord-privacy-util/src-tauri
+        run: cargo install grcov
+
+      - name: Run backend tests with coverage
+        working-directory: discord-privacy-util/src-tauri
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: "-Cinstrument-coverage -Zprofile"
+          LLVM_PROFILE_FILE: "target/debug/cov-%p-%m.profraw"
         run: cargo test
+
+      - name: Generate Rust coverage report
+        working-directory: discord-privacy-util/src-tauri
+        run: |
+          grcov . --binary-path ./target/debug/ -s . -t html --keep-path -o ./target/debug/coverage/
+          ls -l ./target/debug/coverage/
+
+      - name: Upload Rust coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-coverage-report
+          path: discord-privacy-util/src-tauri/target/debug/coverage/
 
   publish-tauri:
     if: startsWith(github.ref, 'refs/tags/v')

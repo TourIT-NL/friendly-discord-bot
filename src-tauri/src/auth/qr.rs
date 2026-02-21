@@ -34,19 +34,13 @@ pub async fn start_qr_login_flow(
     };
     let pub_key = RsaPublicKey::from(&priv_key);
 
-    let pub_key_pem = pub_key
-        .to_pkcs1_pem(rsa::pkcs1::LineEnding::LF)
+    let pub_key_der = pub_key
+        .to_pkcs1_der()
         .map_err(|_| AppError {
-            user_message: "PEM encoding failed.".into(),
+            user_message: "DER encoding failed.".into(),
             ..Default::default()
         })?;
-    let pub_key_base64 = general_purpose::STANDARD.encode(
-        pub_key_pem
-            .replace("-----BEGIN RSA PUBLIC KEY-----", "")
-            .replace("-----END RSA PUBLIC KEY-----", "")
-            .replace("\n", "")
-            .replace("\r", ""),
-    );
+    let pub_key_base64 = general_purpose::STANDARD.encode(pub_key_der.as_bytes());
 
     let cancel_token = CancellationToken::new();
     {
@@ -104,14 +98,23 @@ pub async fn start_qr_login_flow(
                                         Logger::debug(&app_handle_clone, "[QR] Secure handshake initiated", None);
                                     },
                                     "nonce_proof" => {
+                                        Logger::debug(&app_handle_clone, "[QR] Received nonce proof request", None);
                                         let encrypted_nonce = p["encrypted_nonce"].as_str().unwrap_or_default();
-                                        if let Ok(encrypted_bytes) = general_purpose::STANDARD.decode(encrypted_nonce)
-                                            && let Ok(decrypted) = priv_key.decrypt(Pkcs1v15Encrypt, &encrypted_bytes) {
-                                                let mut hasher = Sha256::new();
-                                                hasher.update(&decrypted);
-                                                let hash = hasher.finalize();
-                                                let proof = general_purpose::URL_SAFE_NO_PAD.encode(hash);
-                                                let _ = write.send(Message::Text(serde_json::json!({"op": "nonce_proof", "proof": proof}).to_string().into())).await;
+                                        match general_purpose::STANDARD.decode(encrypted_nonce) {
+                                            Ok(encrypted_bytes) => {
+                                                match priv_key.decrypt(Pkcs1v15Encrypt, &encrypted_bytes) {
+                                                    Ok(decrypted) => {
+                                                        let mut hasher = Sha256::new();
+                                                        hasher.update(&decrypted);
+                                                        let hash = hasher.finalize();
+                                                        let proof = general_purpose::URL_SAFE_NO_PAD.encode(hash);
+                                                        let _ = write.send(Message::Text(serde_json::json!({"op": "nonce_proof", "proof": proof}).to_string().into())).await;
+                                                        Logger::debug(&app_handle_clone, "[QR] Sent nonce proof response", None);
+                                                    },
+                                                    Err(e) => Logger::error(&app_handle_clone, "[QR] Nonce decryption failed", Some(serde_json::json!({"error": e.to_string()}))),
+                                                }
+                                            },
+                                            Err(e) => Logger::error(&app_handle_clone, "[QR] Nonce base64 decode failed", Some(serde_json::json!({"error": e.to_string()}))),
                                         }
                                     },
                                     "fingerprint" => {
@@ -127,10 +130,17 @@ pub async fn start_qr_login_flow(
                                     "finish" => {
                                         Logger::info(&app_handle_clone, "[QR] Handshake finalized", None);
                                         let encrypted_token = p["encrypted_token"].as_str().unwrap_or_default();
-                                        if let Ok(encrypted_bytes) = general_purpose::STANDARD.decode(encrypted_token)
-                                            && let Ok(decrypted) = priv_key.decrypt(Pkcs1v15Encrypt, &encrypted_bytes) {
-                                                let token = String::from_utf8_lossy(&decrypted).to_string();
-                                                let _ = login_with_token_internal(app_handle_clone.clone(), window_clone.clone(), token, false).await;
+                                        match general_purpose::STANDARD.decode(encrypted_token) {
+                                            Ok(encrypted_bytes) => {
+                                                match priv_key.decrypt(Pkcs1v15Encrypt, &encrypted_bytes) {
+                                                    Ok(decrypted) => {
+                                                        let token = String::from_utf8_lossy(&decrypted).to_string();
+                                                        let _ = login_with_token_internal(app_handle_clone.clone(), window_clone.clone(), token, false).await;
+                                                    },
+                                                    Err(e) => Logger::error(&app_handle_clone, "[QR] Token decryption failed", Some(serde_json::json!({"error": e.to_string()}))),
+                                                }
+                                            },
+                                            Err(e) => Logger::error(&app_handle_clone, "[QR] Token base64 decode failed", Some(serde_json::json!({"error": e.to_string()}))),
                                         }
                                         break;
                                     },

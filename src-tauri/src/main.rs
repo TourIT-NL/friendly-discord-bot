@@ -11,7 +11,37 @@ use tokio::sync::mpsc;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+#[cfg(target_os = "windows")]
+fn ensure_elevation() {
+    use std::os::windows::ffi::OsStrExt;
+    use std::ptr;
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::UI::Shell::ShellExecuteW;
+    use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOW;
+
+    if !is_elevated::is_elevated() {
+        let exe_path = std::env::current_exe().expect("Failed to get current exe path");
+        let exe_path_wide: Vec<u16> = exe_path.as_os_str().encode_wide().chain(Some(0)).collect();
+        let verb_wide: Vec<u16> = "runas".encode_utf16().chain(Some(0)).collect();
+
+        unsafe {
+            ShellExecuteW(
+                0 as HWND,
+                verb_wide.as_ptr(),
+                exe_path_wide.as_ptr(),
+                ptr::null(),
+                ptr::null(),
+                SW_SHOW,
+            );
+        }
+        std::process::exit(0);
+    }
+}
+
 fn main() {
+    #[cfg(target_os = "windows")]
+    ensure_elevation();
+
     if let Err(e) = rustls::crypto::ring::default_provider().install_default() {
         eprintln!("Failed to install rustls default provider: {:?}", e);
         // Do not exit here, might not be critical for all features
