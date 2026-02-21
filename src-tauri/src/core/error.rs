@@ -9,7 +9,11 @@ pub struct AppError {
 
 impl std::fmt::Display for AppError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ({}): {:?}", self.user_message, self.error_code, self.technical_details)
+        write!(
+            f,
+            "{} ({}): {:?}",
+            self.user_message, self.error_code, self.technical_details
+        )
     }
 }
 
@@ -125,8 +129,20 @@ impl From<serde_json::Error> for AppError {
     }
 }
 
-impl From<oauth2::RequestTokenError<oauth2::reqwest::Error<reqwest::Error>, oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>>> for AppError {
-    fn from(e: oauth2::RequestTokenError<oauth2::reqwest::Error<reqwest::Error>, oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>>) -> Self {
+impl
+    From<
+        oauth2::RequestTokenError<
+            oauth2::reqwest::Error<reqwest::Error>,
+            oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>,
+        >,
+    > for AppError
+{
+    fn from(
+        e: oauth2::RequestTokenError<
+            oauth2::reqwest::Error<reqwest::Error>,
+            oauth2::StandardErrorResponse<oauth2::basic::BasicErrorResponseType>,
+        >,
+    ) -> Self {
         Self {
             user_message: "Failed to exchange authorization code.".into(),
             error_code: "oauth_error".into(),

@@ -1,12 +1,58 @@
-name: "release"
+name: "Release & CI"
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: discord-privacy-util/package-lock.json
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: install dependencies (ubuntu only)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: install frontend dependencies
+        working-directory: discord-privacy-util
+        run: npm install
+
+      - name: lint frontend
+        working-directory: discord-privacy-util
+        run: npm run lint
+        continue-on-error: true # Don't block build if lint fails for now, but show it
+
+      - name: rust fmt check
+        working-directory: discord-privacy-util/src-tauri
+        run: cargo fmt -- --check
+
+      - name: rust clippy
+        working-directory: discord-privacy-util/src-tauri
+        run: cargo clippy -- -D warnings
+
   publish-tauri:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: lint-and-test
     permissions:
       contents: write
     strategy:
@@ -30,11 +76,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: discord-privacy-util/package-lock.json
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          # Those targets are only used on macos runners so it's skip on linux and windows
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: install dependencies (ubuntu only)
@@ -44,15 +91,17 @@ jobs:
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: install frontend dependencies
+        working-directory: discord-privacy-util
         run: npm install
 
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version
-          releaseName: "Discord Privacy Utility v__VERSION__"
-          releaseBody: "See the assets below to download the latest version."
+          projectPath: discord-privacy-util
+          tagName: v__VERSION__
+          releaseName: "Discord Purge v__VERSION__"
+          releaseBody: "Release notes for Discord Purge v__VERSION__.\n\nSee the assets below to download the latest version."
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

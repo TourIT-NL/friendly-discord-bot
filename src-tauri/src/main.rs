@@ -1,15 +1,15 @@
 // src-tauri/src/main.rs
 
+mod api;
 mod auth;
 mod core;
-mod api;
 
+use crate::api::rate_limiter::{ApiHandle, RateLimiterActor};
+use crate::core::op_manager::OperationManager;
 use tauri::Manager;
+use tokio::sync::mpsc;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use tokio::sync::mpsc;
-use crate::api::rate_limiter::{RateLimiterActor, ApiHandle};
-use crate::core::op_manager::OperationManager;
 
 fn main() {
     if let Err(e) = rustls::crypto::ring::default_provider().install_default() {
@@ -20,7 +20,10 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let app_data_dir = app.path().app_local_data_dir().expect("failed to get app dir");
+            let app_data_dir = app
+                .path()
+                .app_local_data_dir()
+                .expect("failed to get app dir");
             std::fs::create_dir_all(&app_data_dir).expect("failed to create app dir");
 
             let file_appender = tracing_appender::rolling::daily(&app_data_dir, "app.log");
@@ -41,9 +44,9 @@ fn main() {
             info!("Application starting up...");
 
             let (tx, rx) = mpsc::channel(100);
-            let mut rate_limiter = RateLimiterActor::new(rx, app.handle().clone()); 
+            let mut rate_limiter = RateLimiterActor::new(rx, app.handle().clone());
             let api_handle = ApiHandle::new(tx);
-            
+
             tauri::async_runtime::spawn(async move {
                 rate_limiter.run().await;
             });

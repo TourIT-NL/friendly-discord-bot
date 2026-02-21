@@ -1,0 +1,256 @@
+// src-tauri/src/api/discord/bulk.rs
+
+use crate::api::rate_limiter::ApiHandle;
+use crate::core::error::AppError;
+use crate::core::logger::Logger;
+use crate::core::op_manager::OperationManager;
+use crate::core::vault::Vault;
+use std::sync::atomic::Ordering;
+use std::time::Duration;
+use tauri::{AppHandle, Emitter, Window, Manager};
+
+#[derive(serde::Deserialize)]
+pub struct PurgeOptions {
+    pub channel_ids: Vec<String>,
+    pub start_time: Option<u64>,
+    pub end_time: Option<u64>,
+    pub search_query: Option<String>,
+    pub purge_reactions: bool,
+    pub simulation: bool,
+    pub only_attachments: bool,
+}
+
+#[tauri::command]
+pub async fn bulk_remove_relationships(
+    app_handle: AppHandle,
+    window: Window,
+    user_ids: Vec<String>,
+) -> Result<(), AppError> {
+    let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
+    let api_handle = app_handle.state::<ApiHandle>();
+    let op_manager = app_handle.state::<OperationManager>();
+    op_manager.state.is_running.store(true, Ordering::SeqCst);
+
+    for (i, user_id) in user_ids.iter().enumerate() {
+        op_manager.state.wait_if_paused().await;
+        if op_manager.state.should_abort.load(Ordering::SeqCst) {
+            break;
+        }
+
+        let url = format!(
+            "https://discord.com/api/v9/users/@me/relationships/{}",
+            user_id
+        );
+        let _ = api_handle
+            .send_request(reqwest::Method::DELETE, &url, None, &token, is_bearer)
+            .await;
+        let _ = window.emit("relationship_progress", serde_json::json!({ "current": i + 1, "total": user_ids.len(), "id": user_id, "status": "severing" }));
+    }
+    op_manager.state.reset();
+    let _ = window.emit("relationship_complete", ());
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn bulk_leave_guilds(
+    app_handle: AppHandle,
+    window: Window,
+    guild_ids: Vec<String>,
+) -> Result<(), AppError> {
+    let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
+    let api_handle = app_handle.state::<ApiHandle>();
+    let op_manager = app_handle.state::<OperationManager>();
+    op_manager.state.is_running.store(true, Ordering::SeqCst);
+
+    for (i, guild_id) in guild_ids.iter().enumerate() {
+        op_manager.state.wait_if_paused().await;
+        if op_manager.state.should_abort.load(Ordering::SeqCst) {
+            break;
+        }
+
+        let url = format!("https://discord.com/api/v9/users/@me/guilds/{}", guild_id);
+        let _ = api_handle
+            .send_request(reqwest::Method::DELETE, &url, None, &token, is_bearer)
+            .await;
+        let _ = window.emit("leave_progress", serde_json::json!({ "current": i + 1, "total": guild_ids.len(), "id": guild_id, "status": "severing" }));
+    }
+    op_manager.state.reset();
+    let _ = window.emit("leave_complete", ());
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn bulk_delete_messages(
+    app_handle: AppHandle,
+    window: Window,
+    options: PurgeOptions,
+) -> Result<(), AppError> {
+    let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
+    let api_handle = app_handle.state::<ApiHandle>();
+    let op_manager = app_handle.state::<OperationManager>();
+    op_manager.state.is_running.store(true, Ordering::SeqCst);
+
+    Logger::info(
+        &app_handle,
+        &format!(
+            "[OP] Destructive purge initialized for {} nodes (Sim: {})",
+            options.channel_ids.len(),
+            options.simulation
+        ),
+        None,
+    );
+
+    let mut deleted_total = 0;
+
+    for (i, channel_id) in options.channel_ids.iter().enumerate() {
+        let mut last_message_id: Option<String> = None;
+        let mut consecutive_failures = 0;
+
+        'message_loop: loop {
+            op_manager.state.wait_if_paused().await;
+            if op_manager.state.should_abort.load(Ordering::SeqCst) {
+                break 'message_loop;
+            }
+
+            let mut url = format!(
+                "https://discord.com/api/v9/channels/{}/messages?limit=100",
+                channel_id
+            );
+            if let Some(before) = &last_message_id {
+                url.push_str(&format!("&before={}", before));
+            }
+
+            let response = api_handle
+                .send_request(reqwest::Method::GET, &url, None, &token, is_bearer)
+                .await?;
+            if !response.status().is_success() {
+                consecutive_failures += 1;
+                if consecutive_failures > 3 {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_secs(1)).await;
+                continue;
+            }
+            consecutive_failures = 0;
+
+            let messages: Vec<serde_json::Value> = response.json().await?;
+            if messages.is_empty() {
+                break;
+            }
+            last_message_id = messages
+                .last()
+                .and_then(|m| m["id"].as_str().map(|s| s.to_string()));
+
+            for msg in messages {
+                op_manager.state.wait_if_paused().await;
+                if op_manager.state.should_abort.load(Ordering::SeqCst) {
+                    break 'message_loop;
+                }
+
+                let msg_id = msg["id"].as_str().unwrap_or_default();
+                let content = msg["content"].as_str().unwrap_or_default();
+                let timestamp = chrono::DateTime::parse_from_rfc3339(
+                    msg["timestamp"].as_str().unwrap_or_default(),
+                )
+                .map(|dt| dt.timestamp_millis() as u64)
+                .unwrap_or(0);
+
+                let matches_query = if let Some(query) = &options.search_query {
+                    content.to_lowercase().contains(&query.to_lowercase())
+                } else {
+                    true
+                };
+                let has_attachments = msg["attachments"]
+                    .as_array()
+                    .is_some_and(|arr| !arr.is_empty());
+
+                if let Some(start) = options.start_time
+                    && timestamp < start {
+                        if last_message_id.is_some() {
+                            break 'message_loop;
+                        } else {
+                            continue;
+                        }
+                }
+                if let Some(end) = options.end_time
+                    && timestamp > end {
+                        continue;
+                }
+
+                if options.only_attachments && !has_attachments {
+                    continue;
+                }
+
+                if !options.simulation {
+                    if options.purge_reactions
+                        && let Some(reactions) = msg["reactions"].as_array() {
+                            for r in reactions {
+                                if op_manager.state.should_abort.load(Ordering::SeqCst) {
+                                    break 'message_loop;
+                                }
+                                if r["me"].as_bool().unwrap_or(false) {
+                                    let emoji = r["emoji"]["name"].as_str().unwrap_or("");
+                                    let emoji_id = r["emoji"]["id"].as_str().unwrap_or("");
+                                    let emoji_param = if emoji_id.is_empty() {
+                                        emoji.to_string()
+                                    } else {
+                                        format!("{}:{}", emoji, emoji_id)
+                                    };
+                                    let react_url = format!(
+                                        "https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me",
+                                        channel_id, msg_id, emoji_param
+                                    );
+                                    let _ = api_handle
+                                        .send_request(
+                                            reqwest::Method::DELETE,
+                                            &react_url,
+                                            None,
+                                            &token,
+                                            is_bearer,
+                                        )
+                                        .await;
+                                }
+                            }
+                    }
+
+                    if matches_query {
+                        let del_url = format!(
+                            "https://discord.com/api/v9/channels/{}/messages/{}",
+                            channel_id, msg_id
+                        );
+                        let del_res = api_handle
+                            .send_request(
+                                reqwest::Method::DELETE,
+                                &del_url,
+                                None,
+                                &token,
+                                is_bearer,
+                            )
+                            .await;
+                        if let Ok(res) = del_res
+                            && res.status().is_success() {
+                                deleted_total += 1;
+                        }
+                    }
+                } else if matches_query {
+                    deleted_total += 1;
+                }
+
+                if deleted_total % 10 == 0 {
+                    let _ = window.emit("deletion_progress", serde_json::json!({ "current": i + 1, "total": options.channel_ids.len(), "id": channel_id, "deleted_count": deleted_total, "status": if options.simulation { "simulating" } else { "purging" } }));
+                }
+            }
+        }
+    }
+    op_manager.state.reset();
+    let _ = window.emit("deletion_complete", ());
+    Logger::info(
+        &app_handle,
+        &format!(
+            "[OP] Destructive purge complete. Items nullified: {}",
+            deleted_total
+        ),
+        None,
+    );
+    Ok(())
+}
