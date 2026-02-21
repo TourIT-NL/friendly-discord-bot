@@ -16,6 +16,7 @@ import { MessagesMode } from './components/dashboard/modes/MessagesMode';
 import { ServersMode } from './components/dashboard/modes/ServersMode';
 import { IdentityMode } from './components/dashboard/modes/IdentityMode';
 import { OperationOverlay } from './components/dashboard/OperationOverlay';
+import { DeveloperLog } from './components/dashboard/DeveloperLog';
 
 import { useDiscordAuth } from './hooks/useDiscordAuth';
 import { useDiscordOperations } from './hooks/useDiscordOperations';
@@ -23,7 +24,7 @@ import { useDiscordOperations } from './hooks/useDiscordOperations';
 function App() {
   const { 
     isAuthenticated, user, guilds, isLoading, error, 
-    setAuthenticated, setError 
+    setAuthenticated, setError, addLog 
   } = useAuthStore();
 
   const {
@@ -67,6 +68,9 @@ function App() {
       unlisteners.push(await listen<string>('qr_code_ready', (event) => { 
         setQrUrl(event.payload);
         useAuthStore.getState().setLoading(false);
+      }));
+      unlisteners.push(await listen<{level: any, message: string, metadata: any}>('log_event', (event) => {
+        addLog(event.payload.level, event.payload.message, event.payload.metadata);
       }));
       unlisteners.push(await listen('deletion_progress', (event) => setProgress(event.payload as Progress)));
       unlisteners.push(await listen('deletion_complete', () => { setIsProcessing(false); setProgress(null); fetchGuilds(); getOperationStatus(); }));
@@ -140,6 +144,7 @@ function App() {
         )}
       </AnimatePresence>
       <OperationOverlay isLoading={isLoading} operationStatus={operationStatus} progress={progress} mode={mode} onPause={handlePause} onResume={handleResume} onAbort={handleAbort} />
+      <DeveloperLog />
       <AnimatePresence>
         {error && (
           <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[600] w-full max-w-xl px-10">

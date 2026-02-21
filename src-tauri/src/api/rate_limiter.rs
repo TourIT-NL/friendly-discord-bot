@@ -5,8 +5,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use reqwest::{Client, Method, Response, header};
-use tracing::{info, warn, error, debug};
 use crate::core::error::AppError;
+use crate::core::logger::Logger;
 use rand::Rng;
 
 /// Represents a pending API request
@@ -44,15 +44,17 @@ pub struct RateLimiterActor {
     client: Client,
     buckets: Arc<Mutex<HashMap<String, BucketInfo>>>,
     global_reset_at: Arc<Mutex<Instant>>,
+    app_handle: tauri::AppHandle,
 }
 
 impl RateLimiterActor {
-    pub fn new(inbox: mpsc::Receiver<ApiRequest>) -> Self {
+    pub fn new(inbox: mpsc::Receiver<ApiRequest>, app_handle: tauri::AppHandle) -> Self {
         Self {
             inbox,
             client: Client::new(),
             buckets: Arc::new(Mutex::new(HashMap::new())),
             global_reset_at: Arc::new(Mutex::new(Instant::now())),
+            app_handle,
         }
     }
 
@@ -66,6 +68,10 @@ impl RateLimiterActor {
         
         if let Some(pos) = segments.iter().position(|&s| s == "channels") {
             if let Some(id) = segments.get(pos + 1) {
+                // If it's a messages endpoint, include that in the route
+                if segments.get(pos + 2) == Some(&"messages") {
+                    return format!("channels/{}/messages", id);
+                }
                 return format!("channels/{}", id);
             }
         }
@@ -77,14 +83,19 @@ impl RateLimiterActor {
         if segments.contains(&"relationships") {
             return "relationships".to_string();
         }
+        if segments.contains(&"@me") {
+            return "users/@me".to_string();
+        }
         
         "default".to_string()
     }
 
     pub async fn run(&mut self) {
-        info!("[LIM] RateLimiterActor operational.");
+        Logger::info(&self.app_handle, "[LIM] RateLimiterActor operational.", None);
         while let Some(request) = self.inbox.recv().await {
             let route = Self::get_route(&request.url);
+            let mut retry_count = 0;
+            const MAX_RETRIES: u32 = 3;
             
             loop {
                 let now = Instant::now();
@@ -94,7 +105,7 @@ impl RateLimiterActor {
                     let global = self.global_reset_at.lock().await;
                     if now < *global {
                         let wait = *global - now;
-                        debug!("[LIM] Global throttle. Sleep {:?}", wait);
+                        Logger::debug(&self.app_handle, &format!("[LIM] Global throttle active. Waiting {:?}", wait), None);
                         tokio::time::sleep(wait).await;
                         continue;
                     }
@@ -114,17 +125,17 @@ impl RateLimiterActor {
                         if wait.is_zero() {
                             bucket.remaining = bucket.limit; 
                         } else {
-                            warn!("[LIM] Bucket '{}' empty. Waiting {:?}...", route, wait);
+                            Logger::warn(&self.app_handle, &format!("[LIM] Bucket '{}' exhausted. Resets in {:?}. Waiting...", route, wait), None);
                             drop(buckets);
-                            let jitter = rand::thread_rng().gen_range(50..150);
-                            tokio::time::sleep(wait + Duration::from_millis(jitter)).await; // Add small jitter buffer
+                            tokio::time::sleep(wait + Duration::from_millis(100)).await;
                             continue;
                         }
                     }
                     bucket.remaining = bucket.remaining.saturating_sub(1);
                 }
 
-                // 3. Execution with Smart Jitter
+                // 3. Execution
+                Logger::debug(&self.app_handle, &format!("[LIM] [{}] EXEC: {}", request.method, request.url), Some(serde_json::json!({ "route": route })));
                 let mut req_builder = self.client.request(request.method.clone(), &request.url);
                 if request.is_bearer {
                     req_builder = req_builder.bearer_auth(&request.auth_token);
@@ -135,8 +146,9 @@ impl RateLimiterActor {
                     req_builder = req_builder.json(&body);
                 }
 
-                if request.method == Method::DELETE || request.method == Method::POST || request.method == Method::PATCH {
-                    let jitter = rand::thread_rng().gen_range(50..150); // 50ms to 200ms extra
+                // Add minimal delay for destructive actions to avoid burst triggers
+                if request.method != Method::GET {
+                    let jitter = rand::thread_rng().gen_range(100..300);
                     tokio::time::sleep(Duration::from_millis(jitter)).await;
                 }
 
@@ -144,18 +156,34 @@ impl RateLimiterActor {
                     Ok(response) => {
                         let status = response.status();
                         let is_429 = status.as_u16() == 429;
+                        
+                        Logger::trace(&self.app_handle, &format!("[LIM] Response: {} | URL: {}", status, request.url), None);
                         self.update_limits(&route, &response, is_429).await;
 
                         if is_429 {
-                            warn!("[LIM] Rate limit (429) hit for {}. Recalibrating...", request.url);
+                            let body_text = response.text().await.unwrap_or_else(|_| "Could not read 429 body".to_string());
+                            Logger::warn(&self.app_handle, &format!("[LIM] 429 HIT: {}", request.url), Some(serde_json::json!({ "body": body_text })));
                             continue; 
+                        }
+
+                        if !status.is_success() && status.is_server_error() && retry_count < MAX_RETRIES {
+                            retry_count += 1;
+                            Logger::warn(&self.app_handle, &format!("[LIM] Server error ({}). Retry {}/{}...", status, retry_count, MAX_RETRIES), None);
+                            tokio::time::sleep(Duration::from_secs(retry_count as u64)).await;
+                            continue;
                         }
 
                         let _ = request.response_tx.send(Ok(response));
                         break; 
                     }
                     Err(e) => {
-                        error!("[LIM] Transport error for {}: {}", request.url, e);
+                        if retry_count < MAX_RETRIES {
+                            retry_count += 1;
+                            Logger::warn(&self.app_handle, &format!("[LIM] Transport error: {}. Retry {}/{}...", e, retry_count, MAX_RETRIES), None);
+                            tokio::time::sleep(Duration::from_secs(retry_count as u64)).await;
+                            continue;
+                        }
+                        Logger::error(&self.app_handle, &format!("[LIM] Fatal error for {}: {}", request.url, e), None);
                         let _ = request.response_tx.send(Err(AppError::from(e)));
                         break;
                     }
@@ -177,14 +205,26 @@ impl RateLimiterActor {
             bucket.consecutive_429s = 0;
         }
 
+        let mut updated = false;
         if let Some(rem) = headers.get("X-RateLimit-Remaining").and_then(|h| h.to_str().ok()).and_then(|s| s.parse::<u32>().ok()) {
             bucket.remaining = rem;
+            updated = true;
         }
         if let Some(reset) = headers.get("X-RateLimit-Reset-After").and_then(|h| h.to_str().ok()).and_then(|s| s.parse::<f32>().ok()) {
             bucket.reset_at = now + Duration::from_secs_f32(reset);
+            updated = true;
         }
         if let Some(lim) = headers.get("X-RateLimit-Limit").and_then(|h| h.to_str().ok()).and_then(|s| s.parse::<u32>().ok()) {
             bucket.limit = lim;
+            updated = true;
+        }
+
+        if updated {
+            Logger::trace(&self.app_handle, &format!("[LIM] Bucket '{}' updated", route), Some(serde_json::json!({
+                "remaining": bucket.remaining,
+                "limit": bucket.limit,
+                "resets_in": bucket.reset_at.duration_since(now).as_secs_f32()
+            })));
         }
 
         if is_429 {
@@ -195,12 +235,15 @@ impl RateLimiterActor {
             
             let mut wait = Duration::from_secs_f32(retry_after);
             
-            // Exponential Backoff for consecutive 429s
-            if bucket.consecutive_429s > 0 {
-                let backoff_factor = 2u64.pow(bucket.consecutive_429s.min(5)); // Max 5 retries
-                wait += Duration::from_secs(backoff_factor);
-                warn!("[LIM] Exponential Backoff for '{}': waiting {:?} ({} consecutive 429s)", route, wait, bucket.consecutive_429s);
+            if bucket.consecutive_429s > 1 {
+                let backoff = 2u64.pow(bucket.consecutive_429s.min(6));
+                wait += Duration::from_secs(backoff);
             }
+
+            Logger::warn(&self.app_handle, &format!("[LIM] [{}] RATE LIMIT HIT", route), Some(serde_json::json!({
+                "wait": wait.as_secs_f32(),
+                "consecutive": bucket.consecutive_429s
+            })));
 
             if headers.get("X-RateLimit-Global").and_then(|h| h.to_str().ok()) == Some("true") {
                 let mut g = self.global_reset_at.lock().await;

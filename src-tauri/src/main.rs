@@ -28,9 +28,12 @@ fn main() {
 
             app.manage(_guard);
 
-            // Logging to both stdout and file. Remove one of the following `.with` lines if you want to avoid duplicate log entries.
+            // Logging to both stdout and file.
+            let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "src_tauri=debug,info".into());
+
             tracing_subscriber::registry()
-                .with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
+                .with(env_filter)
                 .with(tracing_subscriber::fmt::layer().with_writer(std::io::stdout))
                 .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
                 .init();
@@ -38,7 +41,7 @@ fn main() {
             info!("Application starting up...");
 
             let (tx, rx) = mpsc::channel(100);
-            let mut rate_limiter = RateLimiterActor::new(rx); // No need for 'mut' since it's moved into spawn
+            let mut rate_limiter = RateLimiterActor::new(rx, app.handle().clone()); 
             let api_handle = ApiHandle::new(tx);
             
             tauri::async_runtime::spawn(async move {

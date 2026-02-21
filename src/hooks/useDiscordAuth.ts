@@ -23,17 +23,40 @@ export const useDiscordAuth = () => {
   };
 
   const handleApiError = useCallback((err: any, fallback: string) => {
-    setError(formatApiError(err, fallback));
+    const formattedMsg = formatApiError(err, fallback);
+    console.group(`[API Error] ${fallback}`);
+    console.error("Original Error:", err);
+    if (err.technical_details) {
+      try {
+        console.error("Technical Details:", JSON.parse(err.technical_details));
+      } catch {
+        console.error("Technical Details:", err.technical_details);
+      }
+    }
+    console.groupEnd();
+    
+    setError(formattedMsg, err);
     setLoading(false);
   }, [setError, setLoading]);
 
   const checkStatus = useCallback(async () => { 
     try { 
-      setDiscordStatus(await invoke('check_discord_status')); 
+      const status = await invoke<DiscordStatus>('check_discord_status');
+      setDiscordStatus(status);
+      useAuthStore.getState().resetRetry();
     } catch (err) { 
-      console.error("Failed to check Discord status:", err); 
+      const state = useAuthStore.getState();
+      if (state.retryCount < 5) {
+        state.incrementRetry();
+        const backoff = Math.min(1000 * Math.pow(2, state.retryCount), 10000);
+        console.warn(`[Status] Check failed. Retrying in ${backoff}ms... (${state.retryCount}/5)`);
+        setTimeout(checkStatus, backoff);
+      } else {
+        console.error("[Status] Maximum retries reached. Discord detection offline.");
+        handleApiError(err, "Discord link status unavailable.");
+      }
     } 
-  }, []);
+  }, [handleApiError]);
 
   const fetchIdentities = useCallback(async () => {
     try { 

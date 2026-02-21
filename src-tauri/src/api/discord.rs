@@ -6,8 +6,8 @@ use crate::api::rate_limiter::ApiHandle;
 use crate::core::error::AppError;
 use crate::core::vault::Vault;
 use crate::core::op_manager::OperationManager;
+use crate::core::logger::Logger;
 use std::time::Duration;
-use tracing::{info, warn};
 use std::sync::atomic::Ordering;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -45,12 +45,15 @@ pub struct OperationStatus {
 pub async fn fetch_guilds(app_handle: AppHandle) -> Result<Vec<Guild>, AppError> {
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
-    info!("[SYNC] Fetching guilds (OAuth: {})...", is_bearer);
+    Logger::info(&app_handle, &format!("[SYNC] Fetching guilds (OAuth: {})...", is_bearer), None);
     let response = api_handle.send_request(reqwest::Method::GET, "https://discord.com/api/v9/users/@me/guilds", None, &token, is_bearer).await?;
     if !response.status().is_success() {
+        Logger::error(&app_handle, "[SYNC] Guild fetch failed", Some(serde_json::json!({ "status": response.status().as_u16() })));
         return Err(AppError { user_message: "Sync failed.".into(), ..Default::default() });
     }
-    Ok(response.json().await?)
+    let guilds: Vec<Guild> = response.json().await?;
+    Logger::debug(&app_handle, &format!("[SYNC] Discovered {} guilds", guilds.len()), None);
+    Ok(guilds)
 }
 
 #[tauri::command]
@@ -59,13 +62,18 @@ pub async fn fetch_channels(app_handle: AppHandle, guild_id: Option<String>) -> 
     let api_handle = app_handle.state::<ApiHandle>();
     
     if let Some(gid) = guild_id {
-        info!("[SYNC] Fetching channels for guild {} (OAuth: {})...", gid, is_bearer);
+        Logger::info(&app_handle, &format!("[SYNC] Mapping channels for guild {}", gid), None);
         let response = api_handle.send_request(reqwest::Method::GET, &format!("https://discord.com/api/v9/guilds/{}/channels", gid), None, &token, is_bearer).await?;
-        if !response.status().is_success() { return Err(AppError { user_message: "Channel mapping failed.".into(), ..Default::default() }); }
+        if !response.status().is_success() { 
+            Logger::error(&app_handle, "[SYNC] Channel mapping failed", Some(serde_json::json!({ "guild": gid, "status": response.status().as_u16() })));
+            return Err(AppError { user_message: "Channel mapping failed.".into(), ..Default::default() }); 
+        }
         let channels: Vec<Channel> = response.json().await?;
-        Ok(channels.into_iter().filter(|c| c.channel_type == 0 || c.channel_type == 11 || c.channel_type == 12).collect())
+        let filtered: Vec<Channel> = channels.into_iter().filter(|c| c.channel_type == 0 || c.channel_type == 11 || c.channel_type == 12).collect();
+        Logger::debug(&app_handle, &format!("[SYNC] Mapped {} valid buffers", filtered.len()), None);
+        Ok(filtered)
     } else {
-        info!("[SYNC] Fetching DM channels (OAuth: {})...", is_bearer);
+        Logger::info(&app_handle, "[SYNC] Fetching DM buffers...", None);
         if is_bearer { return Err(AppError { user_message: "DMs restricted in Official Gate.".into(), ..Default::default() }); }
         let response = api_handle.send_request(reqwest::Method::GET, "https://discord.com/api/v9/users/@me/channels", None, &token, is_bearer).await?;
         if !response.status().is_success() { return Err(AppError { user_message: "DM sync failed.".into(), ..Default::default() }); }
@@ -82,6 +90,7 @@ pub async fn fetch_channels(app_handle: AppHandle, guild_id: Option<String>) -> 
                 result.push(Channel { id: ch["id"].as_str().unwrap_or_default().to_string(), name, channel_type: ch_type as u8 });
             }
         }
+        Logger::debug(&app_handle, &format!("[SYNC] Mapped {} private buffers", result.len()), None);
         Ok(result)
     }
 }
@@ -91,9 +100,12 @@ pub async fn fetch_relationships(app_handle: AppHandle) -> Result<Vec<Relationsh
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
     if is_bearer { return Err(AppError { user_message: "Relationships restricted in Official Gate.".into(), ..Default::default() }); }
+    Logger::info(&app_handle, "[SYNC] Fetching relationships...", None);
     let response = api_handle.send_request(reqwest::Method::GET, "https://discord.com/api/v9/users/@me/relationships", None, &token, is_bearer).await?;
     if !response.status().is_success() { return Err(AppError { user_message: "Identity sync failed.".into(), ..Default::default() }); }
-    Ok(response.json().await?)
+    let rels: Vec<Relationship> = response.json().await?;
+    Logger::debug(&app_handle, &format!("[SYNC] Found {} linked identities", rels.len()), None);
+    Ok(rels)
 }
 
 #[tauri::command]
@@ -103,9 +115,14 @@ pub async fn bulk_remove_relationships(app_handle: AppHandle, window: tauri::Win
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
+    Logger::info(&app_handle, &format!("[OP] Starting bulk relationship severance for {} identities", user_ids.len()), None);
+
     for (i, user_id) in user_ids.iter().enumerate() {
         op_manager.state.wait_if_paused().await;
-        if op_manager.state.should_abort.load(Ordering::SeqCst) { break; }
+        if op_manager.state.should_abort.load(Ordering::SeqCst) { 
+            Logger::warn(&app_handle, "[OP] Relationship severance aborted", None);
+            break; 
+        }
 
         let url = format!("https://discord.com/api/v9/users/@me/relationships/{}", user_id);
         let _ = api_handle.send_request(reqwest::Method::DELETE, &url, None, &token, is_bearer).await;
@@ -113,6 +130,7 @@ pub async fn bulk_remove_relationships(app_handle: AppHandle, window: tauri::Win
     }
     op_manager.state.reset();
     let _ = window.emit("relationship_complete", ());
+    Logger::info(&app_handle, "[OP] Identity purge complete", None);
     Ok(())
 }
 
@@ -123,9 +141,14 @@ pub async fn bulk_leave_guilds(app_handle: AppHandle, window: tauri::Window, gui
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
+    Logger::info(&app_handle, &format!("[OP] Connection severance initiated for {} nodes", guild_ids.len()), None);
+
     for (i, guild_id) in guild_ids.iter().enumerate() {
         op_manager.state.wait_if_paused().await;
-        if op_manager.state.should_abort.load(Ordering::SeqCst) { break; }
+        if op_manager.state.should_abort.load(Ordering::SeqCst) { 
+            Logger::warn(&app_handle, "[OP] Node severance aborted", None);
+            break; 
+        }
 
         let url = format!("https://discord.com/api/v9/users/@me/guilds/{}", guild_id);
         let _ = api_handle.send_request(reqwest::Method::DELETE, &url, None, &token, is_bearer).await;
@@ -133,6 +156,7 @@ pub async fn bulk_leave_guilds(app_handle: AppHandle, window: tauri::Window, gui
     }
     op_manager.state.reset();
     let _ = window.emit("leave_complete", ());
+    Logger::info(&app_handle, "[OP] Node severance complete", None);
     Ok(())
 }
 
@@ -153,11 +177,15 @@ pub async fn bulk_delete_messages(
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
+    Logger::info(&app_handle, &format!("[OP] Initializing destructive purge for {} buffers (Sim: {})", channel_ids.len(), simulation), None);
+
     let mut deleted_total = 0;
 
     for (i, channel_id) in channel_ids.iter().enumerate() {
         let mut last_message_id: Option<String> = None;
         let mut consecutive_failures = 0;
+
+        Logger::debug(&app_handle, &format!("[OP] Purging node {}", channel_id), None);
 
         'message_loop: loop {
             op_manager.state.wait_if_paused().await;
@@ -169,6 +197,7 @@ pub async fn bulk_delete_messages(
             let response = api_handle.send_request(reqwest::Method::GET, &url, None, &token, is_bearer).await?;
             if !response.status().is_success() { 
                 consecutive_failures += 1;
+                Logger::warn(&app_handle, &format!("[OP] Chunk fetch failed for channel {} ({}/3)", channel_id, consecutive_failures), None);
                 if consecutive_failures > 3 { break; }
                 tokio::time::sleep(Duration::from_secs(1)).await;
                 continue; 
@@ -181,7 +210,7 @@ pub async fn bulk_delete_messages(
 
             for msg in messages {
                 op_manager.state.wait_if_paused().await;
-                if op_manager.state.should_abort.load(Ordering::SeqCst) { break; }
+                if op_manager.state.should_abort.load(Ordering::SeqCst) { break 'message_loop; }
 
                 let msg_id = msg["id"].as_str().unwrap_or_default();
                 let content = msg["content"].as_str().unwrap_or_default();
@@ -193,26 +222,21 @@ pub async fn bulk_delete_messages(
                 if let Some(start) = start_time { if timestamp < start { if last_message_id.is_some() { break 'message_loop; } else { continue; } }}
                 if let Some(end) = end_time { if timestamp > end { continue; }}
 
-                // Apply attachment filter
-                if only_attachments && !has_attachments {
-                    continue; // Skip message if we only want attachments but this message has none
-                }
+                if only_attachments && !has_attachments { continue; }
 
                 if !simulation {
                     if purge_reactions {
                         if let Some(reactions) = msg["reactions"].as_array() {
                             for r in reactions {
                                 op_manager.state.wait_if_paused().await;
-                                if op_manager.state.should_abort.load(Ordering::SeqCst) { break; }
+                                if op_manager.state.should_abort.load(Ordering::SeqCst) { break 'message_loop; }
 
-                                if let Some(me) = r["me"].as_bool() {
-                                    if me {
-                                        let emoji = r["emoji"]["name"].as_str().unwrap_or("");
-                                        let emoji_id = r["emoji"]["id"].as_str().unwrap_or("");
-                                        let emoji_param = if emoji_id.is_empty() { emoji.to_string() } else { format!("{}:{}", emoji, emoji_id) };
-                                        let react_url = format!("https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me", channel_id, msg_id, emoji_param);
-                                        let _ = api_handle.send_request(reqwest::Method::DELETE, &react_url, None, &token, is_bearer).await;
-                                    }
+                                if r["me"].as_bool().unwrap_or(false) {
+                                    let emoji = r["emoji"]["name"].as_str().unwrap_or("");
+                                    let emoji_id = r["emoji"]["id"].as_str().unwrap_or("");
+                                    let emoji_param = if emoji_id.is_empty() { emoji.to_string() } else { format!("{}:{}", emoji, emoji_id) };
+                                    let react_url = format!("https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me", channel_id, msg_id, emoji_param);
+                                    let _ = api_handle.send_request(reqwest::Method::DELETE, &react_url, None, &token, is_bearer).await;
                                 }
                             }
                         }
@@ -227,7 +251,7 @@ pub async fn bulk_delete_messages(
                     if matches_query { deleted_total += 1; }
                 }
 
-                if deleted_total % 5 == 0 {
+                if deleted_total % 10 == 0 {
                     let _ = window.emit("deletion_progress", serde_json::json!({ "current": i + 1, "total": channel_ids.len(), "id": channel_id, "deleted_count": deleted_total, "status": if simulation { "simulating" } else { "purging" } }));
                 }
             }
@@ -235,6 +259,7 @@ pub async fn bulk_delete_messages(
     }
     op_manager.state.reset();
     let _ = window.emit("deletion_complete", ());
+    Logger::info(&app_handle, &format!("[OP] Destructive purge complete. Total items nullified: {}", deleted_total), None);
     Ok(())
 }
 
@@ -256,26 +281,28 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
+    Logger::info(&app_handle, "[STEALTH] Initiating privacy wipe...", None);
+
     // 1. Wipe Custom Status
     op_manager.state.wait_if_paused().await;
     if op_manager.state.should_abort.load(Ordering::SeqCst) { op_manager.state.reset(); return Ok(()); }
-    info!("[STEALTH] Wiping custom status...");
+    Logger::debug(&app_handle, "[STEALTH] Wiping custom status", None);
     let _ = api_handle.send_request(reqwest::Method::PATCH, "https://discord.com/api/v9/users/@me/settings", Some(serde_json::json!({ "custom_status": null })), &token, is_bearer).await;
 
     // 2. Global DM Disable (default for new servers)
     op_manager.state.wait_if_paused().await;
     if op_manager.state.should_abort.load(Ordering::SeqCst) { op_manager.state.reset(); return Ok(()); }
-    info!("[STEALTH] Disabling DMs from new server members...");
+    Logger::debug(&app_handle, "[STEALTH] Restricted default DMs from new servers", None);
     let _ = api_handle.send_request(reqwest::Method::PATCH, "https://discord.com/api/v9/users/@me/settings", Some(serde_json::json!({ "default_guilds_restricted": true })), &token, is_bearer).await;
 
     // 3. Presence Privacy
     op_manager.state.wait_if_paused().await;
     if op_manager.state.should_abort.load(Ordering::SeqCst) { op_manager.state.reset(); return Ok(()); }
-    info!("[STEALTH] Adjusting presence privacy settings...");
+    Logger::debug(&app_handle, "[STEALTH] Disabling presence game/activity tracking", None);
     let _ = api_handle.send_request(reqwest::Method::PATCH, "https://discord.com/api/v9/users/@me/settings", Some(serde_json::json!({ "show_current_game": false, "restricted_guilds": [] })), &token, is_bearer).await;
 
     op_manager.state.reset();
-    info!("[STEALTH] Privacy wipe complete.");
+    Logger::info(&app_handle, "[STEALTH] Privacy enforcement complete", None);
     Ok(())
 }
 
@@ -288,39 +315,33 @@ pub async fn bury_audit_log(app_handle: AppHandle, window: tauri::Window, guild_
 
     if is_bearer { return Err(AppError { user_message: "Audit Log Burial restricted in Official Gate.".into(), ..Default::default() }); }
 
-    info!("[AUDIT] Attempting to bury audit log in guild {}...", guild_id);
+    Logger::info(&app_handle, &format!("[AUDIT] Starting burial protocol in guild {}", guild_id), None);
 
-    // Fetch original channel name
     let original_channel_response = api_handle.send_request(reqwest::Method::GET, &format!("https://discord.com/api/v9/channels/{}", channel_id), None, &token, is_bearer).await?;
     if !original_channel_response.status().is_success() {
         op_manager.state.reset();
-        return Err(AppError { user_message: "Failed to get original channel name.".into(), technical_details: Some(format!("HTTP {}", original_channel_response.status())), ..Default::default() });
+        return Err(AppError { user_message: "Failed to get original channel name.".into(), ..Default::default() });
     }
     let original_channel_name = original_channel_response.json::<serde_json::Value>().await?["name"].as_str().unwrap_or("general").to_string();
 
-    for i in 0..10 { // Perform 10 renames
+    for i in 0..10 {
         op_manager.state.wait_if_paused().await;
         if op_manager.state.should_abort.load(Ordering::SeqCst) { break; }
 
         let new_name = format!("{}-temp-{}", original_channel_name, i);
-        info!("[AUDIT] Renaming channel {} to {}...", channel_id, new_name);
+        Logger::debug(&app_handle, &format!("[AUDIT] Burial phase {}: rename to {}", i, new_name), None);
         let _ = api_handle.send_request(reqwest::Method::PATCH, &format!("https://discord.com/api/v9/channels/{}", channel_id), Some(serde_json::json!({ "name": new_name })), &token, is_bearer).await;
         
-        op_manager.state.wait_if_paused().await;
-        if op_manager.state.should_abort.load(Ordering::SeqCst) { break; }
+        let _ = window.emit("audit_log_progress", serde_json::json!({ "current": i + 1, "total": 20, "status": format!("Burying phase {}", i) }));
+        tokio::time::sleep(Duration::from_millis(500)).await;
 
-        let _ = window.emit("audit_log_progress", serde_json::json!({ "current": i + 1, "total": 20, "status": format!("Renaming to '{}'", new_name) }));
-        tokio::time::sleep(Duration::from_millis(500)).await; // Small delay
-
-        info!("[AUDIT] Renaming channel {} back to {}...", channel_id, original_channel_name);
         let _ = api_handle.send_request(reqwest::Method::PATCH, &format!("https://discord.com/api/v9/channels/{}", channel_id), Some(serde_json::json!({ "name": original_channel_name })), &token, is_bearer).await;
-        let _ = window.emit("audit_log_progress", serde_json::json!({ "current": i + 1, "total": 20, "status": format!("Renaming back to '{}'", original_channel_name) }));
-        tokio::time::sleep(Duration::from_millis(500)).await; // Small delay
+        tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
     op_manager.state.reset();
     let _ = window.emit("audit_log_complete", ());
-    info!("[AUDIT] Audit log burial complete.");
+    Logger::info(&app_handle, "[AUDIT] Burial sequence finalized", None);
     Ok(())
 }
 
@@ -333,12 +354,12 @@ pub async fn webhook_ghosting(app_handle: AppHandle, window: tauri::Window, guil
 
     if is_bearer { op_manager.state.reset(); return Err(AppError { user_message: "Webhook Ghosting restricted in Official Gate.".into(), ..Default::default() }); }
 
-    info!("[WEBHOOK] Starting Webhook Ghosting for guild {}...", guild_id);
+    Logger::info(&app_handle, &format!("[WEBHOOK] Detecting identity-linked hooks in {}", guild_id), None);
 
     let webhooks_response = api_handle.send_request(reqwest::Method::GET, &format!("https://discord.com/api/v9/guilds/{}/webhooks", guild_id), None, &token, is_bearer).await?;
     if !webhooks_response.status().is_success() {
         op_manager.state.reset();
-        return Err(AppError { user_message: "Failed to fetch webhooks.".into(), technical_details: Some(format!("HTTP {}", webhooks_response.status())), ..Default::default() });
+        return Err(AppError { user_message: "Failed to fetch webhooks.".into(), ..Default::default() });
     }
     let webhooks: Vec<serde_json::Value> = webhooks_response.json().await?;
 
@@ -348,27 +369,20 @@ pub async fn webhook_ghosting(app_handle: AppHandle, window: tauri::Window, guil
         if op_manager.state.should_abort.load(Ordering::SeqCst) { break; }
 
         let webhook_id = webhook["id"].as_str().unwrap_or_default();
-        let webhook_creator_id = webhook["user"]["id"].as_str().unwrap_or_default(); // Assuming webhook has a 'user' field
-
-        // Only delete webhooks created by the current user
-        // Note: The user ID is part of the token. For simplicity, we are getting it from the token's first part.
-        // A more robust solution would be to pass the current user's ID to this command.
+        let webhook_creator_id = webhook["user"]["id"].as_str().unwrap_or_default();
         let user_id_from_token = token.split('.').next().unwrap_or_default();
+
         if webhook_creator_id == user_id_from_token { 
-            info!("[WEBHOOK] Deleting webhook {}...", webhook_id);
-            let delete_response = api_handle.send_request(reqwest::Method::DELETE, &format!("https://discord.com/api/v9/webhooks/{}", webhook_id), None, &token, is_bearer).await?;
-            if delete_response.status().is_success() {
-                deleted_webhooks += 1;
-            } else {
-                warn!("[WEBHOOK] Failed to delete webhook {}: HTTP {}", webhook_id, delete_response.status());
-            }
+            Logger::debug(&app_handle, &format!("[WEBHOOK] Nullifying hook {}", webhook_id), None);
+            let _ = api_handle.send_request(reqwest::Method::DELETE, &format!("https://discord.com/api/v9/webhooks/{}", webhook_id), None, &token, is_bearer).await;
+            deleted_webhooks += 1;
         }
-        let _ = window.emit("webhook_progress", serde_json::json!({ "current": deleted_webhooks, "total": webhooks.len(), "status": format!("Deleting webhook {}", webhook_id) }));
+        let _ = window.emit("webhook_progress", serde_json::json!({ "current": deleted_webhooks, "total": webhooks.len(), "status": "Ghosting" }));
     }
 
     op_manager.state.reset();
     let _ = window.emit("webhook_complete", ());
-    info!("[WEBHOOK] Webhook Ghosting complete. Deleted {} webhooks.", deleted_webhooks);
+    Logger::info(&app_handle, &format!("[WEBHOOK] Ghosting complete. Removed {} hooks", deleted_webhooks), None);
     Ok(())
 }
 
@@ -381,32 +395,28 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
-    info!("[NITRO] Initiating Nitro Stealth Wipe...");
+    Logger::info(&app_handle, "[NITRO] Initiating stealth wipe of Nitro-exclusive metadata", None);
 
     // 1. Clear About Me (Bio)
     op_manager.state.wait_if_paused().await;
     if op_manager.state.should_abort.load(Ordering::SeqCst) { op_manager.state.reset(); return Ok(()); }
-    info!("[NITRO] Clearing About Me...");
+    Logger::debug(&app_handle, "[NITRO] Clearing bio", None);
     let _ = api_handle.send_request(reqwest::Method::PATCH, "https://discord.com/api/v9/users/@me", Some(serde_json::json!({ "bio": "" })), &token, is_bearer).await;
 
-    // 2. Clear Pronouns (if set)
+    // 2. Clear Pronouns
     op_manager.state.wait_if_paused().await;
     if op_manager.state.should_abort.load(Ordering::SeqCst) { op_manager.state.reset(); return Ok(()); }
-    info!("[NITRO] Clearing Pronouns...");
+    Logger::debug(&app_handle, "[NITRO] Clearing pronouns", None);
     let _ = api_handle.send_request(reqwest::Method::PATCH, "https://discord.com/api/v9/users/@me/settings", Some(serde_json::json!({ "pronouns": "" })), &token, is_bearer).await;
 
-    // 3. Reset Banner (requires fetching current banner and setting to null, complex, or just setting a default color)
+    // 3. Reset Banner
     op_manager.state.wait_if_paused().await;
     if op_manager.state.should_abort.load(Ordering::SeqCst) { op_manager.state.reset(); return Ok(()); }
-    info!("[NITRO] Attempting to reset Banner...");
+    Logger::debug(&app_handle, "[NITRO] Resetting profile banner", None);
     let _ = api_handle.send_request(reqwest::Method::PATCH, "https://discord.com/api/v9/users/@me", Some(serde_json::json!({ "banner": null })), &token, is_bearer).await;
 
-    // 4. Reset Avatar (if animated, revert to static or default)
-    // This is more complex as it requires uploading a new avatar. For now, we'll skip this or set it to default if we have one.
-    // For this version, just focus on text-based clearable Nitro features.
-
     op_manager.state.reset();
-    info!("[NITRO] Nitro Stealth Wipe complete.");
+    Logger::info(&app_handle, "[NITRO] Stealth wipe finalized", None);
     Ok(())
 }
 
@@ -414,7 +424,7 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
 pub async fn pause_operation(app_handle: AppHandle) -> Result<(), AppError> {
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.is_paused.store(true, Ordering::SeqCst);
-    info!("[OP] Operation paused.");
+    Logger::warn(&app_handle, "[OP] Execution loop PAUSED", None);
     Ok(())
 }
 
@@ -422,7 +432,7 @@ pub async fn pause_operation(app_handle: AppHandle) -> Result<(), AppError> {
 pub async fn resume_operation(app_handle: AppHandle) -> Result<(), AppError> {
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.is_paused.store(false, Ordering::SeqCst);
-    info!("[OP] Operation resumed.");
+    Logger::info(&app_handle, "[OP] Execution loop RESUMED", None);
     Ok(())
 }
 
@@ -430,8 +440,8 @@ pub async fn resume_operation(app_handle: AppHandle) -> Result<(), AppError> {
 pub async fn abort_operation(app_handle: AppHandle) -> Result<(), AppError> {
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.should_abort.store(true, Ordering::SeqCst);
-    op_manager.state.is_paused.store(false, Ordering::SeqCst); // Ensure it can exit pause state
-    info!("[OP] Operation aborted.");
+    op_manager.state.is_paused.store(false, Ordering::SeqCst); 
+    Logger::error(&app_handle, "[OP] Execution loop ABORTED", None);
     Ok(())
 }
 

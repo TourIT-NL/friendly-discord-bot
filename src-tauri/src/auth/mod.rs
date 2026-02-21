@@ -14,21 +14,22 @@ use tauri_plugin_opener::OpenerExt;
 use crate::core::error::AppError;
 use crate::core::vault::{Vault, DiscordIdentity};
 use crate::api::rate_limiter::ApiHandle;
+use crate::core::logger::Logger;
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use futures_util::{StreamExt, SinkExt};
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
-use tracing::info;
 use uuid::Uuid;
 use socket2::{Socket, Domain, Type, Protocol};
 use std::net::SocketAddr;
 use tokio_util::sync::CancellationToken;
 use tokio::sync::Mutex;
+use tracing::{debug, trace};
 
 #[derive(Default)]
 pub struct AuthState {
-    qr_cancel_token: Mutex<Option<CancellationToken>>,
+    pub qr_cancel_token: Mutex<Option<CancellationToken>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -48,18 +49,28 @@ pub struct DiscordUser {
 
 #[tauri::command]
 pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<DiscordUser, AppError> {
-    info!("[RPC] Handshake sequence started.");
+    Logger::info(&app_handle, "[RPC] Handshake sequence started.", None);
     let client_id = Vault::get_credential(&app_handle, "client_id")?;
+    Logger::debug(&app_handle, &format!("[RPC] Using client_id: {}", client_id), None);
     
-    let port = (6463..=6472).find(|p| std::net::TcpStream::connect(format!("127.0.0.1:{}", p)).is_ok());
+    let port = (6463..=6472).find(|p| {
+        let ok = std::net::TcpStream::connect(format!("127.0.0.1:{}", p)).is_ok();
+        if ok { Logger::debug(&app_handle, &format!("[RPC] Detected Discord on port: {}", p), None); }
+        ok
+    });
     let port = port.ok_or_else(|| AppError { user_message: "Discord desktop client not detected.".into(), ..Default::default() })?;
 
     let url = format!("ws://127.0.0.1:{}/?v=1&client_id={}", port, client_id);
+    Logger::debug(&app_handle, &format!("[RPC] Connecting to WebSocket: {}", url), None);
+    
     let mut request = url.into_client_request().unwrap();
     request.headers_mut().insert("Origin", "https://discord.com".parse().unwrap());
 
     let (ws_stream, _) = timeout(Duration::from_secs(5), connect_async(request)).await??;
     let (mut write, mut read) = ws_stream.split();
+    
+    // Wait for READY
+    Logger::debug(&app_handle, "[RPC] Connected. Waiting for READY payload...", None);
     let _ = timeout(Duration::from_secs(2), read.next()).await;
 
     let nonce = Uuid::new_v4().to_string();
@@ -69,10 +80,13 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
         "nonce": nonce
     });
     
+    Logger::trace(&app_handle, "[RPC] Sending AUTHORIZE payload", Some(auth_payload.clone()));
     let _ = write.send(Message::Text(auth_payload.to_string().into())).await;
+    
     let code = match timeout(Duration::from_secs(30), async {
         while let Some(msg) = read.next().await {
             if let Ok(Message::Text(text)) = msg {
+                trace!("[RPC] Msg: {}", text);
                 if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
                     if p["nonce"].as_str() == Some(&nonce) {
                         return p["data"]["code"].as_str().map(|s| s.to_string());
@@ -83,16 +97,24 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
         None
     }).await {
         Ok(res) => res,
-        _ => return Err(AppError { user_message: "RPC authorization timed out.".into(), ..Default::default() }),
+        _ => {
+            Logger::error(&app_handle, "[RPC] Handshake timed out after 30s", None);
+            return Err(AppError { user_message: "RPC authorization timed out.".into(), ..Default::default() });
+        }
     };
 
     // Explicitly join and close to avoid "sending after closing" errors on drop
-    // We ignore the error here because the connection might already be closed by the peer
     if let Ok(mut ws_stream) = write.reunite(read) {
+        Logger::debug(&app_handle, "[RPC] Closing stream", None);
         let _ = timeout(Duration::from_secs(1), ws_stream.close(None)).await;
     }
 
-    let code = code.ok_or_else(|| AppError { user_message: "RPC authorization was denied.".into(), ..Default::default() })?;
+    let code = code.ok_or_else(|| {
+        Logger::error(&app_handle, "[RPC] Auth denied or code missing", None);
+        AppError { user_message: "RPC authorization was denied.".into(), ..Default::default() }
+    })?;
+    
+    debug!("[RPC] Code received. Exchanging...");
     let client_secret = Vault::get_credential(&app_handle, "client_secret")?;
     
     let http_client = reqwest::Client::new();
@@ -104,14 +126,23 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
             ("code", &code),
             ("redirect_uri", &"http://127.0.0.1".to_string()),
         ])
-        .send().await?.json::<serde_json::Value>().await?;
+        .send().await?;
+    
+    let status = res.status();
+    let res_json = res.json::<serde_json::Value>().await?;
+    
+    if !status.is_success() {
+        Logger::error(&app_handle, "[RPC] Token exchange failed", Some(res_json.clone()));
+        return Err(AppError { user_message: "Token exchange failed.".into(), technical_details: Some(res_json.to_string()), ..Default::default() });
+    }
 
-    let token = res["access_token"].as_str().ok_or_else(|| AppError { user_message: "Token exchange failed.".into(), ..Default::default() })?;
+    let token = res_json["access_token"].as_str().ok_or_else(|| AppError { user_message: "Access token missing in response.".into(), ..Default::default() })?;
     login_with_token_internal(app_handle, window, token.to_string(), true).await
 }
 
 #[tauri::command]
 pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window, state: tauri::State<'_, AuthState>) -> Result<(), AppError> {
+    Logger::info(&app_handle, "[QR] Initializing gateway...", None);
     let cancel_token = CancellationToken::new();
     {
         let mut token_guard = state.qr_cancel_token.lock().await;
@@ -125,6 +156,7 @@ pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window, state: t
     let mut request = url.into_client_request().unwrap();
     request.headers_mut().insert("Origin", "https://discord.com".parse().unwrap());
 
+    Logger::debug(&app_handle, &format!("[QR] Connecting: {}", url), None);
     let (ws_stream, _) = timeout(Duration::from_secs(10), connect_async(request)).await??;
     let (_write, mut read) = ws_stream.split();
     let window_clone = window.clone();
@@ -134,7 +166,7 @@ pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window, state: t
         loop {
             tokio::select! {
                 _ = cancel_token.cancelled() => {
-                    info!("[QR] Cancellation signal received.");
+                    Logger::info(&app_handle_clone, "[QR] Session cancelled", None);
                     break;
                 }
                 msg = read.next() => {
@@ -144,10 +176,12 @@ pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window, state: t
                                 match p["op"].as_str() {
                                     Some("fingerprint") => {
                                         if let Some(fp) = p["fingerprint"].as_str() {
+                                            Logger::debug(&app_handle_clone, "[QR] Fingerprint received", None);
                                             let _ = window_clone.emit("qr_code_ready", format!("https://discord.com/ra/{}", fp));
                                         }
                                     },
                                     Some("finish") => {
+                                        Logger::info(&app_handle_clone, "[QR] Authorized via mobile", None);
                                         if let Some(token) = p["token"].as_str() {
                                             let _ = login_with_token_internal(app_handle_clone.clone(), window_clone.clone(), token.to_string(), false).await;
                                         }
@@ -157,7 +191,7 @@ pub async fn start_qr_login_flow(app_handle: AppHandle, window: Window, state: t
                                 }
                             }
                         }
-                        None => break, // Connection closed
+                        None => break,
                         _ => {}
                     }
                 }
@@ -213,6 +247,7 @@ async fn validate_token(app_handle: &AppHandle, token: &str, is_bearer: bool) ->
     let api_handle = app_handle.state::<ApiHandle>();
     let response = api_handle.send_request(reqwest::Method::GET, "https://discord.com/api/v9/users/@me", None, token, is_bearer).await?;
     if !response.status().is_success() {
+        Logger::error(app_handle, "[Auth] Token validation failed", None);
         return Err(AppError { user_message: "Token invalid or expired.".into(), ..Default::default() });
     }
     Ok(response.json().await?)
@@ -222,6 +257,7 @@ async fn validate_token(app_handle: &AppHandle, token: &str, is_bearer: bool) ->
 pub async fn save_discord_credentials(app_handle: AppHandle, client_id: String, client_secret: String) -> Result<(), AppError> {
     Vault::set_credential(&app_handle, "client_id", client_id.trim())?;
     Vault::set_credential(&app_handle, "client_secret", client_secret.trim())?;
+    Logger::info(&app_handle, "[Vault] Discord credentials updated", None);
     Ok(())
 }
 
@@ -234,6 +270,7 @@ pub async fn list_identities(app_handle: AppHandle) -> Result<Vec<DiscordIdentit
 pub async fn switch_identity(app_handle: AppHandle, window: Window, id: String) -> Result<DiscordUser, AppError> {
     let identities = Vault::list_identities(&app_handle);
     let identity = identities.iter().find(|i| i.id == id).ok_or_else(|| AppError { user_message: "Identity not found.".into(), ..Default::default() })?;
+    Logger::info(&app_handle, &format!("[Auth] Switching to identity: {}", identity.username), None);
     login_with_token_internal(app_handle, window, identity.token.clone(), identity.is_oauth).await
 }
 
@@ -244,11 +281,12 @@ pub async fn remove_identity(app_handle: AppHandle, id: String) -> Result<(), Ap
 
 #[tauri::command]
 pub async fn start_oauth_flow(app_handle: AppHandle, window: Window) -> Result<DiscordUser, AppError> {
+    Logger::info(&app_handle, "[OAuth] Starting official flow...", None);
     let client_id = Vault::get_credential(&app_handle, "client_id")?;
     let client_secret = Vault::get_credential(&app_handle, "client_secret")?;
     
     let client = BasicClient::new(
-        ClientId::new(client_id), 
+        ClientId::new(client_id.clone()), 
         Some(ClientSecret::new(client_secret)), 
         AuthUrl::new("https://discord.com/oauth2/authorize".to_string()).unwrap(), 
         Some(TokenUrl::new("https://discord.com/api/v9/oauth2/token".to_string()).unwrap())
@@ -268,9 +306,9 @@ pub async fn start_oauth_flow(app_handle: AppHandle, window: Window) -> Result<D
     
     let addr = format!("127.0.0.1:{}", port).parse::<SocketAddr>().map_err(|e| AppError { user_message: "Invalid bind address.".into(), technical_details: Some(e.to_string()), ..Default::default() })?;
     
-    // Try to bind with a few retries in case the port is in TIME_WAIT
+    Logger::debug(&app_handle, &format!("[OAuth] Binding callback to {}", addr), None);
     let mut socket = None;
-    for _ in 0..3 {
+    for i in 0..3 {
         let s = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
         s.set_reuse_address(true)?;
         #[cfg(not(windows))]
@@ -280,15 +318,17 @@ pub async fn start_oauth_flow(app_handle: AppHandle, window: Window) -> Result<D
             socket = Some(s);
             break;
         }
+        Logger::warn(&app_handle, &format!("[OAuth] Port busy, retrying... ({}/3)", i+1), None);
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
-    let socket = socket.ok_or_else(|| AppError { 
-        user_message: "Authorization port (58123) is already in use. Please wait a moment and try again.".into(), 
-        ..Default::default() 
+    let socket = socket.ok_or_else(|| {
+        Logger::error(&app_handle, "[OAuth] Failed to bind callback port", None);
+        AppError { user_message: "Authorization port (58123) is already in use.".into(), ..Default::default() }
     })?;
 
     let listener: std::net::TcpListener = socket.into();
+    let app_clone = app_handle.clone();
 
     tauri::async_runtime::spawn(async move {
         let listener = tokio::net::TcpListener::from_std(listener)?;
@@ -300,25 +340,42 @@ pub async fn start_oauth_flow(app_handle: AppHandle, window: Window) -> Result<D
                 let query: HashMap<String, String> = url.query_pairs().into_owned().collect();
                 if query.get("state").map(|s| s == &csrf_secret).unwrap_or(false) {
                     if let Some(code) = query.get("code") { let _ = tx.send(code.clone()); }
+                } else {
+                    Logger::warn(&app_clone, "[OAuth] CSRF state mismatch!", None);
                 }
             }
-            let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body style='font-family:sans-serif; text-align:center; padding-top:50px;'><h1>Handshake Successful</h1><p>You can close this tab and return to the app.</p></body></html>";
+            let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body style='font-family:sans-serif; text-align:center; padding-top:50px; background:#0a0a0a; color:white;'><h1>Handshake Successful</h1><p>You can close this tab.</p></body></html>";
             let _ = stream.write_all(response.as_bytes()).await;
         }
         Ok::<_, AppError>(())
     });
 
+    Logger::debug(&app_handle, "[OAuth] Opening browser...", None);
     app_handle.opener().open_url(auth_url.to_string(), None::<&str>)?;
+    
     let code = match timeout(Duration::from_secs(120), rx).await {
         Ok(Ok(c)) => c,
-        _ => return Err(AppError { user_message: "Authorization timed out.".into(), ..Default::default() }),
+        _ => {
+            Logger::error(&app_handle, "[OAuth] Timeout waiting for callback", None);
+            return Err(AppError { user_message: "Authorization timed out.".into(), ..Default::default() });
+        }
     };
     
+    debug!("[OAuth] Exchanging code...");
     let token_res = client.exchange_code(oauth2::AuthorizationCode::new(code))
         .set_pkce_verifier(PkceCodeVerifier::new(pkce_ver.secret().to_string()))
-        .request_async(oauth2::reqwest::async_http_client).await?;
+        .request_async(oauth2::reqwest::async_http_client).await;
         
-    login_with_token_internal(app_handle, window, token_res.access_token().secret().to_string(), true).await
+    match token_res {
+        Ok(res) => {
+            Logger::info(&app_handle, "[OAuth] Token exchange successful", None);
+            login_with_token_internal(app_handle, window, res.access_token().secret().to_string(), true).await
+        },
+        Err(e) => {
+            Logger::error(&app_handle, "[OAuth] Token exchange failed", Some(serde_json::json!({ "error": format!("{:?}", e) })));
+            Err(AppError { user_message: "Failed to exchange code.".into(), ..Default::default() })
+        }
+    }
 }
 
 #[tauri::command]
