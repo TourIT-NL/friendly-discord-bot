@@ -1,7 +1,9 @@
 // src-tauri/src/core/vault.rs
 
+use crate::core::crypto::Crypto; // NEW
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
+use hex; // NEW
 use keyring::Entry;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -25,6 +27,7 @@ pub struct Vault;
 
 impl Vault {
     const SERVICE_NAME: &'static str = "com.discordprivacy.util";
+    const ENCRYPTION_KEY_SERVICE_NAME: &'static str = "com.discordprivacy.util.enc_key"; // NEW
 
     fn get_fallback_path(app: &AppHandle, key: &str) -> Option<PathBuf> {
         match app.path().app_local_data_dir() {
@@ -39,13 +42,43 @@ impl Vault {
         }
     }
 
+    fn get_or_create_encryption_key(app: &AppHandle) -> Result<String, AppError> {
+        let key_name = Self::ENCRYPTION_KEY_SERVICE_NAME;
+        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name) {
+            match entry.get_password() {
+                Ok(key) => return Ok(key),
+                Err(e) => Logger::debug(app, &format!("[Vault] Keyring read failed for encryption key: {}. Trying fallback.", e), None),
+            }
+        }
+
+        match Self::read_fallback(app, key_name) {
+            Ok(key) => return Ok(key),
+            Err(e) => Logger::debug(app, &format!("[Vault] Fallback read failed for encryption key: {}. Generating new key.", e), None),
+        }
+
+        let new_key = Crypto::generate_key();
+        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name) {
+            if let Err(e) = entry.set_password(&new_key) {
+                Logger::warn(app, &format!("[Vault] Failed to save encryption key to keyring: {}. Using fallback only.", e), None);
+            } else {
+                Logger::debug(app, "[Vault] Generated and saved encryption key to Keyring", None);
+            }
+        }
+        Self::write_fallback(app, key_name, &new_key)?;
+        Logger::debug(app, "[Vault] Generated and saved encryption key to fallback", None);
+        Ok(new_key)
+    }
+
     fn write_fallback(app: &AppHandle, key: &str, value: &str) -> Result<(), AppError> {
         if let Some(path) = Self::get_fallback_path(app, key) {
-            if let Err(e) = fs::write(&path, value) {
+            let enc_key = Self::get_or_create_encryption_key(app)?;
+            let encrypted_value = Crypto::encrypt(&enc_key, value)?;
+
+            if let Err(e) = fs::write(&path, encrypted_value) {
                 Logger::error(app, &format!("[Vault] File write failed for {}: {}", key, e), None);
                 return Err(AppError::from(e));
             }
-            Logger::debug(app, &format!("[Vault] Saved {} to disk fallback", key), None);
+            Logger::debug(app, &format!("[Vault] Saved {} to disk fallback (encrypted)", key), None);
             Ok(())
         } else {
             Err(AppError { user_message: "Failed to resolve storage path.".into(), ..Default::default() })
@@ -56,7 +89,10 @@ impl Vault {
         if let Some(path) = Self::get_fallback_path(app, key) {
             if path.exists() {
                 match fs::read_to_string(&path) {
-                    Ok(s) => return Ok(s),
+                    Ok(encrypted_s) => {
+                        let enc_key = Self::get_or_create_encryption_key(app)?;
+                        return Crypto::decrypt(&enc_key, &encrypted_s);
+                    },
                     Err(e) => {
                         Logger::error(app, &format!("[Vault] File read failed for {}: {}", key, e), None);
                         return Err(AppError::from(e));
@@ -79,6 +115,8 @@ impl Vault {
                 fs::remove_file(path).map_err(AppError::from)?;
             }
         }
+        // For current implementation, the encryption key is global and not deleted with each item.
+        // If specific keys were generated per item, they would be deleted here.
         Ok(())
     }
 

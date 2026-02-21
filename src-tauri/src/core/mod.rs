@@ -3,3 +3,4 @@ pub mod error;
 pub mod logger;
 pub mod op_manager;
 pub mod vault;
+pub mod crypto; // Add this line

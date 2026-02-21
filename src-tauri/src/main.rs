@@ -39,7 +39,7 @@ fn ensure_elevation() {
 }
 
 fn main() {
-    #[cfg(target_os = "windows")]
+    #[cfg(all(target_os = "windows", not(debug_assertions)))]
     ensure_elevation();
 
     if let Err(e) = rustls::crypto::ring::default_provider().install_default() {

@@ -24,6 +24,8 @@ sysinfo = "0.38.2"
 tokio-tungstenite = { version = "0.28.0", features = ["rustls-tls-webpki-roots"] }
 futures-util = "0.3.32"
 ring = "0.17.14"
+aes-gcm = "0.10.1"
+rand_core = { version = "0.6.3", features = ["getrandom"] }
 rustls = { version = "0.23.36", features = ["ring"] }
 uuid = { version = "1.21.0", features = ["v4"] }
 socket2 = { version = "0.5.7", features = ["all"] }
