@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Filter, Hash, Eye, Settings, ShieldAlert, Trash2, Play } from 'lucide-react';
 import { M3Card, SectionLabel } from '../../common/M3Components';
-import { Channel } from '../../../types/discord';
+import { Channel, Guild } from '../../../types/discord';
 
 interface MessagesModeProps {
   timeRange: '24h' | '7d' | 'all';
