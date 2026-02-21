@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useAuthStore } from "./store/authStore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +20,7 @@ import { DeveloperLog } from "./components/dashboard/DeveloperLog";
 
 import { useDiscordAuth } from "./hooks/useDiscordAuth";
 import { useDiscordOperations } from "./hooks/useDiscordOperations";
+import { invoke } from "@tauri-apps/api/core";
 
 function App() {
   const {
