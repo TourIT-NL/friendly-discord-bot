@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: discord-privacy-util/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -34,45 +34,41 @@ jobs:
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: install frontend dependencies
-        working-directory: discord-privacy-util
         run: npm install
 
       - name: lint frontend
-        working-directory: discord-privacy-util
         run: npm run lint
 
       - name: check formatting
-        working-directory: discord-privacy-util
         run: npm run format:check
 
       - name: test frontend
-        working-directory: discord-privacy-util
         run: npm test
 
       - name: Upload Frontend coverage report
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage-report
-          path: discord-privacy-util/coverage/frontend/
+          path: coverage/frontend/
 
       - name: rust fmt check
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         run: cargo fmt -- --check
 
       - name: rust clippy
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         run: cargo clippy -- -D warnings
 
       - name: install llvm-tools-preview
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         run: rustup component add llvm-tools-preview
 
       - name: install grcov
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         run: cargo install grcov
 
       - name: Run backend tests with coverage
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: "-Cinstrument-coverage -Zprofile"
@@ -80,7 +76,7 @@ jobs:
         run: cargo test
 
       - name: Generate Rust coverage report
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         run: |
           grcov . --binary-path ./target/debug/ -s . -t html --keep-path -o ./target/debug/coverage/
           ls -l ./target/debug/coverage/
@@ -89,7 +85,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rust-coverage-report
-          path: discord-privacy-util/src-tauri/target/debug/coverage/
+          path: src-tauri/target/debug/coverage/
 
   publish-tauri:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -118,7 +114,7 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: discord-privacy-util/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -132,14 +128,12 @@ jobs:
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: install frontend dependencies
-        working-directory: discord-privacy-util
         run: npm install
 
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: discord-privacy-util
           tagName: v__VERSION__
           releaseName: "Discord Purge v__VERSION__"
           releaseBody: "Release notes for Discord Purge v__VERSION__.\n\nSee the assets below to download the latest version."
