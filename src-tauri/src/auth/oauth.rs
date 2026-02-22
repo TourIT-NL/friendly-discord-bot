@@ -42,7 +42,7 @@ pub async fn start_oauth_flow(
     let (tx, rx) = oneshot::channel::<String>();
 
     let (listener_socket, port) = { // Renamed listener to listener_socket to avoid confusion
-        let mut socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
+        let socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
         socket.set_reuse_address(true)?;
         #[cfg(not(windows))]
         socket.set_reuse_port(true)?;

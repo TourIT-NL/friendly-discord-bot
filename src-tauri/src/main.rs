@@ -12,6 +12,7 @@ use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[cfg(target_os = "windows")]
+#[allow(dead_code)] // Added to suppress unused function warning in debug builds
 fn ensure_elevation() {
     use std::os::windows::ffi::OsStrExt;
     use std::ptr;
