@@ -48,66 +48,52 @@ impl Vault {
     fn get_or_create_encryption_key(app: &AppHandle) -> Result<String, AppError> {
         // --- Step 1: Check in-memory cache ---
         if let Some(key_mutex) = KEY_CACHE.get() {
-            let key_guard = key_mutex.lock().unwrap(); // Corrected
+            let key_guard = key_mutex.lock().unwrap();
             if let Some(cached_key) = key_guard.as_ref() {
-                Logger::debug(app, "[Vault] Loaded encryption key from in-memory cache", None);
                 return Ok(cached_key.clone());
             }
         }
 
         let key_name = Self::ENCRYPTION_KEY_SERVICE_NAME;
-        let mut loaded_key: Option<String> = None;
-
-        // --- Step 2: Attempt to retrieve existing key from Keyring ---
-        match Entry::new(Self::SERVICE_NAME, key_name) {
-            Ok(entry) => {
+        
+        // --- Step 2: Persistent retrieval attempt ---
+        for attempt in 1..=3 {
+            // A. Try Keyring
+            if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name) {
                 if let Ok(key) = entry.get_password() {
-                    Logger::debug(app, "[Vault] Loaded encryption key from Keyring", None);
-                    loaded_key = Some(key);
-                } else {
-                    Logger::debug(app, "[Vault] Encryption key not found in Keyring. Will attempt to generate.", None);
+                    let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
+                    mutex.lock().unwrap().replace(key.clone());
+                    return Ok(key);
                 }
-            },
-            Err(e) => {
-                Logger::warn(app, &format!("[Vault] Keyring service issue for encryption key: {}. Will attempt to generate.", e), None);
             }
+            // B. Try Fallback File (Directly)
+            if let Some(path) = Self::get_fallback_path(app, key_name) {
+                if path.exists() {
+                    if let Ok(key) = fs::read_to_string(&path) {
+                        let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
+                        mutex.lock().unwrap().replace(key.clone());
+                        return Ok(key);
+                    }
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100 * attempt));
         }
 
-        // --- Step 3: If not loaded, generate and save a new key to Keyring ---
-        let final_key = if let Some(key) = loaded_key {
-            key
-        } else {
-            let new_key = Crypto::generate_key();
-            match Entry::new(Self::SERVICE_NAME, key_name) {
-                Ok(mut entry) => {
-                    if let Err(e) = entry.set_password(&new_key) {
-                        Logger::error(app, &format!("[Vault] CRITICAL: Failed to save newly generated encryption key to keyring: {}. Encrypted fallback storage cannot be guaranteed.", e), None);
-                        return Err(AppError {
-                            user_message: "Critical security error: Cannot secure encryption key. Please ensure your OS keyring service is functional.".into(),
-                            error_code: "vault_key_storage_failure".into(),
-                            technical_details: Some(e.to_string()),
-                        });
-                    } else {
-                        Logger::debug(app, "[Vault] Generated and saved new encryption key to Keyring", None);
-                        new_key
-                    }
-                },
-                Err(e) => {
-                    Logger::error(app, &format!("[Vault] CRITICAL: Keyring service unavailable for encryption key save: {}. Encrypted fallback storage cannot be guaranteed.", e), None);
-                    return Err(AppError {
-                        user_message: "Critical security error: Keyring service is unavailable for encryption key. Encrypted fallback storage cannot be guaranteed.".into(),
-                        error_code: "vault_keyring_unreachable".into(),
-                        technical_details: Some(e.to_string()),
-                    });
-                }
-            }
-        };
+        // --- Step 3: Generate ONLY if absolutely nothing found ---
+        Logger::warn(app, "[Vault] No existing encryption key found. Generating fresh identity key.", None);
+        let new_key = Crypto::generate_key();
+        
+        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name) {
+            let _ = entry.set_password(&new_key);
+        }
+        
+        if let Some(path) = Self::get_fallback_path(app, key_name) {
+            let _ = fs::write(&path, &new_key);
+        }
 
-        // --- Step 4: Store in in-memory cache and return ---
-        KEY_CACHE.get_or_init(|| Mutex::new(None))
-                 .lock().unwrap() // Corrected
-                 .replace(final_key.clone());
-        Ok(final_key)
+        let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
+        mutex.lock().unwrap().replace(new_key.clone());
+        Ok(new_key)
     }
     fn write_fallback(app: &AppHandle, key: &str, value: &str) -> Result<(), AppError> {
         if let Some(path) = Self::get_fallback_path(app, key) {

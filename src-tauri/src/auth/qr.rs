@@ -2,7 +2,7 @@
 
 use base64::{Engine as _, engine::general_purpose};
 use futures_util::{SinkExt, StreamExt};
-use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey, pkcs1::EncodeRsaPublicKey};
+use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey, pkcs8::EncodePublicKey}; // Updated import
 use tauri::{AppHandle, Emitter, Window};
 use tokio::time::{Duration, timeout};
 use tokio_tungstenite::connect_async;
@@ -48,9 +48,9 @@ pub async fn start_qr_login_flow(
     let pub_key = RsaPublicKey::from(&priv_key);
 
     let pub_key_der = pub_key
-        .to_pkcs1_der()
+        .to_public_key_der() // Use SPKI (pkcs8) instead of pkcs1
         .map_err(|_| AppError {
-            user_message: "DER encoding failed.".into(),
+            user_message: "Public key encoding failed.".into(),
             ..Default::default()
         })?;
     let pub_key_base64 = general_purpose::STANDARD.encode(pub_key_der.as_bytes());
@@ -111,7 +111,7 @@ pub async fn start_qr_login_flow(
                         Some(Ok(Message::Text(text))) => {
                             if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
                                 let op = p["op"].as_str().unwrap_or("unknown");
-                                Logger::trace(&app_handle_clone, &format!("[QR] Opcode: {} | Payload: {:?}", op, p), None); // Log full payload for hello
+                                Logger::trace(&app_handle_clone, &format!("[QR] Received Opcode: {} | Payload: {:?}", op, p), None);
                                 
                                 match op {
                                     "hello" => {
@@ -178,8 +178,19 @@ pub async fn start_qr_login_flow(
                                     _ => {}
                                 }
                             }
-                        }
-                        None => break,
+                        },
+                        Some(Ok(Message::Close(frame))) => {
+                            Logger::warn(&app_handle_clone, &format!("[QR] WebSocket closed by server: {:?}", frame), None);
+                            break;
+                        },
+                        Some(Err(e)) => {
+                            Logger::error(&app_handle_clone, &format!("[QR] WebSocket error: {:?}", e), None);
+                            break;
+                        },
+                        None => {
+                            Logger::warn(&app_handle_clone, "[QR] WebSocket stream ended unexpectedly (None)", None);
+                            break;
+                        },
                         _ => {}
                     }
                 }

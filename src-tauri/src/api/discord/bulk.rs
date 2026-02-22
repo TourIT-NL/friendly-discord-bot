@@ -10,6 +10,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Window, Manager};
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PurgeOptions {
     pub channel_ids: Vec<String>,
     pub start_time: Option<u64>,
