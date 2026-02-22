@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
-use once_cell::sync::OnceLock; // NEW
-use tokio::sync::Mutex; // Added for clarity, although already used indirectly.
+use std::sync::OnceLock; // Using std's OnceLock
+use std::sync::Mutex; // Using std's Mutex
 
 /// Represents a stored Discord identity, containing the unique user ID,
 /// the current session token, and the authentication protocol used (OAuth vs User Token).
@@ -48,7 +48,7 @@ impl Vault {
     fn get_or_create_encryption_key(app: &AppHandle) -> Result<String, AppError> {
         // --- Step 1: Check in-memory cache ---
         if let Some(key_mutex) = KEY_CACHE.get() {
-            let key_guard = key_mutex.lock().await; // Corrected
+            let key_guard = key_mutex.lock().unwrap(); // Corrected
             if let Some(cached_key) = key_guard.as_ref() {
                 Logger::debug(app, "[Vault] Loaded encryption key from in-memory cache", None);
                 return Ok(cached_key.clone());
@@ -105,7 +105,7 @@ impl Vault {
 
         // --- Step 4: Store in in-memory cache and return ---
         KEY_CACHE.get_or_init(|| Mutex::new(None))
-                 .lock().await // Corrected
+                 .lock().unwrap() // Corrected
                  .replace(final_key.clone());
         Ok(final_key)
     }
