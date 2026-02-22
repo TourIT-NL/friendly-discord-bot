@@ -26,7 +26,7 @@ pub async fn start_qr_login_flow(
     Logger::info(&app_handle, "[QR] Initializing secure handshake...", None);
 
     // Check for client credentials first
-    let _client_id = match Vault::get_credential(&app_handle, "client_id") {
+    let client_id = match Vault::get_credential(&app_handle, "client_id") {
         Ok(id) => id,
         Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
         Err(e) => return Err(e),
@@ -121,7 +121,8 @@ pub async fn start_qr_login_flow(
                                         
                                         let init_payload = serde_json::json!({
                                             "op": "init",
-                                            "encoded_public_key": pub_key_base64
+                                            "encoded_public_key": pub_key_base64,
+                                            "client_id": client_id // Include client_id here
                                         });
                                         Logger::debug(&app_handle_clone, "[QR] Sending INIT payload.", None);
                                         let _ = write.send(Message::Text(init_payload.to_string().into())).await;
