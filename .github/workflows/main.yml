@@ -79,7 +79,7 @@ jobs:
         working-directory: src-tauri
         run: |
           mkdir -p ./target/debug/coverage/
-          grcov . --binary-path ./target/debug/ -s . -t html --keep-only -o ./target/debug/coverage/
+          grcov . --binary-path ./target/debug/ -s . -t html --keep-only src -o ./target/debug/coverage/
           ls -l ./target/debug/coverage/
 
       - name: Upload Rust coverage report
