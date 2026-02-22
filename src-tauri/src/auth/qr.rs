@@ -24,6 +24,18 @@ pub async fn start_qr_login_flow(
 ) -> Result<(), AppError> {
     Logger::info(&app_handle, "[QR] Initializing secure handshake...", None);
 
+    // Check for client credentials first
+    let client_id = match Vault::get_credential(&app_handle, "client_id") {
+        Ok(id) => id,
+        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
+        Err(e) => return Err(e),
+    };
+    let client_secret = match Vault::get_credential(&app_handle, "client_secret") {
+        Ok(secret) => secret,
+        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
+        Err(e) => return Err(e),
+    };
+
     // Generate RSA Keypair (ensure rng is not held across await)
     let priv_key = {
         let mut rng = rand::thread_rng();

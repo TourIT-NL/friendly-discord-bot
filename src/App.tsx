@@ -157,6 +157,29 @@ function App() {
           },
         ),
       );
+      // NEW ERROR LISTENER
+      unlisteners.push(
+        await listen<{
+          user_message: string;
+          error_code: string;
+          technical_details?: string;
+        }>(
+          "tauri://error", // Listen for generic Tauri errors
+          (event) => {
+            const { error_code, user_message } = event.payload;
+            if (error_code === "vault_credentials_missing") {
+              setError(user_message); // Display error message
+              setView("setup"); // Redirect to setup view
+            } else if (error_code === "no_active_session") {
+              setError(user_message); // Display error message
+              setView("auth"); // Redirect to auth view
+            } else {
+              // For other errors, just display the message
+              setError(user_message);
+            }
+          },
+        ),
+      );
       unlisteners.push(
         await listen("deletion_progress", (event) =>
           setProgress(event.payload as Progress),

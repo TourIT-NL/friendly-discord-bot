@@ -28,8 +28,16 @@ pub async fn start_oauth_flow(
     window: Window,
 ) -> Result<DiscordUser, AppError> {
     Logger::info(&app_handle, "[OAuth] Starting official flow...", None);
-    let client_id = Vault::get_credential(&app_handle, "client_id")?;
-    let client_secret = Vault::get_credential(&app_handle, "client_secret")?;
+    let client_id = match Vault::get_credential(&app_handle, "client_id") {
+        Ok(id) => id,
+        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
+        Err(e) => return Err(e),
+    };
+    let client_secret = match Vault::get_credential(&app_handle, "client_secret") {
+        Ok(secret) => secret,
+        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
+        Err(e) => return Err(e),
+    };
 
     let client = BasicClient::new(
         ClientId::new(client_id.clone()),

@@ -17,7 +17,11 @@ use crate::core::vault::Vault;
 #[tauri::command]
 pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<DiscordUser, AppError> {
     Logger::info(&app_handle, "[RPC] Handshake sequence started.", None);
-    let client_id = Vault::get_credential(&app_handle, "client_id")?;
+    let client_id = match Vault::get_credential(&app_handle, "client_id") {
+        Ok(id) => id,
+        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
+        Err(e) => return Err(e),
+    };
 
     let port = (6463..=6472).find(|p| {
         std::net::TcpStream::connect(format!("127.0.0.1:{}", p)).is_ok()
@@ -106,7 +110,11 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
         "[RPC] Code received. Exchanging for token...",
         None,
     );
-    let client_secret = Vault::get_credential(&app_handle, "client_secret")?;
+    let client_secret = match Vault::get_credential(&app_handle, "client_secret") {
+        Ok(secret) => secret,
+        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
+        Err(e) => return Err(e),
+    };
 
     let http_client = reqwest::Client::new();
     let res = http_client

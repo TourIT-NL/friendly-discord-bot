@@ -258,7 +258,7 @@ impl Vault {
 
     /// Retrieves a raw application credential (fallback enabled).
     pub fn get_credential(app: &AppHandle, key: &str) -> Result<String, AppError> {
-        match Entry::new(Self::SERVICE_NAME, key) {
+        let result = match Entry::new(Self::SERVICE_NAME, key) {
             Ok(entry) => {
                 match entry.get_password() {
                     Ok(p) => Ok(p),
@@ -272,10 +272,18 @@ impl Vault {
                 Logger::debug(app, &format!("[Vault] Keyring entry failed for {}: {}. Checking fallback.", key, e), None);
                 Self::read_fallback(app, key)
             }
-        }.map_err(|_| AppError { 
-            user_message: format!("Credential '{}' not found. Please complete Setup.", key), 
-            error_code: "credentials_missing".into(),
-            ..Default::default()
+        };
+
+        result.map_err(|original_err| {
+            if original_err.error_code == "credentials_missing" {
+                AppError { 
+                    user_message: format!("Credential '{}' not found. Please complete Setup.", key), 
+                    error_code: "vault_credentials_missing".into(), // Specific code for missing
+                    technical_details: original_err.technical_details,
+                }
+            } else {
+                original_err // Propagate other errors as they are
+            }
         })
     }
 }
