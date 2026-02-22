@@ -238,15 +238,35 @@ pub async fn bulk_delete_messages(
 
         if options.close_empty_dms && !options.simulation {
             let chan_url = format!("https://discord.com/api/v10/channels/{}", channel_id);
-            if let Ok(chan_val) = api_handle.send_request(reqwest::Method::GET, &chan_url, None, &token, is_bearer).await {
+            if let Ok(chan_val) = api_handle
+                .send_request(reqwest::Method::GET, &chan_url, None, &token, is_bearer)
+                .await
+            {
                 let chan_type = chan_val["type"].as_u64().unwrap_or(0);
                 if chan_type == 1 || chan_type == 3 {
-                    let check_url = format!("https://discord.com/api/v10/channels/{}/messages?limit=1", channel_id);
-                    if let Ok(check_val) = api_handle.send_request(reqwest::Method::GET, &check_url, None, &token, is_bearer).await {
-                        if check_val.as_array().map(|a| a.is_empty()).unwrap_or(false) {
-                            Logger::info(&app_handle, &format!("[OP] Closing empty DM node {}", channel_id), None);
-                            let _ = api_handle.send_request(reqwest::Method::DELETE, &chan_url, None, &token, is_bearer).await;
-                        }
+                    let check_url = format!(
+                        "https://discord.com/api/v10/channels/{}/messages?limit=1",
+                        channel_id
+                    );
+                    if let Ok(check_val) = api_handle
+                        .send_request(reqwest::Method::GET, &check_url, None, &token, is_bearer)
+                        .await
+                        && check_val.as_array().map(|a| a.is_empty()).unwrap_or(false)
+                    {
+                        Logger::info(
+                            &app_handle,
+                            &format!("[OP] Closing empty DM node {}", channel_id),
+                            None,
+                        );
+                        let _ = api_handle
+                            .send_request(
+                                reqwest::Method::DELETE,
+                                &chan_url,
+                                None,
+                                &token,
+                                is_bearer,
+                            )
+                            .await;
                     }
                 }
             }

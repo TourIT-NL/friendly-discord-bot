@@ -4,11 +4,11 @@ use crate::api::discord_routes::get_discord_route;
 use crate::api::rate_limiter::types::{ApiRequest, BucketInfo};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
-use reqwest::{header, Client, Response};
+use reqwest::{Client, Response, header};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{Mutex, mpsc};
 
 pub struct RateLimiterActor {
     pub(crate) inbox: mpsc::Receiver<ApiRequest>,

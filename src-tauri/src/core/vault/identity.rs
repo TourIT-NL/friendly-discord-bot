@@ -58,7 +58,7 @@ impl IdentityManager {
         }
 
         super::fallback::FallbackManager::write_fallback(app, &key, &secret)?;
-        
+
         let active_key = "active_account";
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, active_key) {
             let _ = entry.set_password(&identity.id);
@@ -73,13 +73,13 @@ impl IdentityManager {
         if !index.contains(&identity.id) {
             index.push(identity.id.clone());
         }
-        
+
         let index_json = serde_json::to_string(&index)?;
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, index_key) {
             let _ = entry.set_password(&index_json);
         }
         super::fallback::FallbackManager::write_fallback(app, index_key, &index_json)?;
-        
+
         Ok(())
     }
 
@@ -97,11 +97,13 @@ impl IdentityManager {
                     ),
                     None,
                 );
-                super::fallback::FallbackManager::read_fallback(app, "active_account").map_err(|_| AppError {
-                    user_message: "No active session found. Please login.".into(),
-                    error_code: "no_active_session".into(),
-                    ..Default::default()
-                })?
+                super::fallback::FallbackManager::read_fallback(app, "active_account").map_err(
+                    |_| AppError {
+                        user_message: "No active session found. Please login.".into(),
+                        error_code: "no_active_session".into(),
+                        ..Default::default()
+                    },
+                )?
             }
         };
 
@@ -127,7 +129,8 @@ impl IdentityManager {
         let index_str =
             match Entry::new(Self::SERVICE_NAME, index_key).and_then(|e| e.get_password()) {
                 Ok(s) => s,
-                Err(_) => super::fallback::FallbackManager::read_fallback(app, index_key).unwrap_or_else(|_| "[]".to_string()),
+                Err(_) => super::fallback::FallbackManager::read_fallback(app, index_key)
+                    .unwrap_or_else(|_| "[]".to_string()),
             };
 
         let index: Vec<String> = serde_json::from_str(&index_str).unwrap_or_default();
@@ -148,13 +151,14 @@ impl IdentityManager {
         let index_str =
             match Entry::new(Self::SERVICE_NAME, index_key).and_then(|e| e.get_password()) {
                 Ok(s) => s,
-                Err(_) => super::fallback::FallbackManager::read_fallback(app, index_key).unwrap_or_else(|_| "[]".to_string()),
+                Err(_) => super::fallback::FallbackManager::read_fallback(app, index_key)
+                    .unwrap_or_else(|_| "[]".to_string()),
             };
 
         if let Ok(mut index) = serde_json::from_str::<Vec<String>>(&index_str) {
             index.retain(|x| x != id);
             let new_index_json = serde_json::to_string(&index)?;
-            
+
             if let Ok(entry) = Entry::new(Self::SERVICE_NAME, index_key) {
                 let _ = entry.set_password(&new_index_json);
             }

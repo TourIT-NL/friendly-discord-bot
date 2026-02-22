@@ -59,7 +59,10 @@ impl FallbackManager {
             if path.exists() {
                 match fs::read_to_string(&path) {
                     Ok(encrypted_s) => {
-                        let enc_key = super::encryption::EncryptionManager::get_or_create_encryption_key(app)?;
+                        let enc_key =
+                            super::encryption::EncryptionManager::get_or_create_encryption_key(
+                                app,
+                            )?;
                         return Crypto::decrypt(&enc_key, &encrypted_s);
                     }
                     Err(e) => {

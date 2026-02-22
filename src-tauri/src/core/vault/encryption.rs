@@ -25,31 +25,37 @@ impl EncryptionManager {
         }
 
         let key_name = Self::ENCRYPTION_KEY_SERVICE_NAME;
-        
+
         for attempt in 1..=3 {
             if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name)
-                && let Ok(key) = entry.get_password() {
-                    let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
-                    mutex.lock().unwrap().replace(key.clone());
-                    return Ok(key);
+                && let Ok(key) = entry.get_password()
+            {
+                let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
+                mutex.lock().unwrap().replace(key.clone());
+                return Ok(key);
             }
             if let Some(path) = super::fallback::FallbackManager::get_fallback_path(app, key_name)
                 && path.exists()
-                && let Ok(key) = fs::read_to_string(&path) {
-                    let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
-                    mutex.lock().unwrap().replace(key.clone());
-                    return Ok(key);
+                && let Ok(key) = fs::read_to_string(&path)
+            {
+                let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
+                mutex.lock().unwrap().replace(key.clone());
+                return Ok(key);
             }
             std::thread::sleep(std::time::Duration::from_millis(100 * attempt));
         }
 
-        Logger::warn(app, "[Vault] No existing encryption key found. Generating fresh identity key.", None);
+        Logger::warn(
+            app,
+            "[Vault] No existing encryption key found. Generating fresh identity key.",
+            None,
+        );
         let new_key = Crypto::generate_key();
-        
+
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name) {
             let _ = entry.set_password(&new_key);
         }
-        
+
         if let Some(path) = super::fallback::FallbackManager::get_fallback_path(app, key_name) {
             let _ = fs::write(&path, &new_key);
         }

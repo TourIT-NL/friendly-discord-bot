@@ -1,5 +1,7 @@
 # Discord Purge: Privacy Enforcement Unit
-Please buy me a coffee!  buymeacoffee.com/dircordpurge                
+
+Please buy me a coffee! buymeacoffee.com/dircordpurge
+
 <div align="center">
   <img src="src-tauri/icons/128x128.png" alt="Discord Purge Logo" width="128" height="128">
   <p><em>High-performance Privacy Enforcement for the Modern Discord User.</em></p>

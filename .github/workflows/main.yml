@@ -71,13 +71,14 @@ jobs:
         working-directory: src-tauri
         env:
           CARGO_INCREMENTAL: 0
-          RUSTFLAGS: "-Cinstrument-coverage -Zprofile"
+          RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "target/debug/cov-%p-%m.profraw"
         run: cargo test
 
       - name: Generate Rust coverage report
         working-directory: src-tauri
         run: |
+          mkdir -p ./target/debug/coverage/
           grcov . --binary-path ./target/debug/ -s . -t html --keep-path -o ./target/debug/coverage/
           ls -l ./target/debug/coverage/
 
