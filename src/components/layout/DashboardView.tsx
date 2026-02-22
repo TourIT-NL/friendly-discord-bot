@@ -21,7 +21,7 @@ interface DashboardViewProps {
   handleNitroWipe: () => void;
   handleLogout: () => void;
   mode: "messages" | "servers" | "identity";
-  setAppMode: (mode: "messages" | "servers" | "identity") => void;
+  setMode: (mode: "messages" | "servers" | "identity") => void;
   timeRange: "24h" | "7d" | "all";
   setTimeRange: (range: "24h" | "7d" | "all") => void;
   simulation: boolean;
@@ -65,7 +65,7 @@ export const DashboardView = ({
   handleNitroWipe,
   handleLogout,
   mode,
-  setAppMode,
+  setMode,
   timeRange,
   setTimeRange,
   simulation,
@@ -144,21 +144,21 @@ export const DashboardView = ({
             </div>
             <div className="flex bg-m3-surfaceVariant rounded-m3-full p-1.5 border border-m3-outlineVariant shadow-inner">
               <button
-                onClick={() => setAppMode("messages")}
+                onClick={() => setMode("messages")}
                 className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "messages" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"}`}
               >
                 Messages
               </button>
               {selectedGuilds.size > 0 && (
                 <button
-                  onClick={() => setAppMode("servers")}
+                  onClick={() => setMode("servers")}
                   className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "servers" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"}`}
                 >
                   Servers
                 </button>
               )}
               <button
-                onClick={() => setAppMode("identity")}
+                onClick={() => setMode("identity")}
                 className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "identity" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"}`}
               >
                 Friends

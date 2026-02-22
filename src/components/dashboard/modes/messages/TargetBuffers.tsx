@@ -80,7 +80,7 @@ export const TargetBuffers = ({
                 <div className="mx-4 p-3 bg-black/40 rounded-m3-lg border border-m3-outlineVariant/20 space-y-2">
                   {previews.map((p, i) => (
                     <div
-                      key={i}
+                      key={p.id || i}
                       className="text-[9px] font-mono text-m3-onSurfaceVariant border-b border-white/5 pb-1 last:border-none truncate"
                     >
                       <span className="text-m3-primary font-bold">

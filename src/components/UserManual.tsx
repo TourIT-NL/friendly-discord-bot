@@ -93,9 +93,9 @@ export const UserManual = ({ onComplete }: { onComplete: () => void }) => {
 
       <div className="mt-12 flex items-center justify-between">
         <div className="flex gap-3">
-          {steps.map((_, i) => (
+          {steps.map((s, i) => (
             <div
-              key={i}
+              key={s.title}
               className={`h-1.5 transition-all duration-500 rounded-full ${i === step ? "w-12 bg-m3-primary" : "w-2 bg-m3-outlineVariant"}`}
             />
           ))}

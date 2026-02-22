@@ -2,19 +2,21 @@ import { useState } from "react";
 import { Channel, Relationship } from "../types/discord";
 
 export const useSelectionState = () => {
-  const [selectedGuilds, setSelectedGuilds] = useState<Set<string>>(new Set());
+  const [selectedGuilds, setSelectedGuilds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [channelsByGuild, setChannelsByGuild] = useState<
     Map<string, Channel[]>
-  >(new Map());
+  >(() => new Map());
   const [selectedChannels, setSelectedChannels] = useState<Set<string>>(
-    new Set(),
+    () => new Set(),
   );
   const [selectedGuildsToLeave, setSelectedGuildsToLeave] = useState<
     Set<string>
-  >(new Set());
+  >(() => new Set());
   const [selectedRelationships, setSelectedRelationships] = useState<
     Set<string>
-  >(new Set());
+  >(() => new Set());
   const [relationships, setRelationships] = useState<Relationship[] | null>(
     null,
   );

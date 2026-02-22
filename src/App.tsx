@@ -57,7 +57,7 @@ function App() {
 
   const {
     mode,
-    setAppMode,
+    setMode,
     selectedGuilds,
     setSelectedGuilds,
     channelsByGuild,
@@ -296,7 +296,7 @@ function App() {
             handleNitroWipe={handleNitroWipe}
             handleLogout={handleLogout}
             mode={mode}
-            setAppMode={setAppMode}
+            setMode={setMode}
             timeRange={timeRange}
             setTimeRange={setTimeRange}
             simulation={simulation}

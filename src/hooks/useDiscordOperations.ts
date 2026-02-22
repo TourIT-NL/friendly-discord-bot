@@ -10,7 +10,7 @@ export const useDiscordOperations = (
 ) => {
   const { setGuilds, setError, setLoading } = useAuthStore();
 
-  const [mode, setAppMode] = useState<"messages" | "servers" | "identity">(
+  const [mode, setMode] = useState<"messages" | "servers" | "identity">(
     "messages",
   );
   const [confirmText, setConfirmText] = useState("");
@@ -260,7 +260,7 @@ export const useDiscordOperations = (
 
   return {
     mode,
-    setAppMode,
+    setMode,
     selectedGuilds,
     setSelectedGuilds,
     channelsByGuild,
