@@ -1,4 +1,4 @@
-// src-tauri/src/api/discord/bulk.rs
+// src-tauri/src/api/discord/bulk/messages.rs
 
 use crate::api::rate_limiter::ApiHandle;
 use crate::core::error::AppError;
@@ -26,65 +26,6 @@ pub struct PurgeOptions {
     pub only_attachments: bool,
     #[serde(alias = "closeEmptyDms")]
     pub close_empty_dms: bool,
-}
-
-#[tauri::command]
-pub async fn bulk_remove_relationships(
-    app_handle: AppHandle,
-    window: Window,
-    user_ids: Vec<String>,
-) -> Result<(), AppError> {
-    let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
-    let api_handle = app_handle.state::<ApiHandle>();
-    let op_manager = app_handle.state::<OperationManager>();
-    op_manager.state.is_running.store(true, Ordering::SeqCst);
-
-    for (i, user_id) in user_ids.iter().enumerate() {
-        op_manager.state.wait_if_paused().await;
-        if op_manager.state.should_abort.load(Ordering::SeqCst) {
-            break;
-        }
-
-        let url = format!(
-            "https://discord.com/api/v10/users/@me/relationships/{}",
-            user_id
-        );
-        let _ = api_handle
-            .send_request(reqwest::Method::DELETE, &url, None, &token, is_bearer)
-            .await;
-        let _ = window.emit("relationship_progress", serde_json::json!({ "current": i + 1, "total": user_ids.len(), "id": user_id, "status": "severing" }));
-    }
-    op_manager.state.reset();
-    let _ = window.emit("relationship_complete", ());
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn bulk_leave_guilds(
-    app_handle: AppHandle,
-    window: Window,
-    guild_ids: Vec<String>,
-) -> Result<(), AppError> {
-    let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
-    let api_handle = app_handle.state::<ApiHandle>();
-    let op_manager = app_handle.state::<OperationManager>();
-    op_manager.state.is_running.store(true, Ordering::SeqCst);
-
-    for (i, guild_id) in guild_ids.iter().enumerate() {
-        op_manager.state.wait_if_paused().await;
-        if op_manager.state.should_abort.load(Ordering::SeqCst) {
-            break;
-        }
-
-        let url = format!("https://discord.com/api/v10/users/@me/guilds/{}", guild_id);
-        let _ = api_handle
-            .send_request(reqwest::Method::DELETE, &url, None, &token, is_bearer)
-            .await;
-        let _ = window.emit("leave_progress", serde_json::json!({ "current": i + 1, "total": guild_ids.len(), "id": guild_id, "status": "severing" }));
-    }
-    op_manager.state.reset();
-    let _ = window.emit("leave_complete", ());
-    Ok(())
 }
 
 #[tauri::command]
@@ -184,7 +125,6 @@ pub async fn bulk_delete_messages(
                 let author_id = msg["author"]["id"].as_str().unwrap_or_default();
                 let sys_user_id = msg["user"]["id"].as_str().unwrap_or_default();
 
-                // CRITICAL OPTIMIZATION: Only delete our own messages or system messages we triggered
                 if author_id != current_user_id && sys_user_id != current_user_id {
                     continue;
                 }
@@ -296,14 +236,11 @@ pub async fn bulk_delete_messages(
             }
         } // End of message_loop
 
-        // --- NEW: Close empty DM/Group DM option ---
         if options.close_empty_dms && !options.simulation {
-            // 1. Check if it's actually a DM/Group channel
             let chan_url = format!("https://discord.com/api/v10/channels/{}", channel_id);
             if let Ok(chan_val) = api_handle.send_request(reqwest::Method::GET, &chan_url, None, &token, is_bearer).await {
                 let chan_type = chan_val["type"].as_u64().unwrap_or(0);
                 if chan_type == 1 || chan_type == 3 {
-                    // 2. Check if it's actually empty now (fetch 1 message)
                     let check_url = format!("https://discord.com/api/v10/channels/{}/messages?limit=1", channel_id);
                     if let Ok(check_val) = api_handle.send_request(reqwest::Method::GET, &check_url, None, &token, is_bearer).await {
                         if check_val.as_array().map(|a| a.is_empty()).unwrap_or(false) {

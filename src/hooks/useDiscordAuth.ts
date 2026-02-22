@@ -177,8 +177,8 @@ export const useDiscordAuth = () => {
    * Protocol: Bypass Mode (User Token)
    * Manually inject a User Token for high-level private buffer access (DMs/Friends).
    */
-  const handleLoginToken = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLoginToken = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     try {
       await invoke("login_with_user_token", {
@@ -192,8 +192,8 @@ export const useDiscordAuth = () => {
     }
   };
 
-  const handleSaveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveConfig = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     try {
       await invoke("save_discord_credentials", { clientId, clientSecret });

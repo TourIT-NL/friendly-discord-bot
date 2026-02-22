@@ -1,44 +1,18 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { useAuthStore } from "../store/authStore";
-import {
-  Guild,
-  Channel,
-  Relationship,
-  Progress,
-  OperationStatus,
-  DiscordUser,
-} from "../types/discord";
+import { Guild, Channel } from "../types/discord";
+import { useSelectionState } from "./useSelectionState";
+import { useOperationControl } from "./useOperationControl";
 
 export const useDiscordOperations = (
   handleApiError: (err: any, fallback: string) => void,
 ) => {
-  const { user, guilds, setGuilds, setError, setLoading, setAuthenticated } =
-    useAuthStore();
+  const { setGuilds, setError, setLoading } = useAuthStore();
 
   const [mode, setAppMode] = useState<"messages" | "servers" | "identity">(
     "messages",
   );
-  const [selectedGuilds, setSelectedGuilds] = useState<Set<string>>(new Set());
-  const [channelsByGuild, setChannelsByGuild] = useState<
-    Map<string, Channel[]>
-  >(new Map());
-  const [relationships, setRelationships] = useState<Relationship[] | null>(
-    null,
-  );
-  const [previews, setPreviews] = useState<any[]>([]);
-  const [selectedChannels, setSelectedChannels] = useState<Set<string>>(
-    new Set(),
-  );
-  const [selectedGuildsToLeave, setSelectedGuildsToLeave] = useState<
-    Set<string>
-  >(new Set());
-  const [selectedRelationships, setSelectedRelationships] = useState<
-    Set<string>
-  >(new Set());
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState<Progress | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,11 +20,36 @@ export const useDiscordOperations = (
   const [onlyAttachments, setOnlyAttachments] = useState(false);
   const [simulation, setSimulation] = useState(false);
   const [closeEmptyDms, setCloseEmptyDms] = useState(false);
-  const [operationStatus, setOperationStatus] = useState<OperationStatus>({
-    is_running: false,
-    is_paused: false,
-    should_abort: false,
-  });
+
+  const {
+    selectedGuilds,
+    setSelectedGuilds,
+    channelsByGuild,
+    setChannelsByGuild,
+    selectedChannels,
+    setSelectedChannels,
+    selectedGuildsToLeave,
+    setSelectedGuildsToLeave,
+    selectedRelationships,
+    setSelectedRelationships,
+    relationships,
+    setRelationships,
+    previews,
+    setPreviews,
+  } = useSelectionState();
+
+  const {
+    isProcessing,
+    setIsProcessing,
+    progress,
+    setProgress,
+    operationStatus,
+    setOperationStatus,
+    getOperationStatus,
+    handlePause,
+    handleResume,
+    handleAbort,
+  } = useOperationControl();
 
   const fetchGuilds = useCallback(async () => {
     setLoading(true);
@@ -72,15 +71,7 @@ export const useDiscordOperations = (
     } finally {
       setLoading(false);
     }
-  }, [setLoading, handleApiError]);
-
-  const getOperationStatus = useCallback(async () => {
-    try {
-      setOperationStatus(await invoke("get_operation_status"));
-    } catch (err) {
-      console.error("Failed to get op status:", err);
-    }
-  }, []);
+  }, [setLoading, setRelationships, handleApiError]);
 
   const handleNitroWipe = async () => {
     setLoading(true);
@@ -135,7 +126,6 @@ export const useDiscordOperations = (
           err,
           `Failed to load buffers for ${guild?.name || "Direct Messages"}.`,
         );
-        // Rollback selection on error
         setSelectedGuilds((prev) => {
           const next = new Set(prev);
           next.delete(effectiveId);
@@ -145,13 +135,11 @@ export const useDiscordOperations = (
         setLoading(false);
       }
     } else {
-      // Remove channels when deselected
       setChannelsByGuild((prev) => {
         const next = new Map(prev);
         const removedChannels = next.get(effectiveId) || [];
         next.delete(effectiveId);
 
-        // Also deselect any channels that were from this guild
         setSelectedChannels((prevSelected) => {
           const nextSelected = new Set(prevSelected);
           removedChannels.forEach((c) => nextSelected.delete(c.id));
@@ -167,7 +155,7 @@ export const useDiscordOperations = (
     try {
       setPreviews(await invoke("fetch_preview_messages", { channelId }));
     } catch (err) {
-      /* TODO: Handle error or log it */
+      // Ignore preview errors
     }
   };
 
@@ -178,21 +166,6 @@ export const useDiscordOperations = (
     setSelectedChannels(next);
     if (!next.has(id)) setPreviews([]);
     else fetchPreview(id);
-  };
-
-  const handlePause = async () => {
-    await invoke("pause_operation");
-    getOperationStatus();
-  };
-  const handleResume = async () => {
-    await invoke("resume_operation");
-    getOperationStatus();
-  };
-  const handleAbort = async () => {
-    await invoke("abort_operation");
-    getOperationStatus();
-    setIsProcessing(false);
-    setProgress(null);
   };
 
   const handleBuryAuditLog = async () => {
@@ -261,7 +234,6 @@ export const useDiscordOperations = (
               : undefined;
         await invoke("bulk_delete_messages", {
           options: {
-            // Wrap all properties under a single 'options' key
             channelIds: Array.from(selectedChannels),
             startTime: start,
             endTime: undefined,

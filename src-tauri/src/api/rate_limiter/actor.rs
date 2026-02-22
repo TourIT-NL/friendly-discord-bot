@@ -1,51 +1,21 @@
-// src-tauri/src/api/rate_limiter.rs
+// src-tauri/src/api/rate_limiter/actor.rs
 
+use crate::api::discord_routes::get_discord_route;
+use crate::api::rate_limiter::types::{ApiRequest, BucketInfo};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
-use reqwest::{Client, Method, Response, header};
+use reqwest::{header, Client, Response};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{Mutex, mpsc, oneshot};
-
-use super::discord_routes::get_discord_route; // NEW
-
-/// Represents a pending API request
-pub struct ApiRequest {
-    pub method: Method,
-    pub url: String,
-    pub body: Option<serde_json::Value>,
-    pub auth_token: String,
-    pub is_bearer: bool,
-    pub response_tx: oneshot::Sender<Result<serde_json::Value, AppError>>, // Changed return type
-}
-
-/// Information about a rate limit bucket
-#[derive(Clone, Debug)]
-pub struct BucketInfo {
-    pub remaining: u32,
-    pub reset_at: Instant,
-    pub limit: u32,
-    pub consecutive_429s: u32,
-}
-
-impl Default for BucketInfo {
-    fn default() -> Self {
-        Self {
-            remaining: 1,
-            reset_at: Instant::now(),
-            limit: 1,
-            consecutive_429s: 0,
-        }
-    }
-}
+use tokio::sync::{mpsc, Mutex};
 
 pub struct RateLimiterActor {
-    inbox: mpsc::Receiver<ApiRequest>,
-    client: Client,
-    buckets: Arc<Mutex<HashMap<String, Arc<Mutex<BucketInfo>>>>>,
-    global_reset_at: Arc<Mutex<Instant>>,
-    app_handle: tauri::AppHandle,
+    pub(crate) inbox: mpsc::Receiver<ApiRequest>,
+    pub(crate) client: Client,
+    pub(crate) buckets: Arc<Mutex<HashMap<String, Arc<Mutex<BucketInfo>>>>>,
+    pub(crate) global_reset_at: Arc<Mutex<Instant>>,
+    pub(crate) app_handle: tauri::AppHandle,
 }
 
 impl RateLimiterActor {
@@ -303,49 +273,5 @@ impl RateLimiterActor {
                 );
             }
         }
-    }
-}
-
-#[derive(Clone)]
-pub struct ApiHandle {
-    tx: mpsc::Sender<ApiRequest>,
-}
-
-impl ApiHandle {
-    pub fn new(tx: mpsc::Sender<ApiRequest>) -> Self {
-        Self { tx }
-    }
-
-    pub async fn send_request(
-        &self,
-        method: Method,
-        url: &str,
-        body: Option<serde_json::Value>,
-        auth_token: &str,
-        is_bearer: bool,
-    ) -> Result<serde_json::Value, AppError> {
-        // Changed return type
-        let (response_tx, response_rx) = oneshot::channel();
-
-        let api_request = ApiRequest {
-            method,
-            url: url.to_string(),
-            body,
-            auth_token: auth_token.to_string(),
-            is_bearer,
-            response_tx,
-        };
-
-        self.tx.send(api_request).await.map_err(|_| AppError {
-            user_message: "Rate limiter connection failure.".to_string(),
-            error_code: "limiter_offline".to_string(),
-            technical_details: None,
-        })?;
-
-        response_rx.await.map_err(|_| AppError {
-            user_message: "Rate limiter communication timeout.".to_string(),
-            error_code: "limiter_timeout".to_string(),
-            technical_details: None,
-        })?
     }
 }
