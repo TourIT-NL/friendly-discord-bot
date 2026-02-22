@@ -43,7 +43,7 @@ fn main() {
     ensure_elevation();
 
     if let Err(e) = rustls::crypto::ring::default_provider().install_default() {
-        eprintln!("WARN: Failed to install rustls default provider: {}. Secure communication might be impacted for some features.", e);
+        eprintln!("WARN: Failed to install rustls default provider: {:?}. Secure communication might be impacted for some features.", e);
         // If rustls is critical, consider exiting or providing a strong user warning.
         // For now, adhere to previous decision not to exit.
     }

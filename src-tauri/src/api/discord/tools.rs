@@ -34,7 +34,7 @@ pub async fn bury_audit_log(
         None,
     );
 
-    let original_channel_response = api_handle
+    let original_channel_value = api_handle
         .send_request(
             reqwest::Method::GET,
             &format!("https://discord.com/api/v9/channels/{}", channel_id),
@@ -42,17 +42,9 @@ pub async fn bury_audit_log(
             &token,
             is_bearer,
         )
-        .await?;
-    if !original_channel_response.status().is_success() {
-        op_manager.state.reset();
-        return Err(AppError {
-            user_message: "Failed to resolve target node.".into(),
-            ..Default::default()
-        });
-    }
-    let original_channel_name = original_channel_response
-        .json::<serde_json::Value>()
-        .await?["name"]
+        .await?; // Will return serde_json::Value if successful
+
+    let original_channel_name = original_channel_value["name"]
         .as_str()
         .unwrap_or("general")
         .to_string();
@@ -125,7 +117,7 @@ pub async fn webhook_ghosting(
         None,
     );
 
-    let webhooks_response = api_handle
+    let webhooks_value = api_handle
         .send_request(
             reqwest::Method::GET,
             &format!("https://discord.com/api/v9/guilds/{}/webhooks", guild_id),
@@ -133,15 +125,9 @@ pub async fn webhook_ghosting(
             &token,
             is_bearer,
         )
-        .await?;
-    if !webhooks_response.status().is_success() {
-        op_manager.state.reset();
-        return Err(AppError {
-            user_message: "Failed to scan webhooks.".into(),
-            ..Default::default()
-        });
-    }
-    let webhooks: Vec<serde_json::Value> = webhooks_response.json().await?;
+        .await?; // Will return serde_json::Value if successful
+
+    let webhooks: Vec<serde_json::Value> = serde_json::from_value(webhooks_value).map_err(AppError::from)?;
 
     let mut deleted_webhooks = 0;
     for webhook in &webhooks {

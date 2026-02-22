@@ -17,7 +17,7 @@ pub async fn fetch_guilds(app_handle: AppHandle) -> Result<Vec<Guild>, AppError>
         None,
     );
 
-    let response = api_handle
+    let response_value = api_handle
         .send_request(
             reqwest::Method::GET,
             "https://discord.com/api/v9/users/@me/guilds",
@@ -25,24 +25,9 @@ pub async fn fetch_guilds(app_handle: AppHandle) -> Result<Vec<Guild>, AppError>
             &token,
             is_bearer,
         )
-        .await?;
-    let status = response.status();
+        .await?; // Will return serde_json::Value if successful
 
-    if !status.is_success() {
-        let body = response.text().await.unwrap_or_default();
-        Logger::error(
-            &app_handle,
-            "[SYNC] Guild sync failed",
-            Some(serde_json::json!({ "status": status.as_u16(), "response": body })),
-        );
-        return Err(AppError {
-            user_message: format!("Guild sync failed (HTTP {})", status),
-            technical_details: Some(body),
-            ..Default::default()
-        });
-    }
-
-    Ok(response.json().await?)
+    Ok(serde_json::from_value(response_value).map_err(AppError::from)?)
 }
 
 #[tauri::command]
@@ -59,34 +44,17 @@ pub async fn fetch_channels(
             &format!("[SYNC] Mapping nodes for guild {}", gid),
             None,
         );
-        let response = api_handle
-            .send_request(
-                reqwest::Method::GET,
-                &format!("https://discord.com/api/v9/guilds/{}/channels", gid),
-                None,
-                &token,
-                is_bearer,
-            )
-            .await?;
-        let status = response.status();
-
-        if !status.is_success() {
-            let body = response.text().await.unwrap_or_default();
-            Logger::error(
-                &app_handle,
-                "[SYNC] Node mapping failed",
-                Some(
-                    serde_json::json!({ "guild": gid, "status": status.as_u16(), "response": body }),
-                ),
-            );
-            return Err(AppError {
-                user_message: format!("Mapping failed (HTTP {})", status),
-                technical_details: Some(body),
-                ..Default::default()
-            });
-        }
-        let channels: Vec<Channel> = response.json().await?;
-        Ok(channels
+                        let response_value = api_handle
+                            .send_request(
+                                reqwest::Method::GET,
+                                &format!("https://discord.com/api/v9/guilds/{}/channels", gid),
+                                None,
+                                &token,
+                                is_bearer,
+                            )
+                            .await?; // Will return serde_json::Value if successful
+        
+                        let channels: Vec<Channel> = serde_json::from_value(response_value).map_err(AppError::from)?;        Ok(channels
             .into_iter()
             .filter(|c| c.channel_type == 0 || c.channel_type == 11 || c.channel_type == 12)
             .collect())
@@ -98,25 +66,17 @@ pub async fn fetch_channels(
                 ..Default::default()
             });
         }
-        let response = api_handle
-            .send_request(
-                reqwest::Method::GET,
-                "https://discord.com/api/v9/users/@me/channels",
-                None,
-                &token,
-                is_bearer,
-            )
-            .await?;
-        if !response.status().is_success() {
-            let body = response.text().await.unwrap_or_default();
-            return Err(AppError {
-                user_message: "DM sync failed.".into(),
-                technical_details: Some(body),
-                ..Default::default()
-            });
-        }
-        let channels: Vec<serde_json::Value> = response.json().await?;
-        let mut result = Vec::new();
+                    let response_value = api_handle
+                        .send_request(
+                            reqwest::Method::GET,
+                            "https://discord.com/api/v9/users/@me/channels",
+                            None,
+                            &token,
+                            is_bearer,
+                        )
+                        .await?; // Will return serde_json::Value if successful
+        
+                    let channels: Vec<serde_json::Value> = serde_json::from_value(response_value).map_err(AppError::from)?;        let mut result = Vec::new();
         for ch in channels {
             let ch_type = ch["type"].as_u64().unwrap_or(0);
             if ch_type == 1 || ch_type == 3 {
@@ -151,7 +111,7 @@ pub async fn fetch_relationships(app_handle: AppHandle) -> Result<Vec<Relationsh
     }
 
     Logger::info(&app_handle, "[SYNC] Fetching identity links...", None);
-    let response = api_handle
+    let response_value = api_handle
         .send_request(
             reqwest::Method::GET,
             "https://discord.com/api/v9/users/@me/relationships",
@@ -159,14 +119,9 @@ pub async fn fetch_relationships(app_handle: AppHandle) -> Result<Vec<Relationsh
             &token,
             is_bearer,
         )
-        .await?;
-    if !response.status().is_success() {
-        return Err(AppError {
-            user_message: "Identity sync failed.".into(),
-            ..Default::default()
-        });
-    }
-    Ok(response.json().await?)
+        .await?; // Will return serde_json::Value if successful
+
+    Ok(serde_json::from_value(response_value).map_err(AppError::from)?)
 }
 
 #[tauri::command]
@@ -176,7 +131,7 @@ pub async fn fetch_preview_messages(
 ) -> Result<Vec<serde_json::Value>, AppError> {
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
-    let response = api_handle
+    let response_value = api_handle
         .send_request(
             reqwest::Method::GET,
             &format!(
@@ -187,12 +142,6 @@ pub async fn fetch_preview_messages(
             &token,
             is_bearer,
         )
-        .await?;
-    if !response.status().is_success() {
-        return Err(AppError {
-            user_message: "Preview failed.".into(),
-            ..Default::default()
-        });
-    }
-    Ok(response.json().await?)
-}
+        .await?; // Will return serde_json::Value if successful
+
+    Ok(serde_json::from_value(response_value).map_err(AppError::from)?)}

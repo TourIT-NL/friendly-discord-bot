@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, mpsc, oneshot};
 
-use super::discord_routes::{get_discord_route, DiscordApiRoute}; // NEW
+use super::discord_routes::get_discord_route; // NEW
 
 /// Represents a pending API request
 pub struct ApiRequest {

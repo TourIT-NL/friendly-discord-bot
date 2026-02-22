@@ -40,9 +40,8 @@ pub async fn start_oauth_flow(
 
     let (pkce_ch, pkce_ver) = PkceCodeChallenge::new_random_sha256();
     let (tx, rx) = oneshot::channel::<String>();
-    let csrf_secret = csrf.secret().clone();
 
-    let (listener, port) = {
+    let (listener_socket, port) = { // Renamed listener to listener_socket to avoid confusion
         let mut socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
         socket.set_reuse_address(true)?;
         #[cfg(not(windows))]
@@ -65,7 +64,7 @@ pub async fn start_oauth_flow(
             &format!("[OAuth] Bound callback to 127.0.0.1:{}", assigned_port),
             None,
         );
-        (socket.into(), assigned_port)
+        (socket.into(), assigned_port) // This socket.into() is the std::net::TcpListener
     };
 
     let client =
@@ -77,8 +76,7 @@ pub async fn start_oauth_flow(
         .set_pkce_challenge(pkce_ch)
         .url();
 
-    let app_clone = app_handle.clone();
-    let listener: std::net::TcpListener = socket.into();
+    let csrf_secret = csrf.secret().clone(); // Moved this line here
     let app_clone = app_handle.clone();
 
     tauri::async_runtime::spawn(async move {

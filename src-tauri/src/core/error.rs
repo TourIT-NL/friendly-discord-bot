@@ -75,27 +75,16 @@ impl From<keyring::Error> for AppError {
 
 impl From<tauri::Error> for AppError {
     fn from(e: tauri::Error) -> Self {
-        let (error_code, user_message) = match e {
-            tauri::Error::Io(io_err) => {
-                // Delegate to existing From<std::io::Error>
-                return AppError::from(io_err);
+        match e {
+            tauri::Error::Io(io_err) => AppError::from(io_err), // Delegate
+            tauri::Error::Json(json_err) => AppError::from(json_err), // Delegate
+            // For other tauri::Error variants, return a generic tauri_error
+            // or match on specific known ones if needed.
+            _ => Self {
+                user_message: "Application bridge error.".into(),
+                error_code: "tauri_error".into(),
+                technical_details: Some(e.to_string()),
             },
-            tauri::Error::Json(json_err) => {
-                // Delegate to existing From<serde_json::Error>
-                return AppError::from(json_err);
-            },
-            tauri::Error::TauriPlugin(plugin_err) => {
-                ("tauri_plugin_error".to_string(), format!("Tauri plugin error: {}", plugin_err))
-            },
-            tauri::Error::Window(win_err) => {
-                ("tauri_window_error".to_string(), format!("Tauri window error: {}", win_err))
-            },
-            _ => ("tauri_error".to_string(), "Application bridge error.".to_string()),
-        };
-        Self {
-            user_message,
-            error_code,
-            technical_details: Some(e.to_string()),
         }
     }
 }
@@ -155,6 +144,26 @@ impl From<serde_json::Error> for AppError {
         Self {
             user_message: "Data parsing error.".into(),
             error_code: "json_error".into(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}
+
+impl From<base64::DecodeError> for AppError {
+    fn from(e: base64::DecodeError) -> Self {
+        Self {
+            user_message: "Data encoding/decoding error.".into(),
+            error_code: "encoding_error".into(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}
+
+impl From<std::string::FromUtf8Error> for AppError {
+    fn from(e: std::string::FromUtf8Error) -> Self {
+        Self {
+            user_message: "Invalid UTF-8 sequence.".into(),
+            error_code: "utf8_error".into(),
             technical_details: Some(e.to_string()),
         }
     }

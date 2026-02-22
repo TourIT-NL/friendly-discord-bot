@@ -120,20 +120,23 @@ pub async fn bulk_delete_messages(
                 url.push_str(&format!("&before={}", before));
             }
 
-            let response = api_handle
+            let response_value = api_handle
                 .send_request(reqwest::Method::GET, &url, None, &token, is_bearer)
-                .await?;
-            if !response.status().is_success() {
-                consecutive_failures += 1;
-                if consecutive_failures > 3 {
-                    break;
-                }
-                tokio::time::sleep(Duration::from_secs(1)).await;
-                continue;
-            }
-            consecutive_failures = 0;
+                .await; // Will return Result<serde_json::Value, AppError>
 
-            let messages: Vec<serde_json::Value> = response.json().await?;
+            let messages: Vec<serde_json::Value> = match response_value {
+                Ok(value) => serde_json::from_value(value).map_err(AppError::from)?,
+                Err(e) => {
+                    Logger::warn(&app_handle, &format!("[OP] Failed to fetch messages: {}", e.user_message), Some(serde_json::json!({"error": e.technical_details})));
+                    consecutive_failures += 1;
+                    if consecutive_failures > 3 {
+                        break; // Break if too many failures
+                    }
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    continue; // Retry fetching messages
+                }
+            };
+            consecutive_failures = 0;
             if messages.is_empty() {
                 break;
             }
@@ -227,8 +230,7 @@ pub async fn bulk_delete_messages(
                                 is_bearer,
                             )
                             .await;
-                        if let Ok(res) = del_res
-                            && res.status().is_success() {
+                        if let Ok(_) = del_res { // If Ok is returned, it means the request was successful (2xx status)
                                 deleted_total += 1;
                         }
                     }

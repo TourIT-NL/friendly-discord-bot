@@ -49,7 +49,7 @@ pub async fn validate_token(
     is_bearer: bool,
 ) -> Result<DiscordUser, AppError> {
     let api_handle = app_handle.state::<ApiHandle>();
-    let response = api_handle
+    let response_value = api_handle
         .send_request(
             reqwest::Method::GET,
             "https://discord.com/api/v9/users/@me",
@@ -57,19 +57,9 @@ pub async fn validate_token(
             token,
             is_bearer,
         )
-        .await?;
-    if !response.status().is_success() {
-        Logger::error(
-            app_handle,
-            "[Auth] Token validation failed",
-            Some(serde_json::json!({"status": response.status().as_u16()})),
-        );
-        return Err(AppError {
-            user_message: "Token invalid or expired.".into(),
-            ..Default::default()
-        });
-    }
-    Ok(response.json().await?)
+        .await?; // Will return serde_json::Value if successful
+
+    Ok(serde_json::from_value(response_value).map_err(AppError::from)?)
 }
 
 #[tauri::command]
