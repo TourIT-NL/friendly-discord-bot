@@ -18,9 +18,18 @@ use crate::core::vault::Vault;
 pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<DiscordUser, AppError> {
     Logger::info(&app_handle, "[RPC] Handshake sequence started.", None);
     let client_id = match Vault::get_credential(&app_handle, "client_id") {
-        Ok(id) => id,
-        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
-        Err(e) => return Err(e),
+        Ok(id) => {
+            Logger::debug(&app_handle, "[RPC] Client ID retrieved successfully from Vault.", None);
+            id
+        },
+        Err(e) if e.error_code == "vault_credentials_missing" => {
+            Logger::warn(&app_handle, "[RPC] Client ID not found in Vault, returning missing credentials error.", None);
+            return Err(e);
+        },
+        Err(e) => {
+            Logger::error(&app_handle, &format!("[RPC] Failed to retrieve client ID from Vault: {:?}", e), None);
+            return Err(e);
+        },
     };
 
     let port = (6463..=6472).find(|p| {
@@ -111,9 +120,18 @@ pub async fn login_with_rpc(app_handle: AppHandle, window: Window) -> Result<Dis
         None,
     );
     let client_secret = match Vault::get_credential(&app_handle, "client_secret") {
-        Ok(secret) => secret,
-        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
-        Err(e) => return Err(e),
+        Ok(secret) => {
+            Logger::debug(&app_handle, "[RPC] Client Secret retrieved successfully from Vault.", None);
+            secret
+        },
+        Err(e) if e.error_code == "vault_credentials_missing" => {
+            Logger::warn(&app_handle, "[RPC] Client Secret not found in Vault, returning missing credentials error.", None);
+            return Err(e);
+        },
+        Err(e) => {
+            Logger::error(&app_handle, &format!("[RPC] Failed to retrieve client Secret from Vault: {:?}", e), None);
+            return Err(e);
+        },
     };
 
     let http_client = reqwest::Client::new();

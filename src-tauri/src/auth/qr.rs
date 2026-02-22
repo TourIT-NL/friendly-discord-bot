@@ -71,7 +71,23 @@ pub async fn start_qr_login_flow(
         .insert("Origin", "https://discord.com".parse().unwrap());
 
     Logger::debug(&app_handle, "[QR] Establishing WebSocket link", None);
-    let (ws_stream, _) = timeout(Duration::from_secs(10), connect_async(request)).await??;
+    let ws_connect_result = timeout(Duration::from_secs(10), connect_async(request)).await;
+
+    let (ws_stream, _) = match ws_connect_result {
+        Ok(Ok(stream_pair)) => {
+            Logger::info(&app_handle, "[QR] WebSocket connected successfully.", None);
+            stream_pair
+        },
+        Ok(Err(e)) => {
+            Logger::error(&app_handle, &format!("[QR] WebSocket connection failed: {:?}", e), None);
+            return Err(AppError::from(e));
+        },
+        Err(e) => {
+            Logger::error(&app_handle, &format!("[QR] WebSocket connection timed out: {:?}", e), None);
+            return Err(AppError::from(e));
+        },
+    };
+    
     let (mut write, mut read) = ws_stream.split();
 
     let window_clone = window.clone();
@@ -95,7 +111,7 @@ pub async fn start_qr_login_flow(
                         Some(Ok(Message::Text(text))) => {
                             if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
                                 let op = p["op"].as_str().unwrap_or("unknown");
-                                Logger::trace(&app_handle_clone, &format!("[QR] Opcode: {}", op), None);
+                                Logger::trace(&app_handle_clone, &format!("[QR] Opcode: {} | Payload: {:?}", op, p), None); // Log full payload for hello
                                 
                                 match op {
                                     "hello" => {
@@ -107,6 +123,7 @@ pub async fn start_qr_login_flow(
                                             "op": "init",
                                             "encoded_public_key": pub_key_base64
                                         });
+                                        Logger::debug(&app_handle_clone, "[QR] Sending INIT payload.", None);
                                         let _ = write.send(Message::Text(init_payload.to_string().into())).await;
                                         Logger::debug(&app_handle_clone, "[QR] Secure handshake initiated", None);
                                     },
