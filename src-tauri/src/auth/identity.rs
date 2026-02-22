@@ -52,7 +52,7 @@ pub async fn validate_token(
     let response_value = api_handle
         .send_request(
             reqwest::Method::GET,
-            "https://discord.com/api/v9/users/@me",
+            "https://discord.com/api/v10/users/@me",
             None,
             token,
             is_bearer,

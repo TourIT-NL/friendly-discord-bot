@@ -10,14 +10,19 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Window, Manager};
 
 #[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct PurgeOptions {
+    #[serde(alias = "channelIds")]
     pub channel_ids: Vec<String>,
+    #[serde(alias = "startTime")]
     pub start_time: Option<u64>,
+    #[serde(alias = "endTime")]
     pub end_time: Option<u64>,
+    #[serde(alias = "searchQuery")]
     pub search_query: Option<String>,
+    #[serde(alias = "purgeReactions")]
     pub purge_reactions: bool,
     pub simulation: bool,
+    #[serde(alias = "onlyAttachments")]
     pub only_attachments: bool,
 }
 
@@ -39,7 +44,7 @@ pub async fn bulk_remove_relationships(
         }
 
         let url = format!(
-            "https://discord.com/api/v9/users/@me/relationships/{}",
+            "https://discord.com/api/v10/users/@me/relationships/{}",
             user_id
         );
         let _ = api_handle
@@ -69,7 +74,7 @@ pub async fn bulk_leave_guilds(
             break;
         }
 
-        let url = format!("https://discord.com/api/v9/users/@me/guilds/{}", guild_id);
+        let url = format!("https://discord.com/api/v10/users/@me/guilds/{}", guild_id);
         let _ = api_handle
             .send_request(reqwest::Method::DELETE, &url, None, &token, is_bearer)
             .await;
@@ -86,7 +91,11 @@ pub async fn bulk_delete_messages(
     window: Window,
     options: PurgeOptions,
 ) -> Result<(), AppError> {
-    let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
+    let identity = Vault::get_active_identity(&app_handle)?;
+    let token = identity.token;
+    let is_bearer = identity.is_oauth;
+    let current_user_id = identity.id;
+
     let api_handle = app_handle.state::<ApiHandle>();
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
@@ -94,8 +103,9 @@ pub async fn bulk_delete_messages(
     Logger::info(
         &app_handle,
         &format!(
-            "[OP] Destructive purge initialized for {} nodes (Sim: {})",
+            "[OP] Destructive purge initialized for {} nodes (User: {}, Sim: {})",
             options.channel_ids.len(),
+            current_user_id,
             options.simulation
         ),
         None,
@@ -106,6 +116,15 @@ pub async fn bulk_delete_messages(
     for (i, channel_id) in options.channel_ids.iter().enumerate() {
         let mut last_message_id: Option<String> = None;
         let mut consecutive_failures = 0;
+        let mut scanned_in_channel = 0;
+
+        let _ = window.emit("deletion_progress", serde_json::json!({ 
+            "current": i + 1, 
+            "total": options.channel_ids.len(), 
+            "id": channel_id, 
+            "deleted_count": deleted_total, 
+            "status": "scanning" 
+        }));
 
         'message_loop: loop {
             op_manager.state.wait_if_paused().await;
@@ -114,7 +133,7 @@ pub async fn bulk_delete_messages(
             }
 
             let mut url = format!(
-                "https://discord.com/api/v9/channels/{}/messages?limit=100",
+                "https://discord.com/api/v10/channels/{}/messages?limit=100",
                 channel_id
             );
             if let Some(before) = &last_message_id {
@@ -123,24 +142,26 @@ pub async fn bulk_delete_messages(
 
             let response_value = api_handle
                 .send_request(reqwest::Method::GET, &url, None, &token, is_bearer)
-                .await; // Will return Result<serde_json::Value, AppError>
+                .await; 
 
             let messages: Vec<serde_json::Value> = match response_value {
                 Ok(value) => serde_json::from_value(value).map_err(AppError::from)?,
                 Err(e) => {
-                    Logger::warn(&app_handle, &format!("[OP] Failed to fetch messages: {}", e.user_message), Some(serde_json::json!({"error": e.technical_details})));
+                    Logger::warn(&app_handle, &format!("[OP] Failed to fetch messages: {}", e.user_message), None);
                     consecutive_failures += 1;
                     if consecutive_failures > 3 {
-                        break; // Break if too many failures
+                        break; 
                     }
                     tokio::time::sleep(Duration::from_secs(1)).await;
-                    continue; // Retry fetching messages
+                    continue; 
                 }
             };
-            consecutive_failures = 0;
+
             if messages.is_empty() {
                 break;
             }
+            
+            scanned_in_channel += messages.len();
             last_message_id = messages
                 .last()
                 .and_then(|m| m["id"].as_str().map(|s| s.to_string()));
@@ -149,6 +170,13 @@ pub async fn bulk_delete_messages(
                 op_manager.state.wait_if_paused().await;
                 if op_manager.state.should_abort.load(Ordering::SeqCst) {
                     break 'message_loop;
+                }
+
+                let author_id = msg["author"]["id"].as_str().unwrap_or_default();
+                
+                // CRITICAL OPTIMIZATION: Only delete our own messages
+                if author_id != current_user_id {
+                    continue;
                 }
 
                 let msg_id = msg["id"].as_str().unwrap_or_default();
@@ -201,7 +229,7 @@ pub async fn bulk_delete_messages(
                                         format!("{}:{}", emoji, emoji_id)
                                     };
                                     let react_url = format!(
-                                        "https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me",
+                                        "https://discord.com/api/v10/channels/{}/messages/{}/reactions/{}/@me",
                                         channel_id, msg_id, emoji_param
                                     );
                                     let _ = api_handle
@@ -219,7 +247,7 @@ pub async fn bulk_delete_messages(
 
                     if matches_query {
                         let del_url = format!(
-                            "https://discord.com/api/v9/channels/{}/messages/{}",
+                            "https://discord.com/api/v10/channels/{}/messages/{}",
                             channel_id, msg_id
                         );
                         let del_res = api_handle
@@ -231,7 +259,7 @@ pub async fn bulk_delete_messages(
                                 is_bearer,
                             )
                             .await;
-                        if let Ok(_) = del_res { // If Ok is returned, it means the request was successful (2xx status)
+                        if let Ok(_) = del_res {
                                 deleted_total += 1;
                         }
                     }
@@ -239,8 +267,15 @@ pub async fn bulk_delete_messages(
                     deleted_total += 1;
                 }
 
-                if deleted_total % 10 == 0 {
-                    let _ = window.emit("deletion_progress", serde_json::json!({ "current": i + 1, "total": options.channel_ids.len(), "id": channel_id, "deleted_count": deleted_total, "status": if options.simulation { "simulating" } else { "purging" } }));
+                if scanned_in_channel % 50 == 0 || deleted_total % 5 == 0 {
+                    let _ = window.emit("deletion_progress", serde_json::json!({ 
+                        "current": i + 1, 
+                        "total": options.channel_ids.len(), 
+                        "id": channel_id, 
+                        "deleted_count": deleted_total, 
+                        "scanned_count": scanned_in_channel,
+                        "status": if options.simulation { "simulating" } else { "purging" } 
+                    }));
                 }
             }
         }

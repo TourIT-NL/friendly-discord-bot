@@ -2,7 +2,7 @@
 
 use base64::{Engine as _, engine::general_purpose};
 use futures_util::{SinkExt, StreamExt};
-use rsa::{Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey, pkcs8::EncodePublicKey}; // Updated import
+use rsa::{Oaep, RsaPrivateKey, RsaPublicKey, pkcs8::EncodePublicKey};
 use tauri::{AppHandle, Emitter, Window};
 use tokio::time::{Duration, timeout};
 use tokio_tungstenite::connect_async;
@@ -15,7 +15,7 @@ use super::identity::login_with_token_internal;
 use super::types::AuthState;
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
-use crate::core::vault::Vault; // NEW
+use crate::core::vault::Vault;
 
 #[tauri::command]
 pub async fn start_qr_login_flow(
@@ -37,7 +37,7 @@ pub async fn start_qr_login_flow(
         Err(e) => return Err(e),
     };
 
-    // Generate RSA Keypair (ensure rng is not held across await)
+    // Generate RSA Keypair
     let priv_key = {
         let mut rng = rand::thread_rng();
         RsaPrivateKey::new(&mut rng, 2048).map_err(|_| AppError {
@@ -48,7 +48,7 @@ pub async fn start_qr_login_flow(
     let pub_key = RsaPublicKey::from(&priv_key);
 
     let pub_key_der = pub_key
-        .to_public_key_der() // Use SPKI (pkcs8) instead of pkcs1
+        .to_public_key_der() // Use SPKI format
         .map_err(|_| AppError {
             user_message: "Public key encoding failed.".into(),
             ..Default::default()
@@ -122,7 +122,7 @@ pub async fn start_qr_login_flow(
                                         let init_payload = serde_json::json!({
                                             "op": "init",
                                             "encoded_public_key": pub_key_base64,
-                                            "client_id": client_id // Include client_id here
+                                            "client_id": client_id
                                         });
                                         Logger::debug(&app_handle_clone, "[QR] Sending INIT payload.", None);
                                         let _ = write.send(Message::Text(init_payload.to_string().into())).await;
@@ -133,7 +133,8 @@ pub async fn start_qr_login_flow(
                                         let encrypted_nonce = p["encrypted_nonce"].as_str().unwrap_or_default();
                                         match general_purpose::STANDARD.decode(encrypted_nonce) {
                                             Ok(encrypted_bytes) => {
-                                                match priv_key.decrypt(Pkcs1v15Encrypt, &encrypted_bytes) {
+                                                let padding = Oaep::new::<Sha256>();
+                                                match priv_key.decrypt(padding, &encrypted_bytes) {
                                                     Ok(decrypted) => {
                                                         let mut hasher = Sha256::new();
                                                         hasher.update(&decrypted);
@@ -163,7 +164,8 @@ pub async fn start_qr_login_flow(
                                         let encrypted_token = p["encrypted_token"].as_str().unwrap_or_default();
                                         match general_purpose::STANDARD.decode(encrypted_token) {
                                             Ok(encrypted_bytes) => {
-                                                match priv_key.decrypt(Pkcs1v15Encrypt, &encrypted_bytes) {
+                                                let padding = Oaep::new::<Sha256>();
+                                                match priv_key.decrypt(padding, &encrypted_bytes) {
                                                     Ok(decrypted) => {
                                                         let token = String::from_utf8_lossy(&decrypted).to_string();
                                                         let _ = login_with_token_internal(app_handle_clone.clone(), window_clone.clone(), token, false).await;

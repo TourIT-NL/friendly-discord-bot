@@ -37,7 +37,7 @@ pub async fn bury_audit_log(
     let original_channel_value = api_handle
         .send_request(
             reqwest::Method::GET,
-            &format!("https://discord.com/api/v9/channels/{}", channel_id),
+            &format!("https://discord.com/api/v10/channels/{}", channel_id),
             None,
             &token,
             is_bearer,
@@ -64,7 +64,7 @@ pub async fn bury_audit_log(
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                &format!("https://discord.com/api/v9/channels/{}", channel_id),
+                &format!("https://discord.com/api/v10/channels/{}", channel_id),
                 Some(serde_json::json!({ "name": new_name })),
                 &token,
                 is_bearer,
@@ -77,7 +77,7 @@ pub async fn bury_audit_log(
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                &format!("https://discord.com/api/v9/channels/{}", channel_id),
+                &format!("https://discord.com/api/v10/channels/{}", channel_id),
                 Some(serde_json::json!({ "name": original_channel_name })),
                 &token,
                 is_bearer,
@@ -120,7 +120,7 @@ pub async fn webhook_ghosting(
     let webhooks_value = api_handle
         .send_request(
             reqwest::Method::GET,
-            &format!("https://discord.com/api/v9/guilds/{}/webhooks", guild_id),
+            &format!("https://discord.com/api/v10/guilds/{}/webhooks", guild_id),
             None,
             &token,
             is_bearer,
@@ -149,7 +149,7 @@ pub async fn webhook_ghosting(
             let _ = api_handle
                 .send_request(
                     reqwest::Method::DELETE,
-                    &format!("https://discord.com/api/v9/webhooks/{}", webhook_id),
+                    &format!("https://discord.com/api/v10/webhooks/{}", webhook_id),
                     None,
                     &token,
                     is_bearer,

@@ -191,8 +191,8 @@ impl Vault {
         Ok(())
     }
 
-    /// Retrieves the currently active Discord token.
-    pub fn get_active_token(app: &AppHandle) -> Result<(String, bool), AppError> {
+    /// Retrieves the currently active Discord identity.
+    pub fn get_active_identity(app: &AppHandle) -> Result<DiscordIdentity, AppError> {
         let id = match Entry::new(Self::SERVICE_NAME, "active_account").and_then(|e| e.get_password()) {
             Ok(p) => p,
             Err(e) => {
@@ -205,7 +205,12 @@ impl Vault {
             }
         };
 
-        let identity = Self::get_identity(app, &id)?;
+        Self::get_identity(app, &id)
+    }
+
+    /// Retrieves the currently active Discord token.
+    pub fn get_active_token(app: &AppHandle) -> Result<(String, bool), AppError> {
+        let identity = Self::get_active_identity(app)?;
         Ok((identity.token, identity.is_oauth))
     }
 

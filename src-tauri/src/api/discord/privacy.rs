@@ -35,7 +35,7 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                "https://discord.com/api/v9/users/@me/settings",
+                "https://discord.com/api/v10/users/@me/settings",
                 Some(serde_json::json!({ "custom_status": null })),
                 &token,
                 is_bearer,
@@ -50,7 +50,7 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                "https://discord.com/api/v9/users/@me/settings",
+                "https://discord.com/api/v10/users/@me/settings",
                 Some(serde_json::json!({ "default_guilds_restricted": true })),
                 &token,
                 is_bearer,
@@ -69,7 +69,7 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                "https://discord.com/api/v9/users/@me/settings",
+                "https://discord.com/api/v10/users/@me/settings",
                 Some(serde_json::json!({ "show_current_game": false, "restricted_guilds": [] })),
                 &token,
                 is_bearer,
@@ -113,7 +113,7 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                "https://discord.com/api/v9/users/@me",
+                "https://discord.com/api/v10/users/@me",
                 Some(serde_json::json!({ "bio": "" })),
                 &token,
                 is_bearer,
@@ -128,7 +128,7 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                "https://discord.com/api/v9/users/@me/settings",
+                "https://discord.com/api/v10/users/@me/settings",
                 Some(serde_json::json!({ "pronouns": "" })),
                 &token,
                 is_bearer,
@@ -143,7 +143,7 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                "https://discord.com/api/v9/users/@me",
+                "https://discord.com/api/v10/users/@me",
                 Some(serde_json::json!({ "banner": null })),
                 &token,
                 is_bearer,

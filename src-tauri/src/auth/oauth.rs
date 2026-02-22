@@ -43,7 +43,7 @@ pub async fn start_oauth_flow(
         ClientId::new(client_id.clone()),
         Some(ClientSecret::new(client_secret)),
         AuthUrl::new("https://discord.com/oauth2/authorize".to_string()).unwrap(),
-        Some(TokenUrl::new("https://discord.com/api/v9/oauth2/token".to_string()).unwrap()),
+        Some(TokenUrl::new("https://discord.com/api/v10/oauth2/token".to_string()).unwrap()),
     );
 
     let (pkce_ch, pkce_ver) = PkceCodeChallenge::new_random_sha256();

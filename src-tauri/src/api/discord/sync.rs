@@ -20,7 +20,7 @@ pub async fn fetch_guilds(app_handle: AppHandle) -> Result<Vec<Guild>, AppError>
     let response_value = api_handle
         .send_request(
             reqwest::Method::GET,
-            "https://discord.com/api/v9/users/@me/guilds",
+            "https://discord.com/api/v10/users/@me/guilds",
             None,
             &token,
             is_bearer,
@@ -47,7 +47,7 @@ pub async fn fetch_channels(
                         let response_value = api_handle
                             .send_request(
                                 reqwest::Method::GET,
-                                &format!("https://discord.com/api/v9/guilds/{}/channels", gid),
+                                &format!("https://discord.com/api/v10/guilds/{}/channels", gid),
                                 None,
                                 &token,
                                 is_bearer,
@@ -69,7 +69,7 @@ pub async fn fetch_channels(
                     let response_value = api_handle
                         .send_request(
                             reqwest::Method::GET,
-                            "https://discord.com/api/v9/users/@me/channels",
+                            "https://discord.com/api/v10/users/@me/channels",
                             None,
                             &token,
                             is_bearer,
@@ -114,7 +114,7 @@ pub async fn fetch_relationships(app_handle: AppHandle) -> Result<Vec<Relationsh
     let response_value = api_handle
         .send_request(
             reqwest::Method::GET,
-            "https://discord.com/api/v9/users/@me/relationships",
+            "https://discord.com/api/v10/users/@me/relationships",
             None,
             &token,
             is_bearer,
@@ -135,7 +135,7 @@ pub async fn fetch_preview_messages(
         .send_request(
             reqwest::Method::GET,
             &format!(
-                "https://discord.com/api/v9/channels/{}/messages?limit=5",
+                "https://discord.com/api/v10/channels/{}/messages?limit=5",
                 channel_id
             ),
             None,
