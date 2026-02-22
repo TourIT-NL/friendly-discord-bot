@@ -179,10 +179,14 @@ impl RateLimiterActor {
 
                             // Deserialize response body within the actor
                             let result = if status.is_success() {
-                                response
-                                    .json::<serde_json::Value>()
-                                    .await
-                                    .map_err(AppError::from)
+                                if status == reqwest::StatusCode::NO_CONTENT {
+                                    Ok(serde_json::json!({}))
+                                } else {
+                                    response
+                                        .json::<serde_json::Value>()
+                                        .await
+                                        .map_err(AppError::from)
+                                }
                             } else {
                                 // For non-success responses, try to read body as JSON for error details
                                 // Otherwise, create a generic AppError

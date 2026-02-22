@@ -45,6 +45,7 @@ export const useDiscordOperations = (
   const [purgeReactions, setPurgeReactions] = useState(false);
   const [onlyAttachments, setOnlyAttachments] = useState(false);
   const [simulation, setSimulation] = useState(false);
+  const [closeEmptyDms, setCloseEmptyDms] = useState(false);
   const [operationStatus, setOperationStatus] = useState<OperationStatus>({
     is_running: false,
     is_paused: false,
@@ -268,6 +269,7 @@ export const useDiscordOperations = (
             purgeReactions,
             simulation,
             onlyAttachments,
+            closeEmptyDms,
           },
         });
       } else if (mode === "servers") {
@@ -317,6 +319,8 @@ export const useDiscordOperations = (
     setOnlyAttachments,
     simulation,
     setSimulation,
+    closeEmptyDms,
+    setCloseEmptyDms,
     operationStatus,
     setOperationStatus,
     fetchGuilds,

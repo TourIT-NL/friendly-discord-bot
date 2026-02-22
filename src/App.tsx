@@ -409,6 +409,12 @@ function App() {
                           Servers
                         </button>
                       )}
+                      <button
+                        onClick={() => setAppMode("identity")}
+                        className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "identity" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"}`}
+                      >
+                        Friends
+                      </button>
                       <div className="w-px bg-white/10 mx-2" />
                       <IconButton
                         icon={HelpCircle}
@@ -423,6 +429,8 @@ function App() {
                       setTimeRange={setTimeRange}
                       simulation={simulation}
                       setSimulation={setSimulation}
+                      closeEmptyDms={closeEmptyDms}
+                      setCloseEmptyDms={setCloseEmptyDms}
                       searchQuery={searchQuery}
                       setSearchQuery={setSearchQuery}
                       purgeReactions={purgeReactions}
@@ -446,7 +454,7 @@ function App() {
                       isProcessing={isProcessing}
                       onStartAction={startAction}
                     />
-                  )}
+                  )}{" "}
                   {mode === "servers" && (
                     <ServersMode
                       guilds={guilds}

@@ -24,6 +24,8 @@ interface MessagesModeProps {
   setPurgeReactions: (purge: boolean) => void;
   onlyAttachments: boolean;
   setOnlyAttachments: (only: boolean) => void;
+  closeEmptyDms: boolean;
+  setCloseEmptyDms: (close: boolean) => void;
   guilds: Guild[] | null;
   channelsByGuild: Map<string, Channel[]>;
   selectedChannels: Set<string>;
@@ -47,6 +49,8 @@ export const MessagesMode = ({
   setPurgeReactions,
   onlyAttachments,
   setOnlyAttachments,
+  closeEmptyDms,
+  setCloseEmptyDms,
   guilds,
   channelsByGuild,
   selectedChannels,
@@ -133,6 +137,22 @@ export const MessagesMode = ({
           >
             <motion.div
               animate={{ x: onlyAttachments ? 16 : 0 }}
+              className="w-4 h-4 bg-white rounded-full shadow-sm"
+            />
+          </div>
+        </button>
+        <button
+          onClick={() => setCloseEmptyDms(!closeEmptyDms)}
+          className={`w-full flex items-center justify-between p-4 rounded-m3-xl border-2 transition-all ${closeEmptyDms ? "bg-m3-primary/10 border-m3-primary text-white" : "bg-transparent border-m3-outlineVariant/30 text-m3-onSurfaceVariant"}`}
+        >
+          <span className="text-xs font-bold uppercase italic text-left">
+            Close DM/Group after purge (if empty)
+          </span>
+          <div
+            className={`w-10 h-6 rounded-full p-1 transition-colors ${closeEmptyDms ? "bg-m3-primary" : "bg-m3-outline"}`}
+          >
+            <motion.div
+              animate={{ x: closeEmptyDms ? 16 : 0 }}
               className="w-4 h-4 bg-white rounded-full shadow-sm"
             />
           </div>
