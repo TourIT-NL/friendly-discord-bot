@@ -80,7 +80,7 @@ pub async fn start_oauth_flow(
     let app_clone = app_handle.clone();
 
     tauri::async_runtime::spawn(async move {
-        let listener = tokio::net::TcpListener::from_std(listener)?;
+        let listener = tokio::net::TcpListener::from_std(listener_socket)?;
         if let Ok(Ok((mut stream, _))) = timeout(Duration::from_secs(120), listener.accept()).await
         {
             let mut buffer = [0; 4096];

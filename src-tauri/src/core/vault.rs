@@ -3,7 +3,6 @@
 use crate::core::crypto::Crypto; // NEW
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
-use hex; // NEW
 use keyring::Entry;
 use serde::{Deserialize, Serialize};
 use std::fs;
