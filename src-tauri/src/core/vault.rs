@@ -43,29 +43,39 @@ impl Vault {
 
     fn get_or_create_encryption_key(app: &AppHandle) -> Result<String, AppError> {
         let key_name = Self::ENCRYPTION_KEY_SERVICE_NAME;
+        // Attempt to get from Keyring first
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name) {
-            match entry.get_password() {
-                Ok(key) => return Ok(key),
-                Err(e) => Logger::debug(app, &format!("[Vault] Keyring read failed for encryption key: {}. Trying fallback.", e), None),
+            if let Ok(key) = entry.get_password() {
+                Logger::debug(app, "[Vault] Loaded encryption key from Keyring", None);
+                return Ok(key);
             }
+            Logger::warn(app, "[Vault] Encryption key not found in Keyring or read failed. Attempting to generate and save.", None);
+        } else {
+            Logger::warn(app, "[Vault] Keyring access failed for encryption key. Attempting to generate and save.", None);
         }
 
-        match Self::read_fallback(app, key_name) {
-            Ok(key) => return Ok(key),
-            Err(e) => Logger::debug(app, &format!("[Vault] Fallback read failed for encryption key: {}. Generating new key.", e), None),
-        }
-
+        // If not in keyring or keyring access failed, generate a new key and try to save to keyring
         let new_key = Crypto::generate_key();
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name) {
             if let Err(e) = entry.set_password(&new_key) {
-                Logger::warn(app, &format!("[Vault] Failed to save encryption key to keyring: {}. Using fallback only.", e), None);
+                Logger::error(app, &format!("[Vault] CRITICAL: Failed to save newly generated encryption key to keyring: {}. Encrypted fallback storage cannot be guaranteed.", e), None);
+                return Err(AppError {
+                    user_message: "Critical security error: Cannot secure encryption key. Please ensure your OS keyring service is functional.".into(),
+                    error_code: "vault_key_storage_failure".into(),
+                    technical_details: Some(e.to_string()),
+                });
             } else {
-                Logger::debug(app, "[Vault] Generated and saved encryption key to Keyring", None);
+                Logger::debug(app, "[Vault] Generated and saved new encryption key to Keyring", None);
+                return Ok(new_key);
             }
         }
-        Self::write_fallback(app, key_name, &new_key)?;
-        Logger::debug(app, "[Vault] Generated and saved encryption key to fallback", None);
-        Ok(new_key)
+
+        // If keyring itself failed to create Entry, this is also a critical failure.
+        Err(AppError {
+            user_message: "Critical security error: Keyring service is unavailable for encryption key. Encrypted fallback storage cannot be guaranteed.".into(),
+            error_code: "vault_keyring_unreachable".into(),
+            technical_details: None,
+        })
     }
 
     fn write_fallback(app: &AppHandle, key: &str, value: &str) -> Result<(), AppError> {
