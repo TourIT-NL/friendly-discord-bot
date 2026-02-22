@@ -15,6 +15,7 @@ use super::identity::login_with_token_internal;
 use super::types::AuthState;
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
+use crate::core::vault::Vault; // NEW
 
 #[tauri::command]
 pub async fn start_qr_login_flow(
@@ -25,12 +26,12 @@ pub async fn start_qr_login_flow(
     Logger::info(&app_handle, "[QR] Initializing secure handshake...", None);
 
     // Check for client credentials first
-    let client_id = match Vault::get_credential(&app_handle, "client_id") {
+    let _client_id = match Vault::get_credential(&app_handle, "client_id") {
         Ok(id) => id,
         Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
         Err(e) => return Err(e),
     };
-    let client_secret = match Vault::get_credential(&app_handle, "client_secret") {
+    let _client_secret = match Vault::get_credential(&app_handle, "client_secret") {
         Ok(secret) => secret,
         Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
         Err(e) => return Err(e),
