@@ -18,6 +18,14 @@ Please buy me a coffee! buymeacoffee.com/dircordpurge
 
 Discord Purge is a high-performance, high-security desktop utility designed for deep Discord privacy management. Built with **Rust** and **Tauri**, it provides ultimate control over your social footprint with unyielding security and peak performance.
 
+## ❤️ Support the Project
+
+If you find Discord Purge useful and wish to support its continued development, consider buying me a coffee! Your contribution helps maintain and improve this tool.
+
+[**Buy me a coffee: buymeacoffee.com/dircordpurge**](https://buymeacoffee.com/dircordpurge)
+
+---
+
 ## 🌟 Project Vision
 
 The project's vision is to create a powerful, aesthetically pleasing, and high-performance desktop application that empowers Discord users with ultimate control over their digital footprint. Every decision is measured against three core tenets:
@@ -25,6 +33,7 @@ The project's vision is to create a powerful, aesthetically pleasing, and high-p
 1.  **Unyielding Security**: User data and account integrity are paramount.
 2.  **Peak Performance**: The application must feel fast and responsive.
 3.  **Total User Empowerment**: Clear, intuitive interfaces and reliable tools.
+4.  **Modern Dependency Stack**: All dependencies are maintained to reflect contemporary security and performance standards.
 
 ## ✨ Key Protocols
 
