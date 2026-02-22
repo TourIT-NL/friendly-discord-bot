@@ -47,34 +47,7 @@ pub async fn start_oauth_flow(
     );
 
     let (pkce_ch, pkce_ver) = PkceCodeChallenge::new_random_sha256();
-    let (tx, rx) = oneshot::channel::<String>();
-
-    let (listener_socket, port) = { // Renamed listener to listener_socket to avoid confusion
-        let socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
-        socket.set_reuse_address(true)?;
-        #[cfg(not(windows))]
-        socket.set_reuse_port(true)?;
-
-        // Bind to port 0 to let the OS assign an ephemeral port
-        let initial_addr = "127.0.0.1:0".parse::<SocketAddr>().map_err(|e| AppError {
-            user_message: "Invalid bind address for dynamic port.".into(),
-            technical_details: Some(e.to_string()),
-            ..Default::default()
-        })?;
-        socket.bind(&initial_addr.into())?;
-        socket.listen(128)?;
-
-        let bound_addr = socket.local_addr()?.as_socket().expect("Failed to get socket address");
-        let assigned_port = bound_addr.port();
-
-        Logger::debug(
-            &app_handle,
-            &format!("[OAuth] Bound callback to 127.0.0.1:{}", assigned_port),
-            None,
-        );
-        (socket.into(), assigned_port) // This socket.into() is the std::net::TcpListener
-    };
-
+    let port = 58123; // Fixed port
     let client =
         client.set_redirect_uri(RedirectUrl::new(format!("http://127.0.0.1:{}", port)).unwrap());
     let (auth_url, csrf) = client
@@ -84,11 +57,54 @@ pub async fn start_oauth_flow(
         .set_pkce_challenge(pkce_ch)
         .url();
 
-    let csrf_secret = csrf.secret().clone(); // Moved this line here
-    let app_clone = app_handle.clone();
+    let (tx, rx) = oneshot::channel::<String>();
+    let csrf_secret = csrf.secret().clone();
+
+    let addr = format!("127.0.0.1:{}", port)
+        .parse::<SocketAddr>()
+        .map_err(|e| AppError {
+            user_message: "Invalid bind address.".into(),
+            technical_details: Some(e.to_string()),
+            ..Default::default()
+        })?;
+
+    Logger::debug(
+        &app_handle,
+        &format!("[OAuth] Binding callback to {}", addr),
+        None,
+    );
+    let mut socket = None;
+    for i in 0..3 {
+        let s = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
+        s.set_reuse_address(true)?;
+        #[cfg(not(windows))]
+        s.set_reuse_port(true)?;
+        if s.bind(&addr.into()).is_ok() {
+            s.listen(128)?;
+            socket = Some(s);
+            break;
+        }
+        Logger::warn(
+            &app_handle,
+            &format!("[OAuth] Port busy, retrying... ({}/3)", i + 1),
+            None,
+        );
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    let socket = socket.ok_or_else(|| {
+        Logger::error(&app_handle, "[OAuth] Failed to bind callback port", None);
+        AppError {
+            user_message: "Authorization port (58123) is already in use.".into(),
+            ..Default::default()
+        }
+    })?;
+
+    let listener: std::net::TcpListener = socket.into(); // Revert back to original listener variable name
+    let app_clone = app_handle.clone(); // Revert app_clone position
 
     tauri::async_runtime::spawn(async move {
-        let listener = tokio::net::TcpListener::from_std(listener_socket)?;
+        let listener = tokio::net::TcpListener::from_std(listener)?;
         if let Ok(Ok((mut stream, _))) = timeout(Duration::from_secs(120), listener.accept()).await
         {
             let mut buffer = [0; 4096];
