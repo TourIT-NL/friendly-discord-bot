@@ -7,9 +7,9 @@ use keyring::Entry;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use tauri::{AppHandle, Manager};
+use std::sync::Mutex;
 use std::sync::OnceLock; // Using std's OnceLock
-use std::sync::Mutex; // Using std's Mutex
+use tauri::{AppHandle, Manager}; // Using std's Mutex
 
 /// Represents a stored Discord identity, containing the unique user ID,
 /// the current session token, and the authentication protocol used (OAuth vs User Token).
@@ -37,9 +37,13 @@ impl Vault {
             Ok(p) => {
                 let secure_path = p.join(format!("{}.secure", key));
                 Some(secure_path)
-            },
+            }
             Err(e) => {
-                Logger::error(app, &format!("[Vault] Failed to resolve data dir: {}", e), None);
+                Logger::error(
+                    app,
+                    &format!("[Vault] Failed to resolve data dir: {}", e),
+                    None,
+                );
                 None
             }
         }
@@ -55,38 +59,41 @@ impl Vault {
         }
 
         let key_name = Self::ENCRYPTION_KEY_SERVICE_NAME;
-        
+
         // --- Step 2: Persistent retrieval attempt ---
         for attempt in 1..=3 {
             // A. Try Keyring
-            if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name) {
-                if let Ok(key) = entry.get_password() {
-                    let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
-                    mutex.lock().unwrap().replace(key.clone());
-                    return Ok(key);
-                }
+            if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name)
+                && let Ok(key) = entry.get_password()
+            {
+                let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
+                mutex.lock().unwrap().replace(key.clone());
+                return Ok(key);
             }
             // B. Try Fallback File (Directly)
-            if let Some(path) = Self::get_fallback_path(app, key_name) {
-                if path.exists() {
-                    if let Ok(key) = fs::read_to_string(&path) {
-                        let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
-                        mutex.lock().unwrap().replace(key.clone());
-                        return Ok(key);
-                    }
-                }
+            if let Some(path) = Self::get_fallback_path(app, key_name)
+                && path.exists()
+                && let Ok(key) = fs::read_to_string(&path)
+            {
+                let mutex = KEY_CACHE.get_or_init(|| Mutex::new(None));
+                mutex.lock().unwrap().replace(key.clone());
+                return Ok(key);
             }
             std::thread::sleep(std::time::Duration::from_millis(100 * attempt));
         }
 
         // --- Step 3: Generate ONLY if absolutely nothing found ---
-        Logger::warn(app, "[Vault] No existing encryption key found. Generating fresh identity key.", None);
+        Logger::warn(
+            app,
+            "[Vault] No existing encryption key found. Generating fresh identity key.",
+            None,
+        );
         let new_key = Crypto::generate_key();
-        
+
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key_name) {
             let _ = entry.set_password(&new_key);
         }
-        
+
         if let Some(path) = Self::get_fallback_path(app, key_name) {
             let _ = fs::write(&path, &new_key);
         }
@@ -101,13 +108,24 @@ impl Vault {
             let encrypted_value = Crypto::encrypt(&enc_key, value)?;
 
             if let Err(e) = fs::write(&path, encrypted_value) {
-                Logger::error(app, &format!("[Vault] File write failed for {}: {}", key, e), None);
+                Logger::error(
+                    app,
+                    &format!("[Vault] File write failed for {}: {}", key, e),
+                    None,
+                );
                 return Err(AppError::from(e));
             }
-            Logger::debug(app, &format!("[Vault] Saved {} to disk fallback (encrypted)", key), None);
+            Logger::debug(
+                app,
+                &format!("[Vault] Saved {} to disk fallback (encrypted)", key),
+                None,
+            );
             Ok(())
         } else {
-            Err(AppError { user_message: "Failed to resolve storage path.".into(), ..Default::default() })
+            Err(AppError {
+                user_message: "Failed to resolve storage path.".into(),
+                ..Default::default()
+            })
         }
     }
 
@@ -118,9 +136,13 @@ impl Vault {
                     Ok(encrypted_s) => {
                         let enc_key = Self::get_or_create_encryption_key(app)?;
                         return Crypto::decrypt(&enc_key, &encrypted_s);
-                    },
+                    }
                     Err(e) => {
-                        Logger::error(app, &format!("[Vault] File read failed for {}: {}", key, e), None);
+                        Logger::error(
+                            app,
+                            &format!("[Vault] File read failed for {}: {}", key, e),
+                            None,
+                        );
                         return Err(AppError::from(e));
                     }
                 }
@@ -128,18 +150,18 @@ impl Vault {
                 Logger::warn(app, &format!("[Vault] File not found: {:?}", path), None);
             }
         }
-        Err(AppError { 
-            user_message: "Credential not found in local storage.".into(), 
+        Err(AppError {
+            user_message: "Credential not found in local storage.".into(),
             error_code: "credentials_missing".into(),
-            ..Default::default() 
+            ..Default::default()
         })
     }
 
     fn delete_fallback(app: &AppHandle, key: &str) -> Result<(), AppError> {
-        if let Some(path) = Self::get_fallback_path(app, key) {
-            if path.exists() {
-                fs::remove_file(path).map_err(AppError::from)?;
-            }
+        if let Some(path) = Self::get_fallback_path(app, key)
+            && path.exists()
+        {
+            fs::remove_file(path).map_err(AppError::from)?;
         }
         // For current implementation, the encryption key is global and not deleted with each item.
         // If specific keys were generated per item, they would be deleted here.
@@ -154,20 +176,42 @@ impl Vault {
         // Strategy: Write Keyring -> Read Verify
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, &key) {
             if let Err(e) = entry.set_password(&secret) {
-                Logger::warn(app, &format!("[Vault] Keyring write error for {}: {}. Using fallback.", key, e), None);
+                Logger::warn(
+                    app,
+                    &format!(
+                        "[Vault] Keyring write error for {}: {}. Using fallback.",
+                        key, e
+                    ),
+                    None,
+                );
             } else {
                 // Verify write
                 match entry.get_password() {
-                    Ok(stored) if stored == secret => Logger::debug(app, &format!("[Vault] Verified Keyring storage for {}", key), None),
-                    Ok(_) => Logger::warn(app, &format!("[Vault] Keyring verification mismatch for {}", key), None),
-                    Err(e) => Logger::warn(app, &format!("[Vault] Keyring verification read failed for {}: {}", key, e), None),
+                    Ok(stored) if stored == secret => Logger::debug(
+                        app,
+                        &format!("[Vault] Verified Keyring storage for {}", key),
+                        None,
+                    ),
+                    Ok(_) => Logger::warn(
+                        app,
+                        &format!("[Vault] Keyring verification mismatch for {}", key),
+                        None,
+                    ),
+                    Err(e) => Logger::warn(
+                        app,
+                        &format!(
+                            "[Vault] Keyring verification read failed for {}: {}",
+                            key, e
+                        ),
+                        None,
+                    ),
                 }
             }
         }
 
         // Always write to fallback for maximum resilience
         Self::write_fallback(app, &key, &secret)?;
-        
+
         // Track active account
         let active_key = "active_account";
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, active_key) {
@@ -177,26 +221,38 @@ impl Vault {
 
         // Update index
         let index_key = "identity_index";
-        let mut index = Self::list_identities(app).iter().map(|i| i.id.clone()).collect::<Vec<_>>();
+        let mut index = Self::list_identities(app)
+            .iter()
+            .map(|i| i.id.clone())
+            .collect::<Vec<_>>();
         if !index.contains(&identity.id) {
             index.push(identity.id.clone());
         }
-        
+
         let index_json = serde_json::to_string(&index)?;
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, index_key) {
             let _ = entry.set_password(&index_json);
         }
         Self::write_fallback(app, index_key, &index_json)?;
-        
+
         Ok(())
     }
 
     /// Retrieves the currently active Discord identity.
     pub fn get_active_identity(app: &AppHandle) -> Result<DiscordIdentity, AppError> {
-        let id = match Entry::new(Self::SERVICE_NAME, "active_account").and_then(|e| e.get_password()) {
+        let id = match Entry::new(Self::SERVICE_NAME, "active_account")
+            .and_then(|e| e.get_password())
+        {
             Ok(p) => p,
             Err(e) => {
-                Logger::debug(app, &format!("[Vault] Keyring read failed for active_account: {}. Checking fallback.", e), None);
+                Logger::debug(
+                    app,
+                    &format!(
+                        "[Vault] Keyring read failed for active_account: {}. Checking fallback.",
+                        e
+                    ),
+                    None,
+                );
                 Self::read_fallback(app, "active_account").map_err(|_| AppError {
                     user_message: "No active session found. Please login.".into(),
                     error_code: "no_active_session".into(),
@@ -219,7 +275,7 @@ impl Vault {
         let key = format!("account_{}", id);
         let secret = match Entry::new(Self::SERVICE_NAME, &key).and_then(|e| e.get_password()) {
             Ok(s) => s,
-            Err(_) => Self::read_fallback(app, &key)?
+            Err(_) => Self::read_fallback(app, &key)?,
         };
         Ok(serde_json::from_str(&secret)?)
     }
@@ -227,13 +283,15 @@ impl Vault {
     /// Lists all Discord identities.
     pub fn list_identities(app: &AppHandle) -> Vec<DiscordIdentity> {
         let index_key = "identity_index";
-        let index_str = match Entry::new(Self::SERVICE_NAME, index_key).and_then(|e| e.get_password()) {
-            Ok(s) => s,
-            Err(_) => Self::read_fallback(app, index_key).unwrap_or_else(|_| "[]".to_string())
-        };
+        let index_str =
+            match Entry::new(Self::SERVICE_NAME, index_key).and_then(|e| e.get_password()) {
+                Ok(s) => s,
+                Err(_) => Self::read_fallback(app, index_key).unwrap_or_else(|_| "[]".to_string()),
+            };
 
         let index: Vec<String> = serde_json::from_str(&index_str).unwrap_or_default();
-        index.into_iter()
+        index
+            .into_iter()
             .filter_map(|id| Self::get_identity(app, &id).ok())
             .collect()
     }
@@ -248,15 +306,16 @@ impl Vault {
 
         // Remove from index
         let index_key = "identity_index";
-        let index_str = match Entry::new(Self::SERVICE_NAME, index_key).and_then(|e| e.get_password()) {
-            Ok(s) => s,
-            Err(_) => Self::read_fallback(app, index_key).unwrap_or_else(|_| "[]".to_string())
-        };
+        let index_str =
+            match Entry::new(Self::SERVICE_NAME, index_key).and_then(|e| e.get_password()) {
+                Ok(s) => s,
+                Err(_) => Self::read_fallback(app, index_key).unwrap_or_else(|_| "[]".to_string()),
+            };
 
         if let Ok(mut index) = serde_json::from_str::<Vec<String>>(&index_str) {
             index.retain(|x| x != id);
             let new_index_json = serde_json::to_string(&index)?;
-            
+
             if let Ok(entry) = Entry::new(Self::SERVICE_NAME, index_key) {
                 let _ = entry.set_password(&new_index_json);
             }
@@ -269,7 +328,14 @@ impl Vault {
     pub fn set_credential(app: &AppHandle, key: &str, value: &str) -> Result<(), AppError> {
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key) {
             if let Err(e) = entry.set_password(value) {
-                Logger::warn(app, &format!("[Vault] Credential keyring write failed: {}. Using fallback.", e), None);
+                Logger::warn(
+                    app,
+                    &format!(
+                        "[Vault] Credential keyring write failed: {}. Using fallback.",
+                        e
+                    ),
+                    None,
+                );
             } else {
                 Logger::debug(app, &format!("[Vault] Saved {} to Keyring", key), None);
             }
@@ -281,25 +347,37 @@ impl Vault {
     /// Retrieves a raw application credential (fallback enabled).
     pub fn get_credential(app: &AppHandle, key: &str) -> Result<String, AppError> {
         let result = match Entry::new(Self::SERVICE_NAME, key) {
-            Ok(entry) => {
-                match entry.get_password() {
-                    Ok(p) => Ok(p),
-                    Err(e) => {
-                        Logger::debug(app, &format!("[Vault] Keyring read failed for {}: {}. Checking fallback.", key, e), None);
-                        Self::read_fallback(app, key)
-                    }
+            Ok(entry) => match entry.get_password() {
+                Ok(p) => Ok(p),
+                Err(e) => {
+                    Logger::debug(
+                        app,
+                        &format!(
+                            "[Vault] Keyring read failed for {}: {}. Checking fallback.",
+                            key, e
+                        ),
+                        None,
+                    );
+                    Self::read_fallback(app, key)
                 }
             },
             Err(e) => {
-                Logger::debug(app, &format!("[Vault] Keyring entry failed for {}: {}. Checking fallback.", key, e), None);
+                Logger::debug(
+                    app,
+                    &format!(
+                        "[Vault] Keyring entry failed for {}: {}. Checking fallback.",
+                        key, e
+                    ),
+                    None,
+                );
                 Self::read_fallback(app, key)
             }
         };
 
         result.map_err(|original_err| {
             if original_err.error_code == "credentials_missing" {
-                AppError { 
-                    user_message: format!("Credential '{}' not found. Please complete Setup.", key), 
+                AppError {
+                    user_message: format!("Credential '{}' not found. Please complete Setup.", key),
                     error_code: "vault_credentials_missing".into(), // Specific code for missing
                     technical_details: original_err.technical_details,
                 }

@@ -16,6 +16,7 @@ We take the security of Discord Purge seriously. If you believe you have found a
 To report a vulnerability, please email: **security@evuldeeds.design** (Replace with actual email if different)
 
 Please include:
+
 - A description of the issue.
 - Steps to reproduce (proof of concept).
 - Potential impact.

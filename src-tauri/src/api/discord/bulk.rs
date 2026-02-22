@@ -7,7 +7,7 @@ use crate::core::op_manager::OperationManager;
 use crate::core::vault::Vault;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Window, Manager};
+use tauri::{AppHandle, Emitter, Manager, Window};
 
 #[derive(serde::Deserialize)]
 pub struct PurgeOptions {
@@ -118,13 +118,16 @@ pub async fn bulk_delete_messages(
         let mut consecutive_failures = 0;
         let mut scanned_in_channel = 0;
 
-        let _ = window.emit("deletion_progress", serde_json::json!({ 
-            "current": i + 1, 
-            "total": options.channel_ids.len(), 
-            "id": channel_id, 
-            "deleted_count": deleted_total, 
-            "status": "scanning" 
-        }));
+        let _ = window.emit(
+            "deletion_progress",
+            serde_json::json!({
+                "current": i + 1,
+                "total": options.channel_ids.len(),
+                "id": channel_id,
+                "deleted_count": deleted_total,
+                "status": "scanning"
+            }),
+        );
 
         'message_loop: loop {
             op_manager.state.wait_if_paused().await;
@@ -142,25 +145,29 @@ pub async fn bulk_delete_messages(
 
             let response_value = api_handle
                 .send_request(reqwest::Method::GET, &url, None, &token, is_bearer)
-                .await; 
+                .await;
 
             let messages: Vec<serde_json::Value> = match response_value {
                 Ok(value) => serde_json::from_value(value).map_err(AppError::from)?,
                 Err(e) => {
-                    Logger::warn(&app_handle, &format!("[OP] Failed to fetch messages: {}", e.user_message), None);
+                    Logger::warn(
+                        &app_handle,
+                        &format!("[OP] Failed to fetch messages: {}", e.user_message),
+                        None,
+                    );
                     consecutive_failures += 1;
                     if consecutive_failures > 3 {
-                        break; 
+                        break;
                     }
                     tokio::time::sleep(Duration::from_secs(1)).await;
-                    continue; 
+                    continue;
                 }
             };
 
             if messages.is_empty() {
                 break;
             }
-            
+
             scanned_in_channel += messages.len();
             last_message_id = messages
                 .last()
@@ -173,7 +180,7 @@ pub async fn bulk_delete_messages(
                 }
 
                 let author_id = msg["author"]["id"].as_str().unwrap_or_default();
-                
+
                 // CRITICAL OPTIMIZATION: Only delete our own messages
                 if author_id != current_user_id {
                     continue;
@@ -197,16 +204,18 @@ pub async fn bulk_delete_messages(
                     .is_some_and(|arr| !arr.is_empty());
 
                 if let Some(start) = options.start_time
-                    && timestamp < start {
-                        if last_message_id.is_some() {
-                            break 'message_loop;
-                        } else {
-                            continue;
-                        }
+                    && timestamp < start
+                {
+                    if last_message_id.is_some() {
+                        break 'message_loop;
+                    } else {
+                        continue;
+                    }
                 }
                 if let Some(end) = options.end_time
-                    && timestamp > end {
-                        continue;
+                    && timestamp > end
+                {
+                    continue;
                 }
 
                 if options.only_attachments && !has_attachments {
@@ -215,34 +224,35 @@ pub async fn bulk_delete_messages(
 
                 if !options.simulation {
                     if options.purge_reactions
-                        && let Some(reactions) = msg["reactions"].as_array() {
-                            for r in reactions {
-                                if op_manager.state.should_abort.load(Ordering::SeqCst) {
-                                    break 'message_loop;
-                                }
-                                if r["me"].as_bool().unwrap_or(false) {
-                                    let emoji = r["emoji"]["name"].as_str().unwrap_or("");
-                                    let emoji_id = r["emoji"]["id"].as_str().unwrap_or("");
-                                    let emoji_param = if emoji_id.is_empty() {
-                                        emoji.to_string()
-                                    } else {
-                                        format!("{}:{}", emoji, emoji_id)
-                                    };
-                                    let react_url = format!(
-                                        "https://discord.com/api/v10/channels/{}/messages/{}/reactions/{}/@me",
-                                        channel_id, msg_id, emoji_param
-                                    );
-                                    let _ = api_handle
-                                        .send_request(
-                                            reqwest::Method::DELETE,
-                                            &react_url,
-                                            None,
-                                            &token,
-                                            is_bearer,
-                                        )
-                                        .await;
-                                }
+                        && let Some(reactions) = msg["reactions"].as_array()
+                    {
+                        for r in reactions {
+                            if op_manager.state.should_abort.load(Ordering::SeqCst) {
+                                break 'message_loop;
                             }
+                            if r["me"].as_bool().unwrap_or(false) {
+                                let emoji = r["emoji"]["name"].as_str().unwrap_or("");
+                                let emoji_id = r["emoji"]["id"].as_str().unwrap_or("");
+                                let emoji_param = if emoji_id.is_empty() {
+                                    emoji.to_string()
+                                } else {
+                                    format!("{}:{}", emoji, emoji_id)
+                                };
+                                let react_url = format!(
+                                    "https://discord.com/api/v10/channels/{}/messages/{}/reactions/{}/@me",
+                                    channel_id, msg_id, emoji_param
+                                );
+                                let _ = api_handle
+                                    .send_request(
+                                        reqwest::Method::DELETE,
+                                        &react_url,
+                                        None,
+                                        &token,
+                                        is_bearer,
+                                    )
+                                    .await;
+                            }
+                        }
                     }
 
                     if matches_query {
@@ -259,8 +269,8 @@ pub async fn bulk_delete_messages(
                                 is_bearer,
                             )
                             .await;
-                        if let Ok(_) = del_res {
-                                deleted_total += 1;
+                        if del_res.is_ok() {
+                            deleted_total += 1;
                         }
                     }
                 } else if matches_query {
@@ -268,14 +278,17 @@ pub async fn bulk_delete_messages(
                 }
 
                 if scanned_in_channel % 50 == 0 || deleted_total % 5 == 0 {
-                    let _ = window.emit("deletion_progress", serde_json::json!({ 
-                        "current": i + 1, 
-                        "total": options.channel_ids.len(), 
-                        "id": channel_id, 
-                        "deleted_count": deleted_total, 
-                        "scanned_count": scanned_in_channel,
-                        "status": if options.simulation { "simulating" } else { "purging" } 
-                    }));
+                    let _ = window.emit(
+                        "deletion_progress",
+                        serde_json::json!({
+                            "current": i + 1,
+                            "total": options.channel_ids.len(),
+                            "id": channel_id,
+                            "deleted_count": deleted_total,
+                            "scanned_count": scanned_in_channel,
+                            "status": if options.simulation { "simulating" } else { "purging" }
+                        }),
+                    );
                 }
             }
         }

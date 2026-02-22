@@ -3,13 +3,13 @@
 use base64::{Engine as _, engine::general_purpose};
 use futures_util::{SinkExt, StreamExt};
 use rsa::{Oaep, RsaPrivateKey, RsaPublicKey, pkcs8::EncodePublicKey};
+use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Emitter, Window};
 use tokio::time::{Duration, timeout};
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_util::sync::CancellationToken;
-use sha2::{Sha256, Digest};
 
 use super::identity::login_with_token_internal;
 use super::types::AuthState;
@@ -77,17 +77,25 @@ pub async fn start_qr_login_flow(
         Ok(Ok(stream_pair)) => {
             Logger::info(&app_handle, "[QR] WebSocket connected successfully.", None);
             stream_pair
-        },
+        }
         Ok(Err(e)) => {
-            Logger::error(&app_handle, &format!("[QR] WebSocket connection failed: {:?}", e), None);
+            Logger::error(
+                &app_handle,
+                &format!("[QR] WebSocket connection failed: {:?}", e),
+                None,
+            );
             return Err(AppError::from(e));
-        },
+        }
         Err(e) => {
-            Logger::error(&app_handle, &format!("[QR] WebSocket connection timed out: {:?}", e), None);
+            Logger::error(
+                &app_handle,
+                &format!("[QR] WebSocket connection timed out: {:?}", e),
+                None,
+            );
             return Err(AppError::from(e));
-        },
+        }
     };
-    
+
     let (mut write, mut read) = ws_stream.split();
 
     let window_clone = window.clone();
@@ -112,13 +120,13 @@ pub async fn start_qr_login_flow(
                             if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
                                 let op = p["op"].as_str().unwrap_or("unknown");
                                 Logger::trace(&app_handle_clone, &format!("[QR] Received Opcode: {} | Payload: {:?}", op, p), None);
-                                
+
                                 match op {
                                     "hello" => {
                                         interval_ms = p["heartbeat_interval"].as_u64().unwrap_or(30000);
                                         heartbeat_interval = tokio::time::interval(Duration::from_millis(interval_ms));
-                                        heartbeat_interval.tick().await; 
-                                        
+                                        heartbeat_interval.tick().await;
+
                                         let init_payload = serde_json::json!({
                                             "op": "init",
                                             "encoded_public_key": pub_key_base64,

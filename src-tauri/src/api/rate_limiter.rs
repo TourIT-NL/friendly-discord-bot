@@ -52,7 +52,10 @@ impl RateLimiterActor {
     pub fn new(inbox: mpsc::Receiver<ApiRequest>, app_handle: tauri::AppHandle) -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(30))
-            .user_agent(format!("DiscordPurge/{} (https://github.com/TourIT-NL/friendly-discord-bot)", env!("CARGO_PKG_VERSION")))
+            .user_agent(format!(
+                "DiscordPurge/{} (https://github.com/TourIT-NL/friendly-discord-bot)",
+                env!("CARGO_PKG_VERSION")
+            ))
             .build()
             .expect("Failed to build reqwest client");
 
@@ -176,11 +179,16 @@ impl RateLimiterActor {
 
                             // Deserialize response body within the actor
                             let result = if status.is_success() {
-                                response.json::<serde_json::Value>().await.map_err(AppError::from)
+                                response
+                                    .json::<serde_json::Value>()
+                                    .await
+                                    .map_err(AppError::from)
                             } else {
                                 // For non-success responses, try to read body as JSON for error details
                                 // Otherwise, create a generic AppError
-                                response.json::<serde_json::Value>().await
+                                response
+                                    .json::<serde_json::Value>()
+                                    .await
                                     .map_err(AppError::from)
                                     .and_then(|json_body| {
                                         Err(AppError {
@@ -189,12 +197,13 @@ impl RateLimiterActor {
                                             technical_details: Some(json_body.to_string()),
                                         })
                                     })
-                                    .or_else(|_| { // Fallback if JSON deserialization fails
-                                        Err(AppError {
-                                            user_message: format!("API error with status {}", status),
-                                            error_code: format!("api_http_{}", status.as_u16()),
-                                            technical_details: Some(format!("Response status: {}", status)),
-                                        })
+                                    .map_err(|_| AppError {
+                                        user_message: format!("API error with status {}", status),
+                                        error_code: format!("api_http_{}", status.as_u16()),
+                                        technical_details: Some(format!(
+                                            "Response status: {}",
+                                            status
+                                        )),
                                     })
                             };
 
@@ -310,7 +319,8 @@ impl ApiHandle {
         body: Option<serde_json::Value>,
         auth_token: &str,
         is_bearer: bool,
-    ) -> Result<serde_json::Value, AppError> { // Changed return type
+    ) -> Result<serde_json::Value, AppError> {
+        // Changed return type
         let (response_tx, response_rx) = oneshot::channel();
 
         let api_request = ApiRequest {

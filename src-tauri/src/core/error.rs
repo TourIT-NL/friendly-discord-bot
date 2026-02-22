@@ -42,18 +42,35 @@ impl From<std::io::Error> for AppError {
 impl From<reqwest::Error> for AppError {
     fn from(e: reqwest::Error) -> Self {
         let (error_code, user_message) = if e.is_timeout() {
-            ("network_timeout".to_string(), "Network request timed out.".to_string())
+            (
+                "network_timeout".to_string(),
+                "Network request timed out.".to_string(),
+            )
         } else if e.is_connect() {
-            ("network_connect_error".to_string(), "Failed to connect to network host.".to_string())
+            (
+                "network_connect_error".to_string(),
+                "Failed to connect to network host.".to_string(),
+            )
         } else if e.is_decode() {
-            ("network_decode_error".to_string(), "Failed to decode network response.".to_string())
+            (
+                "network_decode_error".to_string(),
+                "Failed to decode network response.".to_string(),
+            )
         } else if e.is_status() {
-            (format!("network_http_{}", e.status().unwrap_or_default().as_u16()),
-             format!("HTTP error: {}", e.status().unwrap_or_default()))
+            (
+                format!("network_http_{}", e.status().unwrap_or_default().as_u16()),
+                format!("HTTP error: {}", e.status().unwrap_or_default()),
+            )
         } else if e.is_builder() {
-            ("network_request_build_error".to_string(), "Failed to build network request.".to_string())
+            (
+                "network_request_build_error".to_string(),
+                "Failed to build network request.".to_string(),
+            )
         } else {
-            ("network_error".to_string(), "Network request failed.".to_string())
+            (
+                "network_error".to_string(),
+                "Network request failed.".to_string(),
+            )
         };
         Self {
             user_message,

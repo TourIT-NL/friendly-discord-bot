@@ -59,7 +59,7 @@ pub async fn validate_token(
         )
         .await?; // Will return serde_json::Value if successful
 
-    Ok(serde_json::from_value(response_value).map_err(AppError::from)?)
+    serde_json::from_value(response_value).map_err(AppError::from)
 }
 
 #[tauri::command]

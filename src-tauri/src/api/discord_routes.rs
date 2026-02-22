@@ -26,9 +26,9 @@ pub enum DiscordApiRoute {
     // Example: GuildWebhooks(String),
 }
 
-impl ToString for DiscordApiRoute {
-    fn to_string(&self) -> String {
-        match self {
+impl std::fmt::Display for DiscordApiRoute {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
             DiscordApiRoute::Default => "default".to_string(),
             DiscordApiRoute::CurrentUser => "users/@me".to_string(),
             DiscordApiRoute::CurrentUserGuilds => "users/@me/guilds".to_string(),
@@ -40,7 +40,8 @@ impl ToString for DiscordApiRoute {
                 format!("channels/{}/messages/{}", channel_id, message_id)
             }
             DiscordApiRoute::Guild(id) => format!("guilds/{}", id),
-        }
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -71,27 +72,27 @@ pub fn get_discord_route(url_str: &str) -> DiscordApiRoute {
     }
 
     // Check for /channels/{id} routes
-    if let Some(pos) = segments.iter().position(|&s| s == "channels") {
-        if let Some(channel_id) = segments.get(pos.saturating_add(1)) {
-            if segments.get(pos.saturating_add(2)) == Some(&"messages") {
-                if let Some(message_id) = segments.get(pos.saturating_add(3)) {
-                    return DiscordApiRoute::ChannelMessage(
-                        channel_id.to_string(),
-                        message_id.to_string(),
-                    );
-                }
-                return DiscordApiRoute::ChannelMessages(channel_id.to_string());
+    if let Some(pos) = segments.iter().position(|&s| s == "channels")
+        && let Some(channel_id) = segments.get(pos.saturating_add(1))
+    {
+        if segments.get(pos.saturating_add(2)) == Some(&"messages") {
+            if let Some(message_id) = segments.get(pos.saturating_add(3)) {
+                return DiscordApiRoute::ChannelMessage(
+                    channel_id.to_string(),
+                    message_id.to_string(),
+                );
             }
-            return DiscordApiRoute::Channel(channel_id.to_string());
+            return DiscordApiRoute::ChannelMessages(channel_id.to_string());
         }
+        return DiscordApiRoute::Channel(channel_id.to_string());
     }
 
     // Check for /guilds/{id} routes
-    if let Some(pos) = segments.iter().position(|&s| s == "guilds") {
-        if let Some(guild_id) = segments.get(pos.saturating_add(1)) {
-            // Further sub-routes could be added here (e.g., /guilds/{id}/webhooks)
-            return DiscordApiRoute::Guild(guild_id.to_string());
-        }
+    if let Some(pos) = segments.iter().position(|&s| s == "guilds")
+        && let Some(guild_id) = segments.get(pos.saturating_add(1))
+    {
+        // Further sub-routes could be added here (e.g., /guilds/{id}/webhooks)
+        return DiscordApiRoute::Guild(guild_id.to_string());
     }
 
     DiscordApiRoute::Default

@@ -44,7 +44,10 @@ fn main() {
     ensure_elevation();
 
     if let Err(e) = rustls::crypto::ring::default_provider().install_default() {
-        eprintln!("WARN: Failed to install rustls default provider: {:?}. Secure communication might be impacted for some features.", e);
+        eprintln!(
+            "WARN: Failed to install rustls default provider: {:?}. Secure communication might be impacted for some features.",
+            e
+        );
         // If rustls is critical, consider exiting or providing a strong user warning.
         // For now, adhere to previous decision not to exit.
     }
@@ -64,12 +67,17 @@ fn main() {
             app.manage(_guard);
 
             // Logging to both stdout and file.
-            let env_filter = tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                #[cfg(debug_assertions)]
-                { "src_tauri=debug,info".into() }
-                #[cfg(not(debug_assertions))]
-                { "src_tauri=info".into() }
-            });
+            let env_filter =
+                tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                    #[cfg(debug_assertions)]
+                    {
+                        "src_tauri=debug,info".into()
+                    }
+                    #[cfg(not(debug_assertions))]
+                    {
+                        "src_tauri=info".into()
+                    }
+                });
 
             tracing_subscriber::registry()
                 .with(env_filter)

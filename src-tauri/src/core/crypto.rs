@@ -1,10 +1,10 @@
 // src-tauri/src/core/crypto.rs
 
 use aes_gcm::{
-    aead::{Aead, KeyInit, OsRng},
     Aes256Gcm, Nonce,
+    aead::{Aead, KeyInit, OsRng},
 };
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use rand_core::RngCore;
 
 use crate::core::error::AppError;
@@ -66,13 +66,11 @@ impl Crypto {
         let nonce = Nonce::from_slice(&decoded[..NONCE_LEN]);
         let ciphertext = &decoded[NONCE_LEN..];
 
-        let plaintext_bytes = cipher
-            .decrypt(nonce, ciphertext)
-            .map_err(|e| AppError {
-                user_message: "Decryption failed.".into(),
-                error_code: "crypto_decrypt_failed".into(),
-                technical_details: Some(e.to_string()),
-            })?;
+        let plaintext_bytes = cipher.decrypt(nonce, ciphertext).map_err(|e| AppError {
+            user_message: "Decryption failed.".into(),
+            error_code: "crypto_decrypt_failed".into(),
+            technical_details: Some(e.to_string()),
+        })?;
 
         Ok(String::from_utf8(plaintext_bytes)?)
     }

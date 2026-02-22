@@ -127,7 +127,8 @@ pub async fn webhook_ghosting(
         )
         .await?; // Will return serde_json::Value if successful
 
-    let webhooks: Vec<serde_json::Value> = serde_json::from_value(webhooks_value).map_err(AppError::from)?;
+    let webhooks: Vec<serde_json::Value> =
+        serde_json::from_value(webhooks_value).map_err(AppError::from)?;
 
     let mut deleted_webhooks = 0;
     for webhook in &webhooks {

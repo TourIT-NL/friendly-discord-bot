@@ -27,7 +27,7 @@ pub async fn fetch_guilds(app_handle: AppHandle) -> Result<Vec<Guild>, AppError>
         )
         .await?; // Will return serde_json::Value if successful
 
-    Ok(serde_json::from_value(response_value).map_err(AppError::from)?)
+    serde_json::from_value(response_value).map_err(AppError::from)
 }
 
 #[tauri::command]
@@ -44,17 +44,19 @@ pub async fn fetch_channels(
             &format!("[SYNC] Mapping nodes for guild {}", gid),
             None,
         );
-                        let response_value = api_handle
-                            .send_request(
-                                reqwest::Method::GET,
-                                &format!("https://discord.com/api/v10/guilds/{}/channels", gid),
-                                None,
-                                &token,
-                                is_bearer,
-                            )
-                            .await?; // Will return serde_json::Value if successful
-        
-                        let channels: Vec<Channel> = serde_json::from_value(response_value).map_err(AppError::from)?;        Ok(channels
+        let response_value = api_handle
+            .send_request(
+                reqwest::Method::GET,
+                &format!("https://discord.com/api/v10/guilds/{}/channels", gid),
+                None,
+                &token,
+                is_bearer,
+            )
+            .await?; // Will return serde_json::Value if successful
+
+        let channels: Vec<Channel> =
+            serde_json::from_value(response_value).map_err(AppError::from)?;
+        Ok(channels
             .into_iter()
             .filter(|c| c.channel_type == 0 || c.channel_type == 11 || c.channel_type == 12)
             .collect())
@@ -66,23 +68,29 @@ pub async fn fetch_channels(
                 ..Default::default()
             });
         }
-                    let response_value = api_handle
-                        .send_request(
-                            reqwest::Method::GET,
-                            "https://discord.com/api/v10/users/@me/channels",
-                            None,
-                            &token,
-                            is_bearer,
-                        )
-                        .await?; // Will return serde_json::Value if successful
-        
-                    let channels: Vec<serde_json::Value> = serde_json::from_value(response_value).map_err(AppError::from)?;        let mut result = Vec::new();
+        let response_value = api_handle
+            .send_request(
+                reqwest::Method::GET,
+                "https://discord.com/api/v10/users/@me/channels",
+                None,
+                &token,
+                is_bearer,
+            )
+            .await?; // Will return serde_json::Value if successful
+
+        let channels: Vec<serde_json::Value> =
+            serde_json::from_value(response_value).map_err(AppError::from)?;
+        let mut result = Vec::new();
         for ch in channels {
             let ch_type = ch["type"].as_u64().unwrap_or(0);
             if ch_type == 1 || ch_type == 3 {
-                                let name = if ch_type == 1 {
-                                    ch["recipients"].as_array().and_then(|r| r.first()).and_then(|u| u["username"].as_str()).map(|s| format!("DM with {}", s))
-                                } else {
+                let name = if ch_type == 1 {
+                    ch["recipients"]
+                        .as_array()
+                        .and_then(|r| r.first())
+                        .and_then(|u| u["username"].as_str())
+                        .map(|s| format!("DM with {}", s))
+                } else {
                     ch["name"]
                         .as_str()
                         .map(|s| s.to_string())
@@ -121,7 +129,7 @@ pub async fn fetch_relationships(app_handle: AppHandle) -> Result<Vec<Relationsh
         )
         .await?; // Will return serde_json::Value if successful
 
-    Ok(serde_json::from_value(response_value).map_err(AppError::from)?)
+    serde_json::from_value(response_value).map_err(AppError::from)
 }
 
 #[tauri::command]
@@ -144,4 +152,5 @@ pub async fn fetch_preview_messages(
         )
         .await?; // Will return serde_json::Value if successful
 
-    Ok(serde_json::from_value(response_value).map_err(AppError::from)?)}
+    serde_json::from_value(response_value).map_err(AppError::from)
+}

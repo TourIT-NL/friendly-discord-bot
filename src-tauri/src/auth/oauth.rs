@@ -68,39 +68,23 @@ pub async fn start_oauth_flow(
             ..Default::default()
         })?;
 
-    Logger::debug(
-        &app_handle,
-        &format!("[OAuth] Binding callback to {}", addr),
-        None,
-    );
-    let mut socket = None;
-    for i in 0..3 {
+    let listener = {
         let s = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
         s.set_reuse_address(true)?;
         #[cfg(not(windows))]
         s.set_reuse_port(true)?;
         if s.bind(&addr.into()).is_ok() {
             s.listen(128)?;
-            socket = Some(s);
-            break;
+            s
+        } else {
+            return Err(AppError {
+                user_message: "Authorization port (58123) is already in use.".into(),
+                ..Default::default()
+            });
         }
-        Logger::warn(
-            &app_handle,
-            &format!("[OAuth] Port busy, retrying... ({}/3)", i + 1),
-            None,
-        );
-        tokio::time::sleep(Duration::from_millis(500)).await;
-    }
+    };
 
-    let socket = socket.ok_or_else(|| {
-        Logger::error(&app_handle, "[OAuth] Failed to bind callback port", None);
-        AppError {
-            user_message: "Authorization port (58123) is already in use.".into(),
-            ..Default::default()
-        }
-    })?;
-
-    let listener: std::net::TcpListener = socket.into(); // Revert back to original listener variable name
+    let listener: std::net::TcpListener = listener.into();
     let app_clone = app_handle.clone(); // Revert app_clone position
 
     tauri::async_runtime::spawn(async move {
@@ -114,19 +98,20 @@ pub async fn start_oauth_flow(
             // Robust request parsing
             let first_line = req.lines().next().unwrap_or_default();
             if let Some(path) = first_line.split_whitespace().nth(1)
-                && let Ok(url) = Url::parse(&format!("http://127.0.0.1{}", path)) {
-                    let query: HashMap<String, String> = url.query_pairs().into_owned().collect();
-                    if query
-                        .get("state")
-                        .map(|s| s == &csrf_secret)
-                        .unwrap_or(false)
-                    {
-                        if let Some(code) = query.get("code") {
-                            let _ = tx.send(code.clone());
-                        }
-                    } else {
-                        Logger::warn(&app_clone, "[OAuth] CSRF state mismatch or missing", None);
+                && let Ok(url) = Url::parse(&format!("http://127.0.0.1{}", path))
+            {
+                let query: HashMap<String, String> = url.query_pairs().into_owned().collect();
+                if query
+                    .get("state")
+                    .map(|s| s == &csrf_secret)
+                    .unwrap_or(false)
+                {
+                    if let Some(code) = query.get("code") {
+                        let _ = tx.send(code.clone());
                     }
+                } else {
+                    Logger::warn(&app_clone, "[OAuth] CSRF state mismatch or missing", None);
+                }
             }
 
             let response = "HTTP/1.1 200 OK
