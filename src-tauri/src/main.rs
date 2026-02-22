@@ -55,53 +55,53 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let app_data_dir = app
-                .path()
-                .app_local_data_dir()
-                .expect("failed to get app dir");
-            std::fs::create_dir_all(&app_data_dir).expect("failed to create app dir");
+            // let app_data_dir = app
+            //     .path()
+            //     .app_local_data_dir()
+            //     .expect("failed to get app dir");
+            // std::fs::create_dir_all(&app_data_dir).expect("failed to create app dir");
 
-            let file_appender = tracing_appender::rolling::daily(&app_data_dir, "app.log");
-            let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+            // let file_appender = tracing_appender::rolling::daily(&app_data_dir, "app.log");
+            // let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
-            app.manage(_guard);
+            // app.manage(_guard);
 
-            // Logging to both stdout and file.
-            let env_filter =
-                tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                    #[cfg(debug_assertions)]
-                    {
-                        "src_tauri=debug,info".into()
-                    }
-                    #[cfg(not(debug_assertions))]
-                    {
-                        "src_tauri=info".into()
-                    }
-                });
+            // // Logging to both stdout and file.
+            // let env_filter =
+            //     tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+            //         #[cfg(debug_assertions)]
+            //         {
+            //             "src_tauri=debug,info".into()
+            //         }
+            //         #[cfg(not(debug_assertions))]
+            //         {
+            //             "src_tauri=info".into()
+            //         }
+            //     });
 
-            tracing_subscriber::registry()
-                .with(env_filter)
-                .with(tracing_subscriber::fmt::layer().with_writer(std::io::stdout))
-                .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
-                .init();
+            // tracing_subscriber::registry()
+            //     .with(env_filter)
+            //     .with(tracing_subscriber::fmt::layer().with_writer(std::io::stdout))
+            //     .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))
+            //     .init();
 
-            info!("Application starting up...");
+            // info!("Application starting up...");
 
-            let (tx, rx) = mpsc::channel(100);
-            let mut rate_limiter = RateLimiterActor::new(rx, app.handle().clone());
-            let api_handle = ApiHandle::new(tx);
+            // let (tx, rx) = mpsc::channel(100);
+            // let mut rate_limiter = RateLimiterActor::new(rx, app.handle().clone());
+            // let api_handle = ApiHandle::new(tx);
 
-            tauri::async_runtime::spawn(async move {
-                rate_limiter.run().await;
-            });
+            // tauri::async_runtime::spawn(async move {
+            //     rate_limiter.run().await;
+            // });
 
-            app.manage(api_handle);
+            // app.manage(api_handle);
 
-            let op_manager = OperationManager::new();
-            app.manage(op_manager);
+            // let op_manager = OperationManager::new();
+            // app.manage(op_manager);
 
-            let auth_state = auth::AuthState::default();
-            app.manage(auth_state);
+            // let auth_state = auth::AuthState::default();
+            // app.manage(auth_state);
 
             Ok(())
         })
