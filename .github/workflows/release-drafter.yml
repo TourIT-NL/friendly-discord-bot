@@ -12,7 +12,7 @@ jobs:
       contents: write # To create and update releases
       pull-requests: write # To add the drafted release notes to the release
     steps:
-      - uses: release-drafter/release-drafter@v5
+      - uses: release-drafter/release-drafter@v6
         # (Optional) specify custom config file
         # with:
         #   config-name: release-drafter-config.yml
