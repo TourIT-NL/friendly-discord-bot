@@ -15,9 +15,3 @@ jobs:
 
       - name: Check spelling
         uses: check-spelling/check-spelling@v0.0.22 # Using a recent stable version
-        with:
-          # Customize files to include/exclude
-          # For example, to check only markdown and source files, you might use:
-          # files: "**/*.md, **/*.js, **/*.ts, **/*.tsx, **/*.rs"
-          # exclude: ".git/, .github/, node_modules/, target/, dist/"
-          # If left empty, it checks most text-based files.
