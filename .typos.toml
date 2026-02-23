@@ -1,2 +1,16 @@
 [files]
-extend-exclude = ["coverage", "node_modules", "target", "dist"]
+extend-exclude = [
+  "**/coverage/**",
+  "**/node_modules/**",
+  "**/target/**",
+  "**/dist/**",
+  "**/prettify.js"
+]
+
+[default]
+extend-ignore-re = [
+  "lang(?:uage)?-"
+]
+
+[default.extend-words]
+uage = "uage"
