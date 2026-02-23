@@ -107,6 +107,16 @@ function App() {
     handleBuryAuditLog,
     handleWebhookGhosting,
     handleOpenDonateLink,
+    handleOpenDiscordUrl,
+    handleTriggerHarvest,
+    handleMaxPrivacySanitize,
+    handleRevokeApp,
+    fetchSecurityAudit,
+    fetchPrivacyAudit,
+    fetchAccountAudit,
+    authorizedApps,
+    gdprStatus,
+    billingInfo,
     startAction,
   } = useDiscordOperations(handleApiError);
 
@@ -337,6 +347,16 @@ function App() {
             handleBuryAuditLog={handleBuryAuditLog}
             handleWebhookGhosting={handleWebhookGhosting}
             handleOpenDonateLink={handleOpenDonateLink}
+            handleOpenDiscordUrl={handleOpenDiscordUrl}
+            handleTriggerHarvest={handleTriggerHarvest}
+            handleMaxPrivacySanitize={handleMaxPrivacySanitize}
+            handleRevokeApp={handleRevokeApp}
+            fetchSecurityAudit={fetchSecurityAudit}
+            fetchPrivacyAudit={fetchPrivacyAudit}
+            fetchAccountAudit={fetchAccountAudit}
+            authorizedApps={authorizedApps}
+            gdprStatus={gdprStatus}
+            billingInfo={billingInfo}
             isLoading={isLoading}
             relationships={relationships}
             selectedRelationships={selectedRelationships}

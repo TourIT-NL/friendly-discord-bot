@@ -62,7 +62,12 @@ export const useDiscordOperations = (
 
   const fetchGuilds = useCallback(
     async (forceRefresh: boolean = false) => {
-      if (!forceRefresh && guilds.length > 0 && !isFetchingGuildsRef.current) {
+      if (
+        !forceRefresh &&
+        guilds &&
+        guilds.length > 0 &&
+        !isFetchingGuildsRef.current
+      ) {
         // Guilds already loaded, no need to refetch unless forced
         return;
       }

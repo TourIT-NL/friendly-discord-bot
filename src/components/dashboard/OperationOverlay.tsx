@@ -9,7 +9,13 @@ interface OperationOverlayProps {
   progress: Progress | null;
   isComplete: boolean;
   onReset: () => void;
-  mode: "messages" | "servers" | "identity";
+  mode:
+    | "messages"
+    | "servers"
+    | "identity"
+    | "security"
+    | "privacy"
+    | "account";
   onPause: () => void;
   onResume: () => void;
   onAbort: () => void;
