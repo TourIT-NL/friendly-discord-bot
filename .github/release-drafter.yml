@@ -6,7 +6,7 @@ tag-template: "v$NEXT_PATCH_VERSION"
 
 template: |
   ## 🚀 Release Highlights
-  
+
   $CHANGES
 
   ## 👥 Contributors
