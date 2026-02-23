@@ -54,6 +54,8 @@ pub async fn start_oauth_flow(
         .authorize_url(CsrfToken::new_random)
         .add_scope(oauth2::Scope::new("identify".into()))
         .add_scope(oauth2::Scope::new("guilds".into()))
+        .add_scope(oauth2::Scope::new("messages.read".into())) // Added for message fetching
+        .add_scope(oauth2::Scope::new("guilds.members.read".into())) // Added for member info, if needed
         .set_pkce_challenge(pkce_ch)
         .url();
 
