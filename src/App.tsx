@@ -250,14 +250,9 @@ function App() {
       unlisteners.push(
         await getCurrentWindow().onCloseRequested(async (event) => {
           // Check if we are processing something
-          const state = useAuthStore.getState();
           if (useAuthStore.getState().isLoading) {
-            // If we are in the middle of a login or something, we might want to wait or just close
             console.log("App closing during loading state.");
           }
-
-          // Just close the window. We don't want to clear_all_app_data here
-          // because that wipes the saved sessions/credentials!
           await getCurrentWindow().close();
         }),
       );
@@ -272,6 +267,7 @@ function App() {
     getOperationStatus,
     setView,
     setIsProcessing,
+    setIsComplete,
     setProgress,
     setError,
     addLog,

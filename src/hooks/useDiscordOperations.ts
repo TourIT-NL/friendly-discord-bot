@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAuthStore } from "../store/authStore";
-import { Guild, Channel } from "../types/discord";
+import { Guild, Channel, Relationship, PreviewMessage } from "../types/discord";
 import { useSelectionState } from "./useSelectionState";
 import { useOperationControl } from "./useOperationControl";
 
@@ -215,16 +215,8 @@ export const useDiscordOperations = (
 
     if (!selectedGuilds.has(effectiveId)) {
       // If guild is being added
-      // Check if channels are already cached for this guild
       if (channelsByGuild.has(effectiveId)) {
-        // Channels already cached, no need to fetch
-        // Just update selectedGuilds and return
-        setSelectedGuilds((prev) => {
-          const next = new Set(prev);
-          next.add(effectiveId);
-          return next;
-        });
-        return; // Exit early, no API call needed
+        return;
       }
 
       setLoading(true);
@@ -269,7 +261,9 @@ export const useDiscordOperations = (
 
   const fetchPreview = async (channelId: string) => {
     try {
-      setPreviews(await invoke("fetch_preview_messages", { channelId }));
+      setPreviews(
+        await invoke<PreviewMessage[]>("fetch_preview_messages", { channelId }),
+      );
     } catch (err) {
       // Ignore preview errors
     }
@@ -356,6 +350,7 @@ export const useDiscordOperations = (
       mode === "messages" ? "DELETE" : mode === "servers" ? "LEAVE" : "REMOVE";
     if (confirmText !== required) return;
     setIsProcessing(true);
+    setIsComplete(false);
     setConfirmText("");
     try {
       if (mode === "messages") {
@@ -389,6 +384,7 @@ export const useDiscordOperations = (
       }
     } catch (err: any) {
       handleApiError(err, "Protocol execution error.");
+      setIsProcessing(false);
     }
   };
 
