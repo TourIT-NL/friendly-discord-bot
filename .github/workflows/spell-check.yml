@@ -1,0 +1,23 @@
+name: "Spell Check"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  spell-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check spelling
+        uses: check-spelling/check-spelling@v0.0.22 # Using a recent stable version
+        with:
+          # Customize files to include/exclude
+          # For example, to check only markdown and source files, you might use:
+          # files: "**/*.md, **/*.js, **/*.ts, **/*.tsx, **/*.rs"
+          # exclude: ".git/, .github/, node_modules/, target/, dist/"
+          # If left empty, it checks most text-based files.

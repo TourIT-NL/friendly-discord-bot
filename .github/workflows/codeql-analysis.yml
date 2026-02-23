@@ -1,0 +1,45 @@
+name: "CodeQL Analysis"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 1' # Run every Monday at 2 AM UTC
+
+permissions:
+  contents: read # For checkout
+  security-events: write # For uploading CodeQL results
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'rust' ] # Analyze both JavaScript/TypeScript and Rust
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Mandatory for CodeQL
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # If you want to analyze compiled languages, you can specify a build command here.
+        # For Rust, CodeQL can often build it automatically, but you might need to adjust.
+        # For JavaScript/TypeScript, often no explicit build command is needed if dependencies are installed.
+
+    - name: Autobuild (for compiled languages like Rust, if needed)
+      if: ${{ matrix.language == 'rust' }}
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.language }}"

@@ -1,0 +1,32 @@
+name: "Automated Backport"
+
+on:
+  pull_request_target:
+    types: [closed]
+
+jobs:
+  backport:
+    # Only run if the PR was merged and has a specific label indicating it needs backporting
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'backport')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Backport PR
+        uses: sqren/backport-action@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Example: Backport to 'release-v1.0' and 'release-v1.1' branches
+          # You should adjust these to your actual release branches
+          target_branches: |
+            release-v1.0
+            release-v1.1
+          # Label to add to original PR if backport fails or is incomplete
+          # For example, 'backport-failed'
+          # label_on_error: 'backport-failed'
+          # Label to remove from original PR after successful backport
+          # For example, 'backport'
+          # remove_original_labels: 'backport'

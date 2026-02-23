@@ -1,0 +1,33 @@
+# .github/labeler.yml
+# Configuration for actions/labeler
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: "docs/**"
+      - any-glob-to-any-file: "*.md"
+      - any-glob-to-any-file: "**.md"
+
+javascript:
+  - changed-files:
+      - any-glob-to-any-file: "src/**/*.js"
+      - any-glob-to-any-file: "src/**/*.ts"
+      - any-glob-to-any-file: "src/**/*.tsx"
+      - any-glob-to-any-file: "package.json"
+      - any-glob-to-any-file: "package-lock.json"
+      - any-glob-to-any-file: "tsconfig.json"
+      - any-glob-to-any-file: "vite.config.ts"
+
+rust:
+  - changed-files:
+      - any-glob-to-any-file: "src-tauri/**/*.rs"
+      - any-glob-to-any-file: "src-tauri/Cargo.toml"
+      - any-glob-to-any-file: "src-tauri/Cargo.lock"
+
+github_actions:
+  - changed-files:
+      - any-glob-to-any-file: ".github/workflows/**"
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: "**/*.test.ts"
+      - any-glob-to-any-file: "src-tauri/tests/**"

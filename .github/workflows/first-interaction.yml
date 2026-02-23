@@ -1,0 +1,32 @@
+name: "First Interaction Welcome"
+
+on:
+  pull_request_target:
+    types: [opened]
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Greet new contributors
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: >
+            👋 Hi @${{ github.actor }}! Thank you for opening your first issue in this repository.
+            We appreciate your contribution! Please make sure you've provided all necessary details
+            as per our [issue template](.github/ISSUE_TEMPLATE/bug_report.yml).
+          pr-message: >
+            🎉 Awesome, @${{ github.actor }}! This is your first Pull Request in this repository.
+            Welcome aboard! Please review our [contributing guidelines](CONTRIBUTING.md) and
+            ensure your PR description is clear.
+          # Uncomment the following to manage an `exempt-issue-labels` or `exempt-pr-labels`
+          # for issues/PRs that should not trigger this welcome
+          # exempt-issue-labels: 'internal, bot'
+          # exempt-pr-labels: 'internal, bot'
