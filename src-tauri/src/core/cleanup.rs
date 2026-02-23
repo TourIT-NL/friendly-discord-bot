@@ -19,7 +19,7 @@ pub async fn clear_all_app_data(app_handle: AppHandle) -> Result<(), AppError> {
     Vault::clear_all_data(&app_handle)?;
 
     // 2. Attempt to delete old log files (but skip the current one if possible)
-    if let Some(app_local_data_dir) = app_handle.path().app_local_data_dir().ok() {
+    if let Ok(app_local_data_dir) = app_handle.path().app_local_data_dir() {
         let log_dir: PathBuf = app_local_data_dir;
 
         match tokio::fs::read_dir(&log_dir).await {
@@ -31,7 +31,7 @@ pub async fn clear_all_app_data(app_handle: AppHandle) -> Result<(), AppError> {
                             && path
                                 .file_name()
                                 .and_then(|name| name.to_str())
-                                .map_or(false, |name| name.starts_with("app.log"))
+                                .is_some_and(|name| name.starts_with("app.log"))
                         {
                             // Try to delete. If it fails (e.g. locked), just log and continue.
                             if let Err(e) = tokio::fs::remove_file(&path).await {
