@@ -1,0 +1,26 @@
+name: "Documentation Link Checker"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 0 * * 1" # Run weekly on Monday
+
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Link Checker
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Check all markdown files
+          args: --verbose --no-progress "**/*.md"
+          # Only fail on PRs or scheduled runs to avoid blocking small pushes
+          fail: ${{ github.event_name == 'pull_request' || github.event_name == 'schedule' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

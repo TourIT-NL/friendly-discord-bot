@@ -14,127 +14,151 @@ on:
       - main
 
 jobs:
-  lint-and-test:
+  lint-frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: discord-privacy-util/package-lock.json
+      - name: install frontend dependencies
+        working-directory: discord-privacy-util
+        run: npm install
+      - name: lint frontend
+        working-directory: discord-privacy-util
+        run: npm run lint
+      - name: check formatting
+        working-directory: discord-privacy-util
+        run: npm run format:check
 
+  lint-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
-
       - name: install dependencies (ubuntu only)
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: rust fmt check
+        working-directory: discord-privacy-util/src-tauri
+        run: cargo fmt -- --check
+      - name: rust clippy
+        working-directory: discord-privacy-util/src-tauri
+        run: cargo clippy -- -D warnings
 
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: discord-privacy-util/package-lock.json
       - name: install frontend dependencies
+        working-directory: discord-privacy-util
         run: npm install
-
-      - name: lint frontend
-        run: npm run lint
-
-      - name: check formatting
-        run: npm run format:check
-
       - name: test frontend
+        working-directory: discord-privacy-util
         run: npm test
-
       - name: Upload Frontend coverage report
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage-report
-          path: coverage/frontend/
+          path: discord-privacy-util/coverage/frontend/
 
-      - name: rust fmt check
-        working-directory: src-tauri
-        run: cargo fmt -- --check
-
-      - name: rust clippy
-        working-directory: src-tauri
-        run: cargo clippy -- -D warnings
-
-      - name: install llvm-tools-preview
-        working-directory: src-tauri
-        run: rustup component add llvm-tools-preview
-
+  test-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - name: install dependencies (ubuntu only)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - name: install grcov
-        working-directory: src-tauri
         run: cargo install grcov
-
       - name: Run backend tests with coverage
-        working-directory: src-tauri
+        working-directory: discord-privacy-util/src-tauri
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "target/debug/cov-%p-%m.profraw"
         run: cargo test
-
       - name: Generate Rust coverage report
-        working-directory: src-tauri
+        working-directory: discord-privacy-util/src-tauri
         run: |
           mkdir -p ./target/debug/coverage/
           grcov . --binary-path ./target/debug/ -s . -t html --keep-only src -o ./target/debug/coverage/
-          ls -l ./target/debug/coverage/
-
       - name: Upload Rust coverage report
         uses: actions/upload-artifact@v4
         with:
           name: rust-coverage-report
-          path: src-tauri/target/debug/coverage/
+          path: discord-privacy-util/src-tauri/target/debug/coverage/
+
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install cargo-audit
+        run: cargo install cargo-audit
+      - name: Rust security audit
+        working-directory: discord-privacy-util/src-tauri
+        run: cargo audit
+      - name: Node security audit
+        working-directory: discord-privacy-util
+        run: npm audit --audit-level=high
 
   publish-tauri:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: lint-and-test
+    needs: [lint-frontend, lint-rust, test-frontend, test-rust, security-audit]
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: "macos-latest" # for Apple Silicon
+          - platform: "macos-latest"
             args: "--target aarch64-apple-darwin"
-          - platform: "macos-latest" # for Intel
+          - platform: "macos-latest"
             args: "--target x86_64-apple-darwin"
-          - platform: "ubuntu-22.04" # for Linux
+          - platform: "ubuntu-22.04"
             args: ""
-          - platform: "windows-latest" # for Windows
+          - platform: "windows-latest"
             args: ""
-
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: package-lock.json
-
+          cache-dependency-path: discord-privacy-util/package-lock.json
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
       - name: install frontend dependencies
+        working-directory: discord-privacy-util
         run: npm install
-
-      - uses: tauri-apps/tauri-action@action-v0.6.1
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -144,3 +168,4 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+          projectPath: discord-privacy-util
