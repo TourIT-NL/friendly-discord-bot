@@ -41,7 +41,7 @@ jobs:
       - name: install cargo-deny
         run: cargo install cargo-deny
       - name: License and Health Audit
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         run: |
           cargo deny check licenses
           cargo deny check advisories
@@ -58,8 +58,6 @@ jobs:
         with:
           node-version: 20
       - name: install
-        working-directory: discord-privacy-util
         run: npm ci
       - name: Check for unused dependencies
-        working-directory: discord-privacy-util
         run: npx depcheck --ignores="postcss,tailwindcss,autoprefixer,@tailwindcss/postcss"

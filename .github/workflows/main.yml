@@ -27,15 +27,15 @@ jobs:
         with:
           filters: |
             frontend:
-              - 'discord-privacy-util/src/**'
-              - 'discord-privacy-util/package.json'
-              - 'discord-privacy-util/package-lock.json'
-              - 'discord-privacy-util/tsconfig.json'
-              - 'discord-privacy-util/vite.config.ts'
+              - 'src/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.json'
+              - 'vite.config.ts'
             backend:
-              - 'discord-privacy-util/src-tauri/**'
-              - 'discord-privacy-util/src-tauri/Cargo.toml'
-              - 'discord-privacy-util/src-tauri/Cargo.lock'
+              - 'src-tauri/**'
+              - 'src-tauri/Cargo.toml'
+              - 'src-tauri/Cargo.lock'
             docs:
               - '**/*.md'
               - 'wiki_content/**'
@@ -52,12 +52,10 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: discord-privacy-util/package-lock.json
+          cache-dependency-path: package-lock.json
       - name: install
-        working-directory: discord-privacy-util
         run: npm ci
       - name: lint & format
-        working-directory: discord-privacy-util
         run: |
           npm run lint
           npm run format:check
@@ -73,18 +71,16 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: discord-privacy-util/package-lock.json
+          cache-dependency-path: package-lock.json
       - name: install
-        working-directory: discord-privacy-util
         run: npm ci
       - name: test
-        working-directory: discord-privacy-util
         run: npm test
       - name: Upload Coverage
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage
-          path: discord-privacy-util/coverage/
+          path: coverage/
 
   # 2. Optimized Rust CI
   lint-rust:
@@ -99,11 +95,11 @@ jobs:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
         with:
-          work-directories: "discord-privacy-util/src-tauri"
+          work-directories: "src-tauri"
       - name: install dependencies
         run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - name: fmt & clippy
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         run: |
           cargo fmt -- --check
           cargo clippy -- -D warnings
@@ -120,20 +116,20 @@ jobs:
           components: llvm-tools-preview
       - uses: Swatinem/rust-cache@v2
         with:
-          work-directories: "discord-privacy-util/src-tauri"
+          work-directories: "src-tauri"
       - name: install dependencies
         run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - name: install grcov
         run: cargo install grcov
       - name: test
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: "-C instrument-coverage"
           LLVM_PROFILE_FILE: "target/debug/cov-%p-%m.profraw"
         run: cargo test
       - name: grcov
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         run: |
           mkdir -p ./target/debug/coverage/
           grcov . --binary-path ./target/debug/ -s . -t html --keep-only src -o ./target/debug/coverage/
@@ -141,7 +137,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rust-coverage
-          path: discord-privacy-util/src-tauri/target/debug/coverage/
+          path: src-tauri/target/debug/coverage/
 
   # 3. Security & Compliance
   audit:
@@ -153,10 +149,9 @@ jobs:
       - name: install cargo-audit
         run: cargo install cargo-audit
       - name: audit
-        working-directory: discord-privacy-util/src-tauri
+        working-directory: src-tauri
         run: cargo audit
       - name: npm audit
-        working-directory: discord-privacy-util
         run: npm audit --audit-level=high
 
   # 4. Multi-Platform Release Engine
@@ -185,19 +180,18 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: discord-privacy-util/package-lock.json
+          cache-dependency-path: package-lock.json
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
       - uses: Swatinem/rust-cache@v2
         with:
-          work-directories: "discord-privacy-util/src-tauri"
+          work-directories: "src-tauri"
       - name: install dependencies (ubuntu)
         if: matrix.platform == 'ubuntu-22.04'
         run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - name: install frontend
-        working-directory: discord-privacy-util
         run: npm ci
       - uses: tauri-apps/tauri-action@v0
         env:
@@ -209,4 +203,3 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
-          projectPath: discord-privacy-util
