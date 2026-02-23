@@ -1,0 +1,65 @@
+name: "PR Quality Gate"
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  # 1. Enforce Conventional Commits on PR Titles
+  pr-title-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            chore
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            revert
+
+  # 2. Advanced Rust Quality (License Compliance & Duplicate Health)
+  rust-deep-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: install cargo-deny
+        run: cargo install cargo-deny
+      - name: License and Health Audit
+        working-directory: discord-privacy-util/src-tauri
+        run: |
+          cargo deny check licenses
+          cargo deny check advisories
+          cargo deny check bans
+          cargo deny check sources
+
+  # 3. Frontend Quality Gate (Unused code detection)
+  frontend-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: install
+        working-directory: discord-privacy-util
+        run: npm ci
+      - name: Check for unused dependencies
+        working-directory: discord-privacy-util
+        run: npx depcheck --ignores="postcss,tailwindcss,autoprefixer,@tailwindcss/postcss"

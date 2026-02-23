@@ -1,0 +1,51 @@
+name: "Continuous Documentation"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'discord-privacy-util/src-tauri/**/*.rs'
+      - 'discord-privacy-util/src/**/*.ts'
+      - 'discord-privacy-util/src/**/*.tsx'
+
+permissions:
+  contents: write
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        
+      - name: Build Rustdocs
+        working-directory: discord-privacy-util/src-tauri
+        run: cargo doc --no-deps --document-private-items
+        
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Build Frontend Docs
+        working-directory: discord-privacy-util
+        run: |
+          npm ci
+          npx typedoc --out docs/api src/
+          
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./discord-privacy-util/src-tauri/target/doc
+          destination_dir: rustdoc
+          
+      - name: Deploy Frontend Docs to Subdir
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./discord-privacy-util/docs/api
+          destination_dir: tsdoc
+          keep_files: true
