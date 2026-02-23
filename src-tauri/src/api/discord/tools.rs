@@ -8,7 +8,7 @@ use crate::core::vault::Vault;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, Window};
-use tauri_plugin_shell::ShellExt;
+use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
 pub async fn bury_audit_log(
@@ -177,7 +177,7 @@ pub async fn webhook_ghosting(
 
 #[tauri::command]
 pub async fn open_external_link(app_handle: AppHandle, url: String) -> Result<(), AppError> {
-    app_handle.shell().open(&url, None).map_err(|e| AppError {
+    app_handle.opener().open_url(url, None::<String>).map_err(|e| AppError {
         user_message: "Failed to open external link.".into(),
         error_code: "external_link_error".into(),
         technical_details: Some(format!("Error opening URL: {}", e)),
