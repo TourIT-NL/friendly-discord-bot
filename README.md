@@ -1,6 +1,6 @@
 # Discord Purge: Privacy Enforcement Unit
 
-Please buy me a coffee! buymeacoffee.com/dircordpurge
+Please buy me a coffee! buymeacoffee.com/discordpurge
 
 <div align="center">
   <img src="src-tauri/icons/128x128.png" alt="Discord Purge Logo" width="128" height="128">
@@ -22,7 +22,7 @@ Discord Purge is a high-performance, high-security desktop utility designed for 
 
 If you find Discord Purge useful and wish to support its continued development, consider buying me a coffee! Your contribution helps maintain and improve this tool.
 
-[**Buy me a coffee: buymeacoffee.com/dircordpurge**](https://buymeacoffee.com/dircordpurge)
+[**Buy me a coffee: buymeacoffee.com/dircordpurge**](https://buymeacoffee.com/discordpurge)
 
 ---
 
