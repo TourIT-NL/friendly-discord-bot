@@ -37,7 +37,7 @@ rsa = "0.9.7"
 sha2 = "0.10.8"
 
 is_elevated = "0.1.2"
-windows-sys = { version = "0.52", features = ["Win32_UI_Shell", "Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61", features = ["Win32_UI_Shell", "Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
 
 [build-dependencies]
 tauri-build = { version = "2.5.5", features = [] }
