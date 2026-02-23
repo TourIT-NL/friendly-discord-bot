@@ -8,6 +8,7 @@ use crate::core::vault::Vault;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, Window};
+use tauri_plugin_shell::ShellExt;
 
 #[tauri::command]
 pub async fn bury_audit_log(
