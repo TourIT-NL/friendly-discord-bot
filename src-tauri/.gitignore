@@ -1,1 +1,55 @@
 /target
+gemini.md
+output.txt
+discord.com.har
+discordtoken.txt
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+dist/
+.env
+.env.local
+.env.*.local
+
+# Rust
+target/
+**/*.rs.bk
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+src-tauri/bin/
+
+# Build artifacts
+build/
+pkg/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+*.icloud
+
+# VSCode
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+
+# IntelliJ
+.idea/
+*.iml
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+gemini.md
+output.txt
+discord.com.har
+discordtoken.txt
