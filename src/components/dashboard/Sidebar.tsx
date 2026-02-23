@@ -8,6 +8,7 @@ import {
   Ghost,
   LogOut,
   Terminal,
+  Heart,
 } from "lucide-react";
 import { SectionLabel } from "../common/M3Components";
 import { DiscordIdentity, Guild, DiscordUser } from "../../types/discord";
@@ -24,6 +25,7 @@ interface SidebarProps {
   onStealthWipe: () => void;
   onNitroWipe: () => void;
   onLogout: () => void;
+  onOpenDonateLink: () => void;
 }
 
 export const Sidebar = ({
@@ -37,6 +39,7 @@ export const Sidebar = ({
   onStealthWipe,
   onNitroWipe,
   onLogout,
+  onOpenDonateLink,
 }: SidebarProps) => {
   const { showDevLog, toggleDevLog } = useAuthStore();
 
@@ -177,6 +180,12 @@ export const Sidebar = ({
       </div>
 
       <div className="mt-auto space-y-4">
+        <button
+          onClick={onOpenDonateLink}
+          className="w-full flex items-center justify-center gap-3 p-4 rounded-m3-xl bg-m3-tertiaryContainer/20 text-m3-tertiary hover:bg-m3-tertiaryContainer/40 transition-all border border-m3-tertiary/20 font-black uppercase tracking-widest text-[10px] italic"
+        >
+          <Heart className="w-4 h-4" /> Support Development
+        </button>
         <button
           onClick={toggleDevLog}
           className={`w-full flex items-center justify-center gap-3 p-4 rounded-m3-xl transition-all border font-black uppercase tracking-widest text-[10px] italic ${showDevLog ? "bg-m3-primary/20 text-m3-primary border-m3-primary/40" : "bg-white/5 text-m3-onSurfaceVariant border-white/10 hover:bg-white/10"}`}

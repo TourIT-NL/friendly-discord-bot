@@ -131,7 +131,8 @@ fn main() {
             api::discord::pause_operation,
             api::discord::resume_operation,
             api::discord::abort_operation,
-            api::discord::get_operation_status
+            api::discord::get_operation_status,
+            api::discord::tools::open_external_link
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| panic!("error while running tauri application: {:?}", e));

@@ -102,6 +102,7 @@ function App() {
     handleAbort,
     handleBuryAuditLog,
     handleWebhookGhosting,
+    handleOpenDonateLink,
     startAction,
   } = useDiscordOperations(handleApiError);
 
@@ -322,6 +323,7 @@ function App() {
             setSelectedGuildsToLeave={setSelectedGuildsToLeave}
             handleBuryAuditLog={handleBuryAuditLog}
             handleWebhookGhosting={handleWebhookGhosting}
+            handleOpenDonateLink={handleOpenDonateLink}
             isLoading={isLoading}
             relationships={relationships}
             selectedRelationships={selectedRelationships}

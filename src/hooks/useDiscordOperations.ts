@@ -217,6 +217,16 @@ export const useDiscordOperations = (
     }
   };
 
+  const handleOpenDonateLink = async () => {
+    try {
+      await invoke("open_external_link", {
+        url: "https://buymeacoffee.com/dircordpurge",
+      });
+    } catch (err: any) {
+      handleApiError(err, "Failed to open donate link.");
+    }
+  };
+
   const startAction = async () => {
     const required =
       mode === "messages" ? "DELETE" : mode === "servers" ? "LEAVE" : "REMOVE";
@@ -307,6 +317,7 @@ export const useDiscordOperations = (
     handleAbort,
     handleBuryAuditLog,
     handleWebhookGhosting,
+    handleOpenDonateLink,
     startAction,
   };
 };

@@ -47,6 +47,7 @@ interface DashboardViewProps {
   setSelectedGuildsToLeave: (ids: Set<string>) => void;
   handleBuryAuditLog: () => void;
   handleWebhookGhosting: () => void;
+  handleOpenDonateLink: () => void;
   isLoading: boolean;
   relationships: Relationship[] | null;
   selectedRelationships: Set<string>;
@@ -91,6 +92,7 @@ export const DashboardView = ({
   setSelectedGuildsToLeave,
   handleBuryAuditLog,
   handleWebhookGhosting,
+  handleOpenDonateLink,
   isLoading,
   relationships,
   selectedRelationships,
@@ -108,6 +110,7 @@ export const DashboardView = ({
       onStealthWipe={handleStealthWipe}
       onNitroWipe={handleNitroWipe}
       onLogout={handleLogout}
+      onOpenDonateLink={handleOpenDonateLink}
     />
     <main className="flex-1 flex flex-col min-w-0">
       <AnimatePresence mode="wait">
