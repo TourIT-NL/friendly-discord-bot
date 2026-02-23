@@ -12,7 +12,11 @@ pub async fn fetch_oauth_tokens(app_handle: AppHandle) -> Result<serde_json::Val
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
 
-    Logger::info(&app_handle, "[SECURITY] Auditing third-party OAuth access", None);
+    Logger::info(
+        &app_handle,
+        "[SECURITY] Auditing third-party OAuth access",
+        None,
+    );
 
     api_handle
         .send_request(
@@ -30,7 +34,11 @@ pub async fn revoke_oauth_token(app_handle: AppHandle, token_id: String) -> Resu
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
 
-    Logger::warn(&app_handle, &format!("[SECURITY] Revoking authorized app: {}", token_id), None);
+    Logger::warn(
+        &app_handle,
+        &format!("[SECURITY] Revoking authorized app: {}", token_id),
+        None,
+    );
 
     let _ = api_handle
         .send_request(
@@ -46,11 +54,17 @@ pub async fn revoke_oauth_token(app_handle: AppHandle, token_id: String) -> Resu
 }
 
 #[tauri::command]
-pub async fn fetch_application_identities(app_handle: AppHandle) -> Result<serde_json::Value, AppError> {
+pub async fn fetch_application_identities(
+    app_handle: AppHandle,
+) -> Result<serde_json::Value, AppError> {
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
 
-    Logger::info(&app_handle, "[SECURITY] Fetching authorized application identities", None);
+    Logger::info(
+        &app_handle,
+        "[SECURITY] Fetching authorized application identities",
+        None,
+    );
 
     api_handle
         .send_request(

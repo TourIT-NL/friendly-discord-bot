@@ -199,7 +199,11 @@ pub async fn set_max_privacy_settings(app_handle: AppHandle) -> Result<(), AppEr
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
 
-    Logger::info(&app_handle, "[GDPR] Applying maximum privacy hardening via Protobuf", None);
+    Logger::info(
+        &app_handle,
+        "[GDPR] Applying maximum privacy hardening via Protobuf",
+        None,
+    );
 
     let proto_bytes = crate::core::protobuf::encode_max_privacy();
     let proto_b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, proto_bytes);

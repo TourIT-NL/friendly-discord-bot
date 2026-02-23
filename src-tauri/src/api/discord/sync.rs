@@ -17,15 +17,15 @@ pub async fn fetch_guilds(app_handle: AppHandle) -> Result<Vec<Guild>, AppError>
         None,
     );
 
-            let response_value = api_handle
-                .send_request(
-                    reqwest::Method::GET,
-                    "https://discord.com/api/v9/users/@me/guilds",
-                    None,
-                    &token,
-                    is_bearer,
-                )
-                .await?; // Will return serde_json::Value if successful
+    let response_value = api_handle
+        .send_request(
+            reqwest::Method::GET,
+            "https://discord.com/api/v9/users/@me/guilds",
+            None,
+            &token,
+            is_bearer,
+        )
+        .await?; // Will return serde_json::Value if successful
     serde_json::from_value(response_value).map_err(AppError::from)
 }
 
@@ -57,7 +57,13 @@ pub async fn fetch_channels(
             serde_json::from_value(response_value).map_err(AppError::from)?;
         Ok(channels
             .into_iter()
-            .filter(|c| c.channel_type == 0 || c.channel_type == 5 || c.channel_type == 11 || c.channel_type == 12 || c.channel_type == 15)
+            .filter(|c| {
+                c.channel_type == 0
+                    || c.channel_type == 5
+                    || c.channel_type == 11
+                    || c.channel_type == 12
+                    || c.channel_type == 15
+            })
             .collect())
     } else {
         Logger::info(&app_handle, "[SYNC] Fetching DM nodes...", None);
@@ -102,11 +108,9 @@ pub async fn fetch_channels(
                 });
             }
         }
-            Ok(result)
+        Ok(result)
     }
 }
-
-
 
 #[tauri::command]
 pub async fn fetch_relationships(app_handle: AppHandle) -> Result<Vec<Relationship>, AppError> {
@@ -158,7 +162,10 @@ pub async fn fetch_preview_messages(
         Err(e) => {
             Logger::warn(
                 &app_handle,
-                &format!("[SYNC] Failed to fetch preview for {}: {}", channel_id, e.user_message),
+                &format!(
+                    "[SYNC] Failed to fetch preview for {}: {}",
+                    channel_id, e.user_message
+                ),
                 None,
             );
             Ok(vec![])

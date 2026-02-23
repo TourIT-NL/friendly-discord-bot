@@ -57,7 +57,7 @@ impl Vault {
 
     pub fn clear_all_data(app: &AppHandle) -> Result<(), AppError> {
         Logger::info(app, "[Vault] Initiating full data wipe...", None);
-        
+
         // Clear all identities
         let identities = Self::list_identities(app);
         for identity in identities {

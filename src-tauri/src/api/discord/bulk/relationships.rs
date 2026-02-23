@@ -72,6 +72,10 @@ pub async fn bulk_remove_relationships(
     }
     op_manager.state.reset();
     let _ = window.emit("relationship_complete", ());
-    Logger::info(&app_handle, "[OP] Bulk relationship removal completed", None);
+    Logger::info(
+        &app_handle,
+        "[OP] Bulk relationship removal completed",
+        None,
+    );
     Ok(())
 }

@@ -63,15 +63,17 @@ impl RateLimiterActor {
             loop {
                 tokio::time::sleep(Duration::from_secs(45)).await;
                 let op_manager = app_handle_clone.state::<OperationManager>();
-                
+
                 // Only send heartbeat if an operation is currently running or app is in active use
                 if op_manager.state.is_running.load(Ordering::SeqCst) {
-                    let (token, is_bearer) = match crate::core::vault::Vault::get_active_token(&app_handle_clone) {
-                        Ok(t) => t,
-                        _ => continue,
-                    };
+                    let (token, is_bearer) =
+                        match crate::core::vault::Vault::get_active_token(&app_handle_clone) {
+                            Ok(t) => t,
+                            _ => continue,
+                        };
 
-                    let mut req = client_clone.post("https://discord.com/api/v9/users/@me/meaningfully-online");
+                    let mut req = client_clone
+                        .post("https://discord.com/api/v9/users/@me/meaningfully-online");
                     if is_bearer {
                         req = req.header(header::AUTHORIZATION, format!("Bearer {}", token));
                     } else {
@@ -148,14 +150,18 @@ impl RateLimiterActor {
 
                     // 3. Execution
                     let mut req_builder = client.request(request.method.clone(), &request.url);
-                    
+
                     // Contextual Referer Injection
                     if request.url.contains("/messages") {
-                        req_builder = req_builder.header("referer", "https://discord.com/channels/@me");
-                    } else if request.url.contains("/settings") || request.url.contains("/harvest") {
-                        req_builder = req_builder.header("referer", "https://discord.com/settings/privacy");
+                        req_builder =
+                            req_builder.header("referer", "https://discord.com/channels/@me");
+                    } else if request.url.contains("/settings") || request.url.contains("/harvest")
+                    {
+                        req_builder =
+                            req_builder.header("referer", "https://discord.com/settings/privacy");
                     } else if request.url.contains("/billing") {
-                        req_builder = req_builder.header("referer", "https://discord.com/settings/billing");
+                        req_builder =
+                            req_builder.header("referer", "https://discord.com/settings/billing");
                     }
 
                     if request.is_bearer {

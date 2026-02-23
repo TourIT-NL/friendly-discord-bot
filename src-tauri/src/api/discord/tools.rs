@@ -185,13 +185,17 @@ pub async fn open_discord_url_for_action(
     let url = match action_type.as_str() {
         "account_deletion" => "https://discord.com/settings/account",
         "data_privacy" => "https://discord.com/settings/privacy",
-        "gdpr_request" => "https://support.discord.com/hc/en-us/articles/360004027692-Requesting-a-Copy-of-your-Data",
+        "gdpr_request" => {
+            "https://support.discord.com/hc/en-us/articles/360004027692-Requesting-a-Copy-of-your-Data"
+        }
         "support_portal" => "https://support.discord.com/hc/en-us/requests/new",
-        _ => return Err(AppError {
-            user_message: "Unknown action type.".into(),
-            error_code: "invalid_action".into(),
-            ..Default::default()
-        }),
+        _ => {
+            return Err(AppError {
+                user_message: "Unknown action type.".into(),
+                error_code: "invalid_action".into(),
+                ..Default::default()
+            });
+        }
     };
 
     app_handle

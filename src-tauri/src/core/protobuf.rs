@@ -23,7 +23,7 @@ pub fn encode_max_privacy() -> Vec<u8> {
             contact_sync_enabled: Some(false),
         }),
     };
-    
+
     let mut buf = Vec::new();
     settings.encode(&mut buf).unwrap_or_default();
     buf

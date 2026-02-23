@@ -66,7 +66,7 @@ pub async fn bulk_delete_messages(
         }
 
         let channel_info_url = format!("https://discord.com/api/v9/channels/{}", channel_id);
-        
+
         // Check pause/abort before channel info fetch
         op_manager.state.wait_if_paused().await;
         if op_manager.state.should_abort.load(Ordering::SeqCst) {
@@ -74,22 +74,34 @@ pub async fn bulk_delete_messages(
         }
 
         let channel_info_res = api_handle
-            .send_request(reqwest::Method::GET, &channel_info_url, None, &token, is_bearer)
+            .send_request(
+                reqwest::Method::GET,
+                &channel_info_url,
+                None,
+                &token,
+                is_bearer,
+            )
             .await;
 
         let channel_type = match channel_info_res {
             Ok(value) => value["type"].as_u64().unwrap_or(0),
             Err(e) => {
                 if e.error_code.contains("403") || e.user_message.contains("403") {
-                     Logger::warn(
+                    Logger::warn(
                         &app_handle,
-                        &format!("[OP] Access denied (403) for channel {}. Assuming guild channel and skipping.", channel_id),
+                        &format!(
+                            "[OP] Access denied (403) for channel {}. Assuming guild channel and skipping.",
+                            channel_id
+                        ),
                         None,
                     );
                 } else {
                     Logger::warn(
                         &app_handle,
-                        &format!("[OP] Failed to get channel info for channel {}: {}. Skipping channel.", channel_id, e.user_message),
+                        &format!(
+                            "[OP] Failed to get channel info for channel {}: {}. Skipping channel.",
+                            channel_id, e.user_message
+                        ),
                         None,
                     );
                 }
@@ -99,14 +111,20 @@ pub async fn bulk_delete_messages(
 
         Logger::info(
             &app_handle,
-            &format!("[OP] Channel {} type: {} (Is OAuth token: {})", channel_id, channel_type, is_bearer),
+            &format!(
+                "[OP] Channel {} type: {} (Is OAuth token: {})",
+                channel_id, channel_type, is_bearer
+            ),
             None,
         );
 
         if channel_type == 0 {
             Logger::warn(
                 &app_handle,
-                &format!("[OP] Skipping guild text channel {} for message purge due to user token limitations.", channel_id),
+                &format!(
+                    "[OP] Skipping guild text channel {} for message purge due to user token limitations.",
+                    channel_id
+                ),
                 None,
             );
             continue; // Skip this channel
@@ -152,7 +170,10 @@ pub async fn bulk_delete_messages(
                 Err(e) => {
                     Logger::warn(
                         &app_handle,
-                        &format!("[OP] Failed to fetch messages from channel {}: {}", channel_id, e.user_message),
+                        &format!(
+                            "[OP] Failed to fetch messages from channel {}: {}",
+                            channel_id, e.user_message
+                        ),
                         None,
                     );
                     consecutive_failures += 1;
@@ -278,7 +299,7 @@ pub async fn bulk_delete_messages(
                         if op_manager.state.should_abort.load(Ordering::SeqCst) {
                             break 'channel_loop;
                         }
-                        
+
                         let del_url = format!(
                             "https://discord.com/api/v9/channels/{}/messages/{}",
                             channel_id, msg_id
@@ -368,7 +389,7 @@ pub async fn bulk_delete_messages(
             }
         }
     } // End of channel loop
-    
+
     op_manager.state.reset();
     let _ = window.emit("deletion_complete", ());
     Logger::info(

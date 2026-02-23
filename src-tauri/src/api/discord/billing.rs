@@ -12,7 +12,11 @@ pub async fn fetch_payment_sources(app_handle: AppHandle) -> Result<serde_json::
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
 
-    Logger::info(&app_handle, "[ACCOUNT] Fetching stored payment methods", None);
+    Logger::info(
+        &app_handle,
+        "[ACCOUNT] Fetching stored payment methods",
+        None,
+    );
 
     api_handle
         .send_request(
@@ -26,7 +30,9 @@ pub async fn fetch_payment_sources(app_handle: AppHandle) -> Result<serde_json::
 }
 
 #[tauri::command]
-pub async fn fetch_billing_subscriptions(app_handle: AppHandle) -> Result<serde_json::Value, AppError> {
+pub async fn fetch_billing_subscriptions(
+    app_handle: AppHandle,
+) -> Result<serde_json::Value, AppError> {
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
 

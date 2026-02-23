@@ -56,7 +56,10 @@ pub async fn bulk_leave_guilds(
             Err(e) => {
                 Logger::warn(
                     &app_handle,
-                    &format!("[OP] Failed to leave guild {}: {}", guild_id, e.user_message),
+                    &format!(
+                        "[OP] Failed to leave guild {}: {}",
+                        guild_id, e.user_message
+                    ),
                     None,
                 );
             }

@@ -5,8 +5,8 @@ mod auth;
 mod core;
 
 use crate::api::rate_limiter::{ApiHandle, RateLimiterActor};
-use crate::core::op_manager::OperationManager;
 use crate::core::cleanup::clear_all_app_data;
+use crate::core::op_manager::OperationManager;
 use tauri::Manager;
 use tokio::sync::mpsc;
 use tracing::info;
