@@ -220,7 +220,7 @@ export const useDiscordOperations = (
   const handleOpenDonateLink = async () => {
     try {
       await invoke("open_external_link", {
-        url: "https://buymeacoffee.com/dircordpurge",
+        url: "https://www.buymeacoffee.com/discordpurge",
       });
     } catch (err: any) {
       handleApiError(err, "Failed to open donate link.");
