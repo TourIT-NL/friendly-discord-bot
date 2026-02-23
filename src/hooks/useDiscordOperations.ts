@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAuthStore } from "../store/authStore";
 import { Guild, Channel } from "../types/discord";
@@ -8,11 +8,12 @@ import { useOperationControl } from "./useOperationControl";
 export const useDiscordOperations = (
   handleApiError: (err: any, fallback: string) => void,
 ) => {
-  const { setGuilds, setError, setLoading } = useAuthStore();
+  const { guilds, setGuilds, setError, setLoading } = useAuthStore();
+  const isFetchingGuildsRef = useRef(false);
 
-  const [mode, setMode] = useState<"messages" | "servers" | "identity">(
-    "messages",
-  );
+  const [mode, setMode] = useState<
+    "messages" | "servers" | "identity" | "security" | "privacy" | "account"
+  >("messages");
   const [confirmText, setConfirmText] = useState("");
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,6 +21,11 @@ export const useDiscordOperations = (
   const [onlyAttachments, setOnlyAttachments] = useState(false);
   const [simulation, setSimulation] = useState(false);
   const [closeEmptyDms, setCloseEmptyDms] = useState(false);
+
+  // New Audit States
+  const [authorizedApps, setAuthorizedApps] = useState<any[]>([]);
+  const [gdprStatus, setGdprStatus] = useState<any>(null);
+  const [billingInfo, setBillingInfo] = useState<any>(null);
 
   const {
     selectedGuilds,
@@ -41,6 +47,8 @@ export const useDiscordOperations = (
   const {
     isProcessing,
     setIsProcessing,
+    isComplete,
+    setIsComplete,
     progress,
     setProgress,
     operationStatus,
@@ -49,18 +57,108 @@ export const useDiscordOperations = (
     handlePause,
     handleResume,
     handleAbort,
+    resetProcessing,
   } = useOperationControl();
 
-  const fetchGuilds = useCallback(async () => {
+  const fetchGuilds = useCallback(
+    async (forceRefresh: boolean = false) => {
+      if (!forceRefresh && guilds.length > 0 && !isFetchingGuildsRef.current) {
+        // Guilds already loaded, no need to refetch unless forced
+        return;
+      }
+      if (isFetchingGuildsRef.current) {
+        // Already fetching, prevent concurrent calls
+        return;
+      }
+
+      isFetchingGuildsRef.current = true;
+      setLoading(true);
+      try {
+        setGuilds(await invoke("fetch_guilds"));
+      } catch (err: any) {
+        handleApiError(err, "Failed to load servers.");
+      } finally {
+        setLoading(false);
+        isFetchingGuildsRef.current = false;
+      }
+    },
+    [setLoading, setGuilds, handleApiError, guilds],
+  );
+
+  const fetchSecurityAudit = useCallback(async () => {
     setLoading(true);
     try {
-      setGuilds(await invoke("fetch_guilds"));
+      setAuthorizedApps(await invoke("fetch_oauth_tokens"));
     } catch (err: any) {
-      handleApiError(err, "Failed to load servers.");
+      handleApiError(err, "Failed to audit third-party apps.");
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setGuilds, handleApiError]);
+  }, [setLoading, handleApiError]);
+
+  const fetchPrivacyAudit = useCallback(async () => {
+    setLoading(true);
+    try {
+      setGdprStatus(await invoke("get_harvest_status"));
+    } catch (err: any) {
+      handleApiError(err, "Failed to fetch GDPR status.");
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, handleApiError]);
+
+  const fetchAccountAudit = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [paymentSources, subscriptions] = await Promise.all([
+        invoke("fetch_payment_sources"),
+        invoke("fetch_billing_subscriptions"),
+      ]);
+      setBillingInfo({ paymentSources, subscriptions });
+    } catch (err: any) {
+      handleApiError(err, "Failed to fetch financial footprint.");
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, handleApiError]);
+
+  const handleTriggerHarvest = async () => {
+    setLoading(true);
+    try {
+      await invoke("trigger_data_harvest");
+      setError("GDPR Data Harvest protocol triggered.");
+      fetchPrivacyAudit();
+    } catch (err: any) {
+      handleApiError(err, "Failed to trigger harvest.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMaxPrivacySanitize = async () => {
+    setLoading(true);
+    try {
+      await invoke("set_max_privacy_settings");
+      setError("Maximum privacy hardening applied.");
+    } catch (err: any) {
+      handleApiError(err, "Failed to apply privacy hardening.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRevokeApp = async (tokenId: string) => {
+    setLoading(true);
+    try {
+      await invoke("revoke_oauth_token", { tokenId });
+      setError("Third-party authorization shredded.");
+      fetchSecurityAudit();
+    } catch (err: any) {
+      handleApiError(err, "Failed to revoke access.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchRelationships = useCallback(async () => {
     setLoading(true);
@@ -111,6 +209,19 @@ export const useDiscordOperations = (
     });
 
     if (!selectedGuilds.has(effectiveId)) {
+      // If guild is being added
+      // Check if channels are already cached for this guild
+      if (channelsByGuild.has(effectiveId)) {
+        // Channels already cached, no need to fetch
+        // Just update selectedGuilds and return
+        setSelectedGuilds((prev) => {
+          const next = new Set(prev);
+          next.add(effectiveId);
+          return next;
+        });
+        return; // Exit early, no API call needed
+      }
+
       setLoading(true);
       try {
         const fetchedChannels: Channel[] = await invoke("fetch_channels", {
@@ -227,6 +338,14 @@ export const useDiscordOperations = (
     }
   };
 
+  const handleOpenDiscordUrl = async (actionType: string) => {
+    try {
+      await invoke("open_discord_url_for_action", { actionType });
+    } catch (err: any) {
+      handleApiError(err, "Failed to open Discord gateway.");
+    }
+  };
+
   const startAction = async () => {
     const required =
       mode === "messages" ? "DELETE" : mode === "servers" ? "LEAVE" : "REMOVE";
@@ -287,6 +406,9 @@ export const useDiscordOperations = (
     setSelectedRelationships,
     isProcessing,
     setIsProcessing,
+    isComplete,
+    setIsComplete,
+    resetProcessing,
     progress,
     setProgress,
     confirmText,
@@ -318,6 +440,16 @@ export const useDiscordOperations = (
     handleBuryAuditLog,
     handleWebhookGhosting,
     handleOpenDonateLink,
+    handleOpenDiscordUrl,
+    handleTriggerHarvest,
+    handleMaxPrivacySanitize,
+    handleRevokeApp,
+    fetchSecurityAudit,
+    fetchPrivacyAudit,
+    fetchAccountAudit,
+    authorizedApps,
+    gdprStatus,
+    billingInfo,
     startAction,
   };
 };

@@ -100,6 +100,11 @@ export const useDiscordAuth = () => {
   }, []);
 
   const handleLogout = async () => {
+    try {
+      await invoke("logout");
+    } catch (err) {
+      console.error("Failed to clear active session in backend:", err);
+    }
     reset();
     setView("manual");
   };

@@ -52,7 +52,7 @@ pub async fn validate_token(
     let response_value = api_handle
         .send_request(
             reqwest::Method::GET,
-            "https://discord.com/api/v10/users/@me",
+            "https://discord.com/api/v9/users/@me",
             None,
             token,
             is_bearer,
@@ -110,6 +110,11 @@ pub async fn switch_identity(
 #[tauri::command]
 pub async fn remove_identity(app_handle: AppHandle, id: String) -> Result<(), AppError> {
     Vault::remove_identity(&app_handle, &id)
+}
+
+#[tauri::command]
+pub async fn logout(app_handle: AppHandle) -> Result<(), AppError> {
+    Vault::clear_active_session(&app_handle)
 }
 
 #[tauri::command]

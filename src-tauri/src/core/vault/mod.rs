@@ -8,6 +8,8 @@ pub mod identity;
 pub use identity::DiscordIdentity;
 
 use crate::core::error::AppError;
+use crate::core::logger::Logger;
+use crate::core::vault::fallback::FallbackManager; // Added import
 use tauri::AppHandle;
 
 pub struct Vault;
@@ -44,5 +46,35 @@ impl Vault {
 
     pub fn get_credential(app: &AppHandle, key: &str) -> Result<String, AppError> {
         credential::CredentialManager::get_credential(app, key)
+    }
+
+    pub fn clear_active_session(app: &AppHandle) -> Result<(), AppError> {
+        let _ = identity::IdentityManager::clear_keyring_entry("active_account");
+        let _ = FallbackManager::delete_fallback(app, "active_account");
+        Logger::info(app, "[Vault] Active session cleared.", None);
+        Ok(())
+    }
+
+    pub fn clear_all_data(app: &AppHandle) -> Result<(), AppError> {
+        Logger::info(app, "[Vault] Initiating full data wipe...", None);
+        
+        // Clear all identities
+        let identities = Self::list_identities(app);
+        for identity in identities {
+            let _ = Self::remove_identity(app, &identity.id);
+        }
+
+        // Clear active_account and identity_index
+        let _ = identity::IdentityManager::clear_keyring_entry("active_account");
+        let _ = FallbackManager::delete_fallback(app, "active_account");
+        let _ = identity::IdentityManager::clear_keyring_entry("identity_index");
+        let _ = FallbackManager::delete_fallback(app, "identity_index");
+
+        // Clear credentials
+        let _ = credential::CredentialManager::remove_credential(app, "client_id");
+        let _ = credential::CredentialManager::remove_credential(app, "client_secret");
+
+        Logger::info(app, "[Vault] All application data cleared.", None);
+        Ok(())
     }
 }

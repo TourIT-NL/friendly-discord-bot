@@ -70,4 +70,13 @@ impl CredentialManager {
             }
         })
     }
+
+    pub fn remove_credential(app: &AppHandle, key: &str) -> Result<(), AppError> {
+        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key) {
+            let _ = entry.delete_credential();
+        }
+        let _ = super::fallback::FallbackManager::delete_fallback(app, key);
+        Logger::debug(app, &format!("[Vault] Removed {} from storage", key), None);
+        Ok(())
+    }
 }

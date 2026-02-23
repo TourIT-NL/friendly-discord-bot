@@ -6,6 +6,7 @@ mod core;
 
 use crate::api::rate_limiter::{ApiHandle, RateLimiterActor};
 use crate::core::op_manager::OperationManager;
+use crate::core::cleanup::clear_all_app_data;
 use tauri::Manager;
 use tokio::sync::mpsc;
 use tracing::info;
@@ -114,6 +115,7 @@ fn main() {
             auth::cancel_qr_login,
             auth::login_with_rpc,
             auth::get_current_user,
+            auth::logout,
             auth::list_identities,
             auth::switch_identity,
             auth::remove_identity,
@@ -132,7 +134,18 @@ fn main() {
             api::discord::resume_operation,
             api::discord::abort_operation,
             api::discord::get_operation_status,
-            api::discord::tools::open_external_link
+            api::discord::tools::open_external_link,
+            api::discord::tools::open_discord_url_for_action,
+            api::discord::trigger_data_harvest,
+            api::discord::get_harvest_status,
+            api::discord::fetch_oauth_tokens,
+            api::discord::revoke_oauth_token,
+            api::discord::fetch_application_identities,
+            api::discord::fetch_payment_sources,
+            api::discord::fetch_billing_subscriptions,
+            api::discord::fetch_entitlements,
+            api::discord::set_max_privacy_settings,
+            clear_all_app_data
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| panic!("error while running tauri application: {:?}", e));

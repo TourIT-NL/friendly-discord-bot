@@ -31,7 +31,11 @@ export const M3Card = ({
 }) => (
   <div
     onClick={onClick}
-    className={`m3-card ${onClick ? "cursor-pointer hover:bg-m3-surfaceVariant/50 active:scale-[0.98]" : ""} ${className}`}
+    className={`m3-card transition-all duration-300 ${
+      onClick
+        ? "cursor-pointer hover:bg-m3-surfaceVariant/60 hover:shadow-lg active:scale-[0.99] focus-within:ring-2 focus-within:ring-m3-primary/50"
+        : "hover:border-m3-outlineVariant/40"
+    } ${className}`}
   >
     {children}
   </div>

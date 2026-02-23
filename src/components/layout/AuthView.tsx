@@ -69,7 +69,7 @@ export const AuthView = ({
         </motion.h1>
         <p className="text-xs text-m3-primary font-bold uppercase tracking-[0.8em] flex items-center justify-center gap-4 opacity-60">
           <span className="w-12 h-px bg-m3-primary/40" />
-          Privacy Enforcement Unit v5.1
+          Privacy Enforcement Unit v1.2.0
           <span className="w-12 h-px bg-m3-primary/40" />
         </p>
       </div>

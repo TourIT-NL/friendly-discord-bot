@@ -13,6 +13,7 @@ import { DeveloperLog } from "./components/dashboard/DeveloperLog";
 import { useDiscordAuth } from "./hooks/useDiscordAuth";
 import { useDiscordOperations } from "./hooks/useDiscordOperations";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 function App() {
   const {
@@ -73,6 +74,9 @@ function App() {
     setSelectedRelationships,
     isProcessing,
     setIsProcessing,
+    isComplete,
+    setIsComplete,
+    resetProcessing,
     progress,
     setProgress,
     confirmText,
@@ -132,9 +136,7 @@ function App() {
       unlisteners.push(
         await listen("auth_success", (event) => {
           setAuthenticated(event.payload as DiscordUser);
-          setView("dashboard");
-          fetchGuilds();
-          fetchIdentities();
+          fetchGuilds(true);
         }),
       );
       unlisteners.push(
@@ -180,9 +182,8 @@ function App() {
       );
       unlisteners.push(
         await listen("deletion_complete", () => {
-          setIsProcessing(false);
-          setProgress(null);
-          fetchGuilds();
+          setIsComplete(true);
+          fetchGuilds(true);
           getOperationStatus();
         }),
       );
@@ -193,9 +194,8 @@ function App() {
       );
       unlisteners.push(
         await listen("leave_complete", () => {
-          setIsProcessing(false);
-          setProgress(null);
-          fetchGuilds();
+          setIsComplete(true);
+          fetchGuilds(true);
           getOperationStatus();
         }),
       );
@@ -206,8 +206,7 @@ function App() {
       );
       unlisteners.push(
         await listen("relationship_complete", () => {
-          setIsProcessing(false);
-          setProgress(null);
+          setIsComplete(true);
           fetchRelationships();
           getOperationStatus();
         }),
@@ -219,8 +218,7 @@ function App() {
       );
       unlisteners.push(
         await listen("audit_log_complete", () => {
-          setIsProcessing(false);
-          setProgress(null);
+          setIsComplete(true);
           getOperationStatus();
           setError("Audit Log burial complete.");
         }),
@@ -232,10 +230,25 @@ function App() {
       );
       unlisteners.push(
         await listen("webhook_complete", () => {
-          setIsProcessing(false);
-          setProgress(null);
+          setIsComplete(true);
           getOperationStatus();
           setError("Webhook Ghosting complete.");
+        }),
+      );
+
+      // Window close listener - Ensure we stop operations but DON'T wipe user data
+      unlisteners.push(
+        await getCurrentWindow().onCloseRequested(async (event) => {
+          // Check if we are processing something
+          const state = useAuthStore.getState();
+          if (useAuthStore.getState().isLoading) {
+            // If we are in the middle of a login or something, we might want to wait or just close
+            console.log("App closing during loading state.");
+          }
+
+          // Just close the window. We don't want to clear_all_app_data here
+          // because that wipes the saved sessions/credentials!
+          await getCurrentWindow().close();
         }),
       );
     };
@@ -335,6 +348,8 @@ function App() {
         isLoading={isLoading}
         operationStatus={operationStatus}
         progress={progress}
+        isComplete={isComplete}
+        onReset={resetProcessing}
         mode={mode}
         onPause={handlePause}
         onResume={handleResume}

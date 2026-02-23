@@ -20,6 +20,7 @@ pub async fn bury_audit_log(
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
     let op_manager = app_handle.state::<OperationManager>();
+    op_manager.state.prepare();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
     if is_bearer {
@@ -38,7 +39,7 @@ pub async fn bury_audit_log(
     let original_channel_value = api_handle
         .send_request(
             reqwest::Method::GET,
-            &format!("https://discord.com/api/v10/channels/{}", channel_id),
+            &format!("https://discord.com/api/v9/channels/{}", channel_id),
             None,
             &token,
             is_bearer,
@@ -65,7 +66,7 @@ pub async fn bury_audit_log(
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                &format!("https://discord.com/api/v10/channels/{}", channel_id),
+                &format!("https://discord.com/api/v9/channels/{}", channel_id),
                 Some(serde_json::json!({ "name": new_name })),
                 &token,
                 is_bearer,
@@ -78,7 +79,7 @@ pub async fn bury_audit_log(
         let _ = api_handle
             .send_request(
                 reqwest::Method::PATCH,
-                &format!("https://discord.com/api/v10/channels/{}", channel_id),
+                &format!("https://discord.com/api/v9/channels/{}", channel_id),
                 Some(serde_json::json!({ "name": original_channel_name })),
                 &token,
                 is_bearer,
@@ -102,6 +103,7 @@ pub async fn webhook_ghosting(
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
     let op_manager = app_handle.state::<OperationManager>();
+    op_manager.state.prepare();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
     if is_bearer {
@@ -121,7 +123,7 @@ pub async fn webhook_ghosting(
     let webhooks_value = api_handle
         .send_request(
             reqwest::Method::GET,
-            &format!("https://discord.com/api/v10/guilds/{}/webhooks", guild_id),
+            &format!("https://discord.com/api/v9/guilds/{}/webhooks", guild_id),
             None,
             &token,
             is_bearer,
@@ -151,7 +153,7 @@ pub async fn webhook_ghosting(
             let _ = api_handle
                 .send_request(
                     reqwest::Method::DELETE,
-                    &format!("https://discord.com/api/v10/webhooks/{}", webhook_id),
+                    &format!("https://discord.com/api/v9/webhooks/{}", webhook_id),
                     None,
                     &token,
                     is_bearer,
@@ -173,6 +175,33 @@ pub async fn webhook_ghosting(
         None,
     );
     Ok(())
+}
+
+#[tauri::command]
+pub async fn open_discord_url_for_action(
+    app_handle: AppHandle,
+    action_type: String,
+) -> Result<(), AppError> {
+    let url = match action_type.as_str() {
+        "account_deletion" => "https://discord.com/settings/account",
+        "data_privacy" => "https://discord.com/settings/privacy",
+        "gdpr_request" => "https://support.discord.com/hc/en-us/articles/360004027692-Requesting-a-Copy-of-your-Data",
+        "support_portal" => "https://support.discord.com/hc/en-us/requests/new",
+        _ => return Err(AppError {
+            user_message: "Unknown action type.".into(),
+            error_code: "invalid_action".into(),
+            ..Default::default()
+        }),
+    };
+
+    app_handle
+        .opener()
+        .open_url(url, None::<String>)
+        .map_err(|e| AppError {
+            user_message: "Failed to open Discord gateway.".into(),
+            error_code: "external_link_error".into(),
+            technical_details: Some(format!("Error opening URL: {}", e)),
+        })
 }
 
 #[tauri::command]

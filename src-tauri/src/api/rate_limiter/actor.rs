@@ -4,10 +4,14 @@ use crate::api::discord_routes::get_discord_route;
 use crate::api::rate_limiter::types::{ApiRequest, BucketInfo};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
+use crate::core::op_manager::OperationManager;
+use rand::Rng;
 use reqwest::{Client, Response, header};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
+use tauri::Manager;
 use tokio::sync::{Mutex, mpsc};
 
 pub struct RateLimiterActor {
@@ -22,10 +26,11 @@ impl RateLimiterActor {
     pub fn new(inbox: mpsc::Receiver<ApiRequest>, app_handle: tauri::AppHandle) -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(30))
-            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Norton/144.0.0.0")
             .default_headers({
                 let mut headers = header::HeaderMap::new();
-                headers.insert("x-super-properties", header::HeaderValue::from_static("eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6ImVuLVVTIiwiaGFzX2ljbGludF9tb2RzIjpmYWxzZSwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEyMC4wLjAuMCBTYWZhcmkvNTM3LjM2IiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTIwLjAuMC4wIiwib3NfdmVyc2lvbiI6IjEwIiwicmVmZXJyZXIiOiIiLCJyZWZlcnJpbmdfZG9tYWluIjoiIiwiZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfYnVpbGRfbnVtYmVyIjo5OTk5OSwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbH0="));
+                headers.insert("x-super-properties", header::HeaderValue::from_static("eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6ImVuLVVTIiwiaGFzX2NsaWVudF9tb2RzIjpmYWxzZSwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzE0NC4wLjAuMCBTYWZhcmkvNTM3LjM2IE5vcnRvbi8xNDQuMC4wLjAiLCJicm93c2VyX3ZlcnNpb24iOiIxNDQuMC4wLjAiLCJvc192ZXJzaW9uIjoiMTAiLCJyZWZlcnJlciI6IiIsInJlZmVycmluZ19kb21haW4iOiIiLCJyZWZlcnJlcl9jdXJyZW50IjoiaHR0cHM6Ly9kaXNjb3JkLmNvbS8iLCJyZWZlcnJpbmdfZG9tYWluX2N1cnJlbnQiOiJkaXNjb3JkLmNvbSIsInJlbGVhc2VfY2hhbm5lbCI6InN0YWJsZSIsImNsaWVudF9idWlsZF9udW1iZXIiOjUwMDMzNCwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbCwiY2xpZW50X2xhdW5jaF9pZCI6ImE3ZTBhNDczLTY5ZTAtNDE4Yi05M2ZlLWVlNjRkNTk2NGRhMSIsImxhdW5jaF9zaWduYXR1cmUiOiJhZDMxNjA4Mi1jNTRiLTQ1M2EtOGE3ZS0wMzk5NzgwODU0YmEiLCJjbGllbnRfYXBwX3N0YXRlIjoiZm9jdXNlZCIsImNsaWVudF9oZWFydGJlYXRfc2Vzc2lvbl9pZCI6IjNkMjJiZGZkLTlkN2MtNDM3MS1iNDllLWRhN2U3YzhlYzI2ZSJ9"));
+                headers.insert("origin", header::HeaderValue::from_static("https://discord.com"));
                 headers
             })
             .build()
@@ -51,7 +56,44 @@ impl RateLimiterActor {
             None,
         );
 
+        // Start background heartbeat task
+        let client_clone = self.client.clone();
+        let app_handle_clone = self.app_handle.clone();
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(Duration::from_secs(45)).await;
+                let op_manager = app_handle_clone.state::<OperationManager>();
+                
+                // Only send heartbeat if an operation is currently running or app is in active use
+                if op_manager.state.is_running.load(Ordering::SeqCst) {
+                    let (token, is_bearer) = match crate::core::vault::Vault::get_active_token(&app_handle_clone) {
+                        Ok(t) => t,
+                        _ => continue,
+                    };
+
+                    let mut req = client_clone.post("https://discord.com/api/v9/users/@me/meaningfully-online");
+                    if is_bearer {
+                        req = req.header(header::AUTHORIZATION, format!("Bearer {}", token));
+                    } else {
+                        req = req.header(header::AUTHORIZATION, token);
+                    }
+
+                    let _ = req.send().await;
+                }
+            }
+        });
+
         while let Some(request) = self.inbox.recv().await {
+            // Block telemetry calls entirely at the dispatcher level
+            if request.url.contains("/beaker") || request.url.contains("/metrics") {
+                let _ = request.response_tx.send(Err(AppError {
+                    user_message: "Telemetry blocked by Privacy Guard".into(),
+                    error_code: "telemetry_blocked".into(),
+                    ..Default::default()
+                }));
+                continue;
+            }
+
             let client = self.client.clone();
             let buckets_map = self.buckets.clone();
             let global_throttle = self.global_reset_at.clone();
@@ -63,6 +105,10 @@ impl RateLimiterActor {
                 const MAX_RETRIES: u32 = 3;
 
                 loop {
+                    // Apply human-like jitter before every request
+                    let jitter = rand::thread_rng().gen_range(50..250);
+                    tokio::time::sleep(Duration::from_millis(jitter)).await;
+
                     let now = Instant::now();
 
                     // 1. Global Wait
@@ -102,6 +148,16 @@ impl RateLimiterActor {
 
                     // 3. Execution
                     let mut req_builder = client.request(request.method.clone(), &request.url);
+                    
+                    // Contextual Referer Injection
+                    if request.url.contains("/messages") {
+                        req_builder = req_builder.header("referer", "https://discord.com/channels/@me");
+                    } else if request.url.contains("/settings") || request.url.contains("/harvest") {
+                        req_builder = req_builder.header("referer", "https://discord.com/settings/privacy");
+                    } else if request.url.contains("/billing") {
+                        req_builder = req_builder.header("referer", "https://discord.com/settings/billing");
+                    }
+
                     if request.is_bearer {
                         req_builder = req_builder.header(
                             header::AUTHORIZATION,
@@ -250,7 +306,7 @@ impl RateLimiterActor {
 
             let mut wait = Duration::from_secs_f32(retry_after);
             if bucket.consecutive_429s > 1 {
-                wait += Duration::from_secs(2u64.pow(bucket.consecutive_429s.min(5)));
+                wait += Duration::from_secs(3u64.pow(bucket.consecutive_429s.min(5)));
             }
 
             if headers

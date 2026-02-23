@@ -7,6 +7,8 @@ interface OperationOverlayProps {
   isLoading: boolean;
   operationStatus: OperationStatus;
   progress: Progress | null;
+  isComplete: boolean;
+  onReset: () => void;
   mode: "messages" | "servers" | "identity";
   onPause: () => void;
   onResume: () => void;
@@ -17,12 +19,14 @@ export const OperationOverlay = ({
   isLoading,
   operationStatus,
   progress,
+  isComplete,
+  onReset,
   mode,
   onPause,
   onResume,
   onAbort,
 }: OperationOverlayProps) => {
-  if (!isLoading && !operationStatus.is_running) return null;
+  if (!isLoading && !operationStatus.is_running && !isComplete) return null;
 
   return (
     <motion.div
@@ -31,7 +35,51 @@ export const OperationOverlay = ({
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/95 backdrop-blur-[80px] z-[500] flex flex-col items-center justify-center p-10 text-center"
     >
-      {operationStatus.is_running ? (
+      {isComplete ? (
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="flex flex-col items-center gap-12 max-w-2xl w-full"
+        >
+          <div className="p-10 rounded-[4rem] bg-m3-primaryContainer/10 border-2 border-m3-primary/30 shadow-[0_0_50px_rgba(208,188,255,0.2)]">
+            <ShieldCheck className="w-20 h-20 text-m3-primary shadow-[0_0_30px_rgba(208,188,255,0.5)]" />
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-6xl font-black italic text-white uppercase tracking-tighter leading-none">
+              Protocol Success
+            </h2>
+            <p className="text-[10px] text-m3-primary font-black uppercase tracking-[0.6em] italic">
+              All targets nullified
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-8 w-full px-4">
+            <div className="m3-card !bg-black/40 border-m3-outlineVariant/30 flex flex-col gap-3 items-start !p-8 shadow-xl">
+              <span className="text-[10px] font-black text-m3-onSurfaceVariant uppercase tracking-widest leading-none italic">
+                Final Saturation
+              </span>
+              <p className="text-3xl font-black text-m3-primary italic uppercase tracking-tighter">
+                {progress?.total} / {progress?.total}
+              </p>
+            </div>
+            <div className="m3-card !bg-black/40 border-m3-outlineVariant/30 flex flex-col gap-3 items-start !p-8 shadow-xl">
+              <span className="text-[10px] font-black text-m3-onSurfaceVariant uppercase tracking-widest leading-none italic">
+                {mode === "messages" ? "Purged" : "Severed"}
+              </span>
+              <p className="text-3xl font-black text-m3-error italic uppercase tracking-tighter leading-none">
+                {mode === "messages"
+                  ? progress?.deleted_count
+                  : progress?.total}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onReset}
+            className="m3-button-primary !px-20 !py-6 shadow-2xl shadow-m3-primary/20 !text-lg"
+          >
+            Return to Dashboard
+          </button>
+        </motion.div>
+      ) : operationStatus.is_running ? (
         <div className="w-full max-w-2xl flex flex-col items-center gap-16 px-10">
           <motion.div
             animate={{ scale: [1, 1.15, 1], rotate: [0, 8, -8, 0] }}
@@ -43,33 +91,37 @@ export const OperationOverlay = ({
 
           <div className="space-y-6 w-full px-10">
             <div className="space-y-2">
-              <h2 className="text-6xl font-black italic text-white uppercase tracking-tighter leading-none">
+              <h2 className="text-6xl font-black italic text-white uppercase tracking-tighter leading-none drop-shadow-2xl">
                 {mode === "messages"
                   ? "Purging Nodes"
                   : mode === "servers"
                     ? "Severing Nodes"
                     : "Nullifying Identity"}
               </h2>
-              <p className="text-[10px] text-m3-primary font-black uppercase tracking-[0.6em] animate-pulse">
-                Execution Loop: Active
-              </p>
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-m3-error animate-ping" />
+                <p className="text-[10px] text-m3-primary font-black uppercase tracking-[0.6em] animate-pulse">
+                  Execution Loop: Active
+                </p>
+              </div>
             </div>
 
             <div className="w-full space-y-12 pt-10">
               <div className="space-y-5">
                 <div className="flex justify-between text-[11px] font-black text-m3-onSurfaceVariant uppercase tracking-[0.2em] px-6 leading-none">
                   <span>Saturation Level</span>
-                  <span className="text-m3-primary italic">
+                  <span className="text-m3-primary italic font-mono">
                     {progress?.current} / {progress?.total}
                   </span>
                 </div>
-                <div className="w-full h-4 bg-m3-surfaceVariant/50 rounded-full overflow-hidden border border-m3-outlineVariant/30 p-1 shadow-2xl">
+                <div className="w-full h-6 bg-black/40 rounded-full overflow-hidden border-2 border-m3-outlineVariant/30 p-1 shadow-2xl relative">
                   <motion.div
                     animate={{
                       width: `${((progress?.current || 0) / (progress?.total || 1)) * 100}%`,
                     }}
-                    className="h-full bg-gradient-to-r from-m3-primary via-m3-tertiary to-m3-error rounded-full"
+                    className="h-full bg-gradient-to-r from-m3-primary via-m3-tertiary to-m3-error rounded-full relative z-10"
                   />
+                  <div className="absolute inset-0 bg-m3-primary/5 animate-pulse" />
                 </div>
               </div>
 

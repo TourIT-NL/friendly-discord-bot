@@ -17,16 +17,15 @@ pub async fn fetch_guilds(app_handle: AppHandle) -> Result<Vec<Guild>, AppError>
         None,
     );
 
-    let response_value = api_handle
-        .send_request(
-            reqwest::Method::GET,
-            "https://discord.com/api/v10/users/@me/guilds",
-            None,
-            &token,
-            is_bearer,
-        )
-        .await?; // Will return serde_json::Value if successful
-
+            let response_value = api_handle
+                .send_request(
+                    reqwest::Method::GET,
+                    "https://discord.com/api/v9/users/@me/guilds",
+                    None,
+                    &token,
+                    is_bearer,
+                )
+                .await?; // Will return serde_json::Value if successful
     serde_json::from_value(response_value).map_err(AppError::from)
 }
 
@@ -47,7 +46,7 @@ pub async fn fetch_channels(
         let response_value = api_handle
             .send_request(
                 reqwest::Method::GET,
-                &format!("https://discord.com/api/v10/guilds/{}/channels", gid),
+                &format!("https://discord.com/api/v9/guilds/{}/channels", gid),
                 None,
                 &token,
                 is_bearer,
@@ -58,7 +57,7 @@ pub async fn fetch_channels(
             serde_json::from_value(response_value).map_err(AppError::from)?;
         Ok(channels
             .into_iter()
-            .filter(|c| c.channel_type == 0 || c.channel_type == 11 || c.channel_type == 12)
+            .filter(|c| c.channel_type == 0 || c.channel_type == 5 || c.channel_type == 11 || c.channel_type == 12 || c.channel_type == 15)
             .collect())
     } else {
         Logger::info(&app_handle, "[SYNC] Fetching DM nodes...", None);
@@ -71,7 +70,7 @@ pub async fn fetch_channels(
         let response_value = api_handle
             .send_request(
                 reqwest::Method::GET,
-                "https://discord.com/api/v10/users/@me/channels",
+                "https://discord.com/api/v9/users/@me/channels",
                 None,
                 &token,
                 is_bearer,
@@ -103,9 +102,11 @@ pub async fn fetch_channels(
                 });
             }
         }
-        Ok(result)
+            Ok(result)
     }
 }
+
+
 
 #[tauri::command]
 pub async fn fetch_relationships(app_handle: AppHandle) -> Result<Vec<Relationship>, AppError> {
@@ -122,7 +123,7 @@ pub async fn fetch_relationships(app_handle: AppHandle) -> Result<Vec<Relationsh
     let response_value = api_handle
         .send_request(
             reqwest::Method::GET,
-            "https://discord.com/api/v10/users/@me/relationships",
+            "https://discord.com/api/v9/users/@me/relationships",
             None,
             &token,
             is_bearer,
@@ -139,18 +140,28 @@ pub async fn fetch_preview_messages(
 ) -> Result<Vec<serde_json::Value>, AppError> {
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
-    let response_value = api_handle
+    let result = api_handle
         .send_request(
             reqwest::Method::GET,
             &format!(
-                "https://discord.com/api/v10/channels/{}/messages?limit=5",
+                "https://discord.com/api/v9/channels/{}/messages?limit=5",
                 channel_id
             ),
             None,
             &token,
             is_bearer,
         )
-        .await?; // Will return serde_json::Value if successful
+        .await;
 
-    serde_json::from_value(response_value).map_err(AppError::from)
+    match result {
+        Ok(response_value) => serde_json::from_value(response_value).map_err(AppError::from),
+        Err(e) => {
+            Logger::warn(
+                &app_handle,
+                &format!("[SYNC] Failed to fetch preview for {}: {}", channel_id, e.user_message),
+                None,
+            );
+            Ok(vec![])
+        }
+    }
 }

@@ -43,7 +43,7 @@ pub async fn start_oauth_flow(
         ClientId::new(client_id.clone()),
         Some(ClientSecret::new(client_secret)),
         AuthUrl::new("https://discord.com/oauth2/authorize".to_string()).unwrap(),
-        Some(TokenUrl::new("https://discord.com/api/v10/oauth2/token".to_string()).unwrap()),
+        Some(TokenUrl::new("https://discord.com/api/v9/oauth2/token".to_string()).unwrap()),
     );
 
     let (pkce_ch, pkce_ver) = PkceCodeChallenge::new_random_sha256();
@@ -119,7 +119,7 @@ pub async fn start_oauth_flow(
             let response = "HTTP/1.1 200 OK
 Content-Type: text/html
 
-<html><body style='font-family:sans-serif; text-align:center; padding-top:100px; background:#0a0a0a; color:white;'><h1>Handshake Successful</h1><p>Auth signature verified. You can return to the application.</p></body></html>";
+<html><body style='font-family:sans-serif; text-align:center; padding-top:100px; background:#0a0a0a; color:white;'><h1>Handshake Successful</h1><p>Auth signature verified. You can return to the application.</p><script>setTimeout(function(){window.close()}, 2000);</script></body></html>";
             if let Err(e) = stream.write_all(response.as_bytes()).await {
                 Logger::error(
                     &app_clone,

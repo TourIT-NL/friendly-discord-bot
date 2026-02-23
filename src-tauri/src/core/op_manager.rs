@@ -50,4 +50,11 @@ impl OperationState {
         self.is_paused.store(false, Ordering::SeqCst);
         self.should_abort.store(false, Ordering::SeqCst);
     }
+
+    /// Prepares the state for a new operation by clearing pause/abort flags.
+    pub fn prepare(&self) {
+        self.is_paused.store(false, Ordering::SeqCst);
+        self.should_abort.store(false, Ordering::SeqCst);
+        // We do not set is_running to true here; the caller does that to allow for setup time.
+    }
 }

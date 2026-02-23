@@ -142,9 +142,7 @@ impl IdentityManager {
 
     pub fn remove_identity(app: &AppHandle, id: &str) -> Result<(), AppError> {
         let key = format!("account_{}", id);
-        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, &key) {
-            let _ = entry.delete_credential();
-        }
+        Self::clear_keyring_entry(&key)?;
         let _ = super::fallback::FallbackManager::delete_fallback(app, &key);
 
         let index_key = "identity_index";
@@ -159,10 +157,24 @@ impl IdentityManager {
             index.retain(|x| x != id);
             let new_index_json = serde_json::to_string(&index)?;
 
-            if let Ok(entry) = Entry::new(Self::SERVICE_NAME, index_key) {
-                let _ = entry.set_password(&new_index_json);
-            }
+            Self::set_keyring_entry(index_key, &new_index_json)?;
             super::fallback::FallbackManager::write_fallback(app, index_key, &new_index_json)?;
+        }
+        Ok(())
+    }
+
+    // Helper to clear a keyring entry directly
+    pub fn clear_keyring_entry(key: &str) -> Result<(), AppError> {
+        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key) {
+            let _ = entry.delete_credential();
+        }
+        Ok(())
+    }
+
+    // Helper to set a keyring entry directly
+    pub fn set_keyring_entry(key: &str, value: &str) -> Result<(), AppError> {
+        if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key) {
+            let _ = entry.set_password(value);
         }
         Ok(())
     }

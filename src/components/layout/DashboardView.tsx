@@ -1,9 +1,19 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Server, HelpCircle, Hash } from "lucide-react";
+import {
+  Server,
+  HelpCircle,
+  Hash,
+  Shield,
+  Fingerprint,
+  CreditCard,
+} from "lucide-react";
 import { Sidebar } from "../dashboard/Sidebar";
 import { MessagesMode } from "../dashboard/modes/MessagesMode";
 import { ServersMode } from "../dashboard/modes/ServersMode";
 import { IdentityMode } from "../dashboard/modes/IdentityMode";
+import { SecurityMode } from "../dashboard/modes/SecurityMode";
+import { PrivacyMode } from "../dashboard/modes/PrivacyMode";
+import { AccountMode } from "../dashboard/modes/AccountMode";
 import { IconButton } from "../common/M3Components";
 import { Guild, Channel, Relationship } from "../../types/discord";
 
@@ -20,8 +30,14 @@ interface DashboardViewProps {
   handleStealthWipe: () => void;
   handleNitroWipe: () => void;
   handleLogout: () => void;
-  mode: "messages" | "servers" | "identity";
-  setMode: (mode: "messages" | "servers" | "identity") => void;
+  mode:
+    | "messages"
+    | "servers"
+    | "identity"
+    | "security"
+    | "privacy"
+    | "account";
+  setMode: (mode: any) => void;
   timeRange: "24h" | "7d" | "all";
   setTimeRange: (range: "24h" | "7d" | "all") => void;
   simulation: boolean;
@@ -48,6 +64,16 @@ interface DashboardViewProps {
   handleBuryAuditLog: () => void;
   handleWebhookGhosting: () => void;
   handleOpenDonateLink: () => void;
+  handleOpenDiscordUrl: (type: string) => void;
+  handleTriggerHarvest: () => void;
+  handleMaxPrivacySanitize: () => void;
+  handleRevokeApp: (id: string) => void;
+  fetchSecurityAudit: () => void;
+  fetchPrivacyAudit: () => void;
+  fetchAccountAudit: () => void;
+  authorizedApps: any[];
+  gdprStatus: any;
+  billingInfo: any;
   isLoading: boolean;
   relationships: Relationship[] | null;
   selectedRelationships: Set<string>;
@@ -93,6 +119,16 @@ export const DashboardView = ({
   handleBuryAuditLog,
   handleWebhookGhosting,
   handleOpenDonateLink,
+  handleOpenDiscordUrl,
+  handleTriggerHarvest,
+  handleMaxPrivacySanitize,
+  handleRevokeApp,
+  fetchSecurityAudit,
+  fetchPrivacyAudit,
+  fetchAccountAudit,
+  authorizedApps,
+  gdprStatus,
+  billingInfo,
   isLoading,
   relationships,
   selectedRelationships,
@@ -104,6 +140,9 @@ export const DashboardView = ({
       identities={identities}
       guilds={guilds}
       selectedGuilds={selectedGuilds}
+      mode={mode}
+      isProcessing={isProcessing}
+      setMode={setMode}
       onSwitchIdentity={handleSwitchIdentity}
       onNewIdentity={() => setView("auth")}
       onToggleGuildSelection={handleToggleGuildSelection}
@@ -129,42 +168,86 @@ export const DashboardView = ({
               </div>
               <div>
                 <h2 className="text-5xl font-black italic tracking-tighter uppercase leading-none text-white">
-                  {selectedGuilds.size === 0
-                    ? "Select Sources"
-                    : selectedGuilds.size === 1
-                      ? guilds?.find(
-                          (g) => g.id === Array.from(selectedGuilds)[0],
-                        )?.name || "Direct Messages"
-                      : `${selectedGuilds.size} Sources Selected`}
+                  {isProcessing ? (
+                    <span className="text-m3-error animate-pulse">
+                      Execution In Progress
+                    </span>
+                  ) : mode === "identity" ? (
+                    "Identity Links"
+                  ) : mode === "security" ? (
+                    "Security Audit"
+                  ) : mode === "privacy" ? (
+                    "Privacy Hardening"
+                  ) : mode === "account" ? (
+                    "Financial Footprint"
+                  ) : selectedGuilds.size === 0 ? (
+                    "Select Sources"
+                  ) : selectedGuilds.size === 1 ? (
+                    guilds?.find((g) => g.id === Array.from(selectedGuilds)[0])
+                      ?.name || "Direct Messages"
+                  ) : (
+                    `${selectedGuilds.size} Sources Selected`
+                  )}
                 </h2>
                 <div className="flex items-center gap-3 mt-4 bg-m3-primary/10 w-fit px-4 py-1.5 rounded-full border border-m3-primary/20 shadow-inner">
-                  <div className="w-2 h-2 bg-m3-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(208,188,255,0.8)]" />
-                  <p className="text-[10px] text-m3-primary font-black uppercase tracking-[0.4em] italic leading-none">
-                    Node Connection Established
+                  <div
+                    className={`w-2 h-2 rounded-full animate-pulse shadow-[0_0_10px_rgba(208,188,255,0.8)] ${isProcessing ? "bg-m3-error" : "bg-m3-primary"}`}
+                  />
+                  <p
+                    className={`text-[10px] font-black uppercase tracking-[0.4em] italic leading-none ${isProcessing ? "text-m3-error" : "text-m3-primary"}`}
+                  >
+                    {isProcessing
+                      ? "Protocol Active"
+                      : "Node Connection Established"}
                   </p>
                 </div>
               </div>
             </div>
             <div className="flex bg-m3-surfaceVariant rounded-m3-full p-1.5 border border-m3-outlineVariant shadow-inner">
               <button
+                disabled={isProcessing}
                 onClick={() => setMode("messages")}
-                className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "messages" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"}`}
+                className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "messages" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 Messages
               </button>
               {selectedGuilds.size > 0 && (
                 <button
+                  disabled={isProcessing}
                   onClick={() => setMode("servers")}
-                  className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "servers" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"}`}
+                  className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "servers" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   Servers
                 </button>
               )}
               <button
+                disabled={isProcessing}
                 onClick={() => setMode("identity")}
-                className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "identity" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"}`}
+                className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "identity" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 Friends
+              </button>
+              <div className="w-px bg-white/10 mx-2" />
+              <button
+                disabled={isProcessing}
+                onClick={() => setMode("security")}
+                className={`p-2.5 rounded-m3-full transition-all ${mode === "security" ? "bg-m3-tertiary text-m3-onTertiary" : "text-m3-onSurfaceVariant hover:bg-white/5"} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <Shield className="w-4 h-4" />
+              </button>
+              <button
+                disabled={isProcessing}
+                onClick={() => setMode("privacy")}
+                className={`p-2.5 rounded-m3-full transition-all ${mode === "privacy" ? "bg-m3-tertiary text-m3-onTertiary" : "text-m3-onSurfaceVariant hover:bg-white/5"} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <Fingerprint className="w-4 h-4" />
+              </button>
+              <button
+                disabled={isProcessing}
+                onClick={() => setMode("account")}
+                className={`p-2.5 rounded-m3-full transition-all ${mode === "account" ? "bg-m3-tertiary text-m3-onTertiary" : "text-m3-onSurfaceVariant hover:bg-white/5"} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                <CreditCard className="w-4 h-4" />
               </button>
               <div className="w-px bg-white/10 mx-2" />
               <IconButton
@@ -253,6 +336,30 @@ export const DashboardView = ({
               setConfirmText={setConfirmText}
               isProcessing={isProcessing}
               onStartAction={startAction}
+            />
+          )}
+          {mode === "security" && (
+            <SecurityMode
+              apps={authorizedApps}
+              fetchAudit={fetchSecurityAudit}
+              onRevoke={handleRevokeApp}
+              onOpenDiscordUrl={handleOpenDiscordUrl}
+            />
+          )}
+          {mode === "privacy" && (
+            <PrivacyMode
+              status={gdprStatus}
+              fetchAudit={fetchPrivacyAudit}
+              onTriggerHarvest={handleTriggerHarvest}
+              onSanitize={handleMaxPrivacySanitize}
+              onOpenDiscordUrl={handleOpenDiscordUrl}
+            />
+          )}
+          {mode === "account" && (
+            <AccountMode
+              info={billingInfo}
+              fetchAudit={fetchAccountAudit}
+              onOpenDiscordUrl={handleOpenDiscordUrl}
             />
           )}
         </motion.div>
