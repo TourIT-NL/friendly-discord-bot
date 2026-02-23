@@ -14,7 +14,7 @@
 *.yaml text eol=lf
 *.toml text eol=lf
 *.rs text eol=lf
-*.lock text eol=lf # For Cargo.lock and package-lock.json
+*.lock text eol=lf 
 
 # Explicitly mark binary files to prevent Git from trying to auto-convert them
 *.png binary

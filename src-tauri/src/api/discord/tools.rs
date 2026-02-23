@@ -177,9 +177,12 @@ pub async fn webhook_ghosting(
 
 #[tauri::command]
 pub async fn open_external_link(app_handle: AppHandle, url: String) -> Result<(), AppError> {
-    app_handle.opener().open_url(url, None::<String>).map_err(|e| AppError {
-        user_message: "Failed to open external link.".into(),
-        error_code: "external_link_error".into(),
-        technical_details: Some(format!("Error opening URL: {}", e)),
-    })
+    app_handle
+        .opener()
+        .open_url(url, None::<String>)
+        .map_err(|e| AppError {
+            user_message: "Failed to open external link.".into(),
+            error_code: "external_link_error".into(),
+            technical_details: Some(format!("Error opening URL: {}", e)),
+        })
 }
