@@ -15,6 +15,7 @@ on:
 jobs:
   # 0. The Change Detector - Determines what actually needs to run
   changes:
+    if: always()
     runs-on: ubuntu-22.04
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
