@@ -1,0 +1,3 @@
+[advisories]
+ignore = ["RUSTSEC-2023-0071", "RUSTSEC-2024-0429"] # Temporarily ignore until a proper fix or alternative is found
+

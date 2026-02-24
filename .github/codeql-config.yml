@@ -1,0 +1,5 @@
+# .github/codeql-config.yml
+# This file is used to configure CodeQL analysis.
+
+paths-ignore:
+  - 'coverage/frontend/sorter.js'
