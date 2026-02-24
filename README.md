@@ -1,6 +1,6 @@
 # Friendly Discord Bot - Delete All Discord Messages & Data (Privacy Tool)
 
-[![Release](https://img.shields.io/badge/release-v1.0-blue)](https://github.com/TourIT-NL/friendly-discord-bot/releases)
+[![Release](https://img.shields.io/badge/release-v1.0.3-blue)](https://github.com/TourIT-NL/friendly-discord-bot/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/TourIT-NL/friendly-discord-bot)
 
