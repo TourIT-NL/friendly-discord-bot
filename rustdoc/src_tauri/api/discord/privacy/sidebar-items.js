@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["get_harvest_status","nitro_stealth_wipe","set_max_privacy_settings","stealth_privacy_wipe","trigger_data_harvest"]};

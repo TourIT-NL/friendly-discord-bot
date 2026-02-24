@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["fetch_application_identities","fetch_oauth_tokens","revoke_oauth_token"]};

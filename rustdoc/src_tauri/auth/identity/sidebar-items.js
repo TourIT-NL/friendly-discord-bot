@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["get_current_user","list_identities","login_with_token_internal","login_with_user_token","logout","remove_identity","save_discord_credentials","switch_identity","validate_token"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["bulk_delete_messages"],"struct":["PurgeOptions"]};

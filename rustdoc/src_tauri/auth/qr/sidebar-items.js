@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["cancel_qr_login","start_qr_login_flow"]};

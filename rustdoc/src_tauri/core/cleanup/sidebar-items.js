@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["clear_all_app_data"]};

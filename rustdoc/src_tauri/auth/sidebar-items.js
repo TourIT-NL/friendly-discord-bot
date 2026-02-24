@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["identity","oauth","qr","rpc","status","types"]};
