@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Channel, Relationship } from "../types/discord";
+import { Channel, Relationship, PreviewMessage } from "../types/discord";
 
 export const useSelectionState = () => {
   const [selectedGuilds, setSelectedGuilds] = useState<Set<string>>(
@@ -20,7 +20,7 @@ export const useSelectionState = () => {
   const [relationships, setRelationships] = useState<Relationship[] | null>(
     null,
   );
-  const [previews, setPreviews] = useState<any[]>([]);
+  const [previews, setPreviews] = useState<PreviewMessage[]>([]);
 
   return {
     selectedGuilds,

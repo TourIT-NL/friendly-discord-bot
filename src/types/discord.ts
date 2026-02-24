@@ -53,3 +53,15 @@ export interface OperationStatus {
   is_paused: boolean;
   should_abort: boolean;
 }
+
+export interface PreviewMessage {
+  id: string;
+  content: string;
+  author_id: string;
+  author_username: string;
+  timestamp: string; // ISO date string
+  channel_id: string;
+  channel_name: string;
+  guild_id?: string; // Optional for DMs
+  guild_name?: string; // Optional for DMs
+}
