@@ -3,7 +3,7 @@
 [![Release](https://img.shields.io/badge/release-v1.0.3-blue)](https://github.com/TourIT-NL/friendly-discord-bot/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/TourIT-NL/friendly-discord-bot)
-[![Discord Server](https://img.shields.io/discord/YOUR_DISCORD_SERVER_ID?label=Discord&logo=discord&color=7289DA)](https://discord.gg/YOUR_INVITE_LINK) <!-- Placeholder: Replace with actual Discord invite -->
+[![Discord Server](https://img.shields.io/discord/1475853240573890674?label=Discord&logo=discord&color=7289DA)](https://discord.gg/572ahknS) <!-- Placeholder: Replace with actual Discord invite -->
 [![GitHub Stars](https://img.shields.io/github/stars/TourIT-NL/friendly-discord-bot?style=social)](https://github.com/TourIT-NL/friendly-discord-bot/stargazers)
 
 **Friendly Discord Bot** is the ultimate secure, privacy-focused, and incredibly user-friendly desktop application designed for comprehensive Discord data management. Effortlessly **delete Discord messages**, purge DMs, clean up server content, manage relationships, and wipe profile data with **intelligent rate-limit handling** and **local-only processing**. Take back control of your digital footprint and enhance your Discord privacy today! This powerful tool ensures your past communications align with your current privacy expectations, offering a robust solution for **Discord cleanup** and **data removal**. It stands as a beacon for digital autonomy, helping you curate your online presence with confidence and ease.
