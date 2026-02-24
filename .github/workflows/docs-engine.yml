@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "src-tauri/**/*.rs"
-      - "src/**/*.ts"
-      - "src/**/*.tsx"
+      - 'src-tauri/**/*.rs'
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
 
 permissions:
   contents: write
@@ -16,36 +16,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
-
+        
       - name: install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libglib2.0-dev libgobject-2.0-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libglib2.0-dev libgirepository1.0-dev
 
       - name: Build Rustdocs
         working-directory: src-tauri
         run: cargo doc --no-deps --document-private-items
-
+        
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
+          
       - name: Build Frontend Docs
         run: |
           npm ci
           npx typedoc --out docs/api src/
-
+          
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./src-tauri/target/doc
           destination_dir: rustdoc
-
+          
       - name: Deploy Frontend Docs to Subdir
         uses: peaceiris/actions-gh-pages@v4
         with:
