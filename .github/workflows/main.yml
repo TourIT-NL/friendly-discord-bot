@@ -15,7 +15,7 @@ on:
 jobs:
   # 0. The Change Detector - Determines what actually needs to run
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
       backend: ${{ steps.filter.outputs.backend }}
@@ -44,7 +44,7 @@ jobs:
   lint-frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: setup node
@@ -63,7 +63,7 @@ jobs:
   test-frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: setup node
@@ -86,7 +86,7 @@ jobs:
   lint-rust:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: install Rust stable
@@ -109,7 +109,7 @@ jobs:
   test-rust:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: install Rust stable
@@ -147,7 +147,7 @@ jobs:
   audit:
     needs: changes
     if: always() && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: install cargo-audit

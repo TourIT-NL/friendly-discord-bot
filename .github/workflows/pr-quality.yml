@@ -12,7 +12,7 @@ permissions:
 jobs:
   # 1. Enforce Conventional Commits on PR Titles
   pr-title-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: amannn/action-semantic-pull-request@v5
         env:
@@ -33,7 +33,7 @@ jobs:
 
   # 2. Advanced Rust Quality (License Compliance & Duplicate Health)
   rust-deep-audit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: install Rust stable
@@ -50,7 +50,7 @@ jobs:
 
   # 3. Frontend Quality Gate (Unused code detection)
   frontend-health:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: setup node
