@@ -1,0 +1,17 @@
+# .cargo/audit.toml
+# Configuration for cargo audit
+#
+# List of advisories to ignore, as they are either false positives,
+# or mitigations are in place, or no fixed version is available yet.
+
+[advisories]
+ignore = [
+    "RUSTSEC-2023-0071", # rsa: Marvin Attack (no fixed upgrade available, being tracked, risk assessed for application context)
+    "RUSTSEC-2024-0429", # glib: Unsoundness in glib::VariantStrIter (transitive dependency of Tauri/Wry on Linux, upstream fix pending)
+]
+
+# By default, audit will exit with 1 on advisory warnings.
+# Setting this to false will allow the audit job to pass even with warnings,
+# typically used for "unmaintained" type warnings where no immediate action is possible.
+[advisory-warnings]
+deny-warnings = false 
