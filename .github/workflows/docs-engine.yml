@@ -37,7 +37,7 @@ jobs:
       - name: Build Frontend Docs
         run: |
           npm ci
-          npx typedoc --out docs/api src/
+          npx typedoc --out docs/api src/ --entryPointStrategy expand
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
