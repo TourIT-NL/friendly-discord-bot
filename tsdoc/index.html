@@ -1,0 +1,724 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>discord-privacy-util</title><meta name="description" content="Documentation for discord-privacy-util"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">discord-privacy-util</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>discord-privacy-util</h1></div><div class="tsd-panel tsd-typography"><h1 id="✨-friendly-discord-bot-your-ultimate-discord-privacy--data-cleanup-utility-✨" class="tsd-anchor-link">✨ Friendly Discord Bot - Your Ultimate Discord Privacy &amp; Data Cleanup Utility ✨<a href="#✨-friendly-discord-bot-your-ultimate-discord-privacy--data-cleanup-utility-✨" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p><a href="https://github.com/TourIT-NL/friendly-discord-bot/releases"><img src="https://img.shields.io/badge/release-v1.0.3-blue" alt="Release"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
+<a href="https://github.com/TourIT-NL/friendly-discord-bot"><img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform"></a>
+<a href="https://discord.gg/kRFhXPTm"><img src="https://img.shields.io/discord/1475853240573890674?label=Discord&amp;logo=discord&amp;color=7289DA" alt="Discord Server"></a> <!-- Placeholder: Replace with actual Discord invite -->
+<a href="https://github.com/TourIT-NL/friendly-discord-bot/stargazers"><img src="https://img.shields.io/github/stars/TourIT-NL/friendly-discord-bot?style=social" alt="GitHub Stars"></a></p>
+<p><strong>Friendly Discord Bot</strong> is the ultimate secure, privacy-focused, and incredibly user-friendly desktop application designed for comprehensive Discord data management. Effortlessly <strong>delete Discord messages</strong>, purge DMs, clean up server content, manage relationships, and wipe profile data with <strong>intelligent rate-limit handling</strong> and <strong>local-only processing</strong>. Take back control of your digital footprint and enhance your Discord privacy today! This powerful tool ensures your past communications align with your current privacy expectations, offering a robust solution for <strong>Discord cleanup</strong> and <strong>data removal</strong>. It stands as a beacon for digital autonomy, helping you curate your online presence with confidence and ease.</p>
+<hr>
+<h2 id="📖-table-of-contents" class="tsd-anchor-link">📖 Table of Contents<a href="#📖-table-of-contents" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="#-overview">🌟 Overview</a></li>
+<li><a href="#-our-philosophy--vision">🎯 Our Philosophy &amp; Vision</a></li>
+<li><a href="#-why-choose-friendly-discord-bot">🚀 Why Choose Friendly Discord Bot?</a></li>
+<li><a href="#-key-features---dive-deeper">💎 Key Features - Dive Deeper</a></li>
+<li><a href="#-quick-start-your-data-cleanup-journey">⚡ Quick Start: Your Data Cleanup Journey</a></li>
+<li><a href="#-security-and-privacy---our-core-promise">🔒 Security and Privacy - Our Core Promise</a></li>
+<li><a href="#%EF%B8%8F-installation-for-end-users">⬇️ Installation for End Users</a></li>
+<li><a href="#%EF%B8%8F-technical-stack-powering-your-privacy">🛠️ Technical Stack: Powering Your Privacy</a></li>
+<li><a href="#%EF%B8%8F-roadmap--future-vision">🗺️ Roadmap &amp; Future Vision</a></li>
+<li><a href="#-community--support">🤝 Community &amp; Support</a></li>
+<li><a href="#%EF%B8%8F-additional-resources--project-information">ℹ️ Additional Resources &amp; Project Information</a></li>
+</ul>
+<hr>
+<h2 id="🌟-overview" class="tsd-anchor-link">🌟 Overview<a href="#🌟-overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><strong>Friendly Discord Bot</strong> is a pioneering open-source, cross-platform desktop application meticulously engineered to provide Discord users with <strong>unparalleled control</strong> over their digital past. Built upon the robust foundations of <strong>Rust</strong> 🦀 for backend logic, the modern desktop framework <strong>Tauri</strong> ✨ for its intuitive UI, and the versatile frontend of <strong>TypeScript</strong> 🚀, this application empowers you to safely and efficiently <strong>remove your Discord chat history and personal data</strong>. Designed with a dual focus on <strong>seamless usability and unyielding security</strong>, it intelligently minimizes account risk through advanced, <strong>rate-limit aware dispatching</strong> and conservative, user-first defaults.</p>
+<p>This state-of-the-art utility is your definitive, one-stop solution for:</p>
+<ul>
+<li><strong>Mass Message Deletion</strong>: Instantly <strong>delete all Discord messages in bulk</strong> across Direct Messages, private group chats, and specified server channels. Reclaim conversations that no longer serve you or contain sensitive information you wish to remove from the platform forever, ensuring your past is truly yours.</li>
+<li><strong>Secure History Removal</strong>: <strong>Remove Discord history safely and securely</strong>, ensuring your sensitive interaction data and personal tokens are never exposed to any third-party servers. Your digital privacy is our paramount concern, backed by a commitment to local-only processing, giving you peace of mind.</li>
+<li><strong>Comprehensive Privacy Management</strong>: <strong>Master your Discord privacy</strong> by systematically purging old, unwanted data, cleaning up outdated connections, and effortlessly departing from multiple Discord servers you no longer wish to be a part of. This gives you a fresh start and prevents unintended data retention from impacting your digital identity.</li>
+<li><strong>Digital Footprint Control</strong>: Take proactive steps to manage and <strong>control your online presence</strong> on Discord. Ensure that your past communications and associations align perfectly with your current privacy standards and personal preferences, empowering you to shape your digital narrative.</li>
+</ul>
+<p>This comprehensive repository serves as the central hub for our project, encompassing the full source code, readily available release artifacts for various platforms, in-depth documentation, and a vibrant community space dedicated to supporting users, fostering contributions, and welcoming security researchers worldwide. We believe in transparency, empowering our users, and building a more secure digital future together.</p>
+<hr>
+<h2 id="🎯-our-philosophy-vision" class="tsd-anchor-link">🎯 Our Philosophy &amp; Vision<a href="#🎯-our-philosophy-vision" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Our project's vision is crystal clear: to create a powerful, aesthetically pleasing, and high-performance desktop application that grants Discord users the <strong>ultimate control over their digital footprint</strong>. Every decision, every line of code, and every design choice is meticulously measured against our three foundational core tenets, ensuring we deliver a product that is both reliable, revolutionary, and deeply user-centric.</p>
+<h3 id="core-tenets-guiding-our-development" class="tsd-anchor-link">Core Tenets Guiding Our Development:<a href="#core-tenets-guiding-our-development" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li><strong>🛡️ Unyielding Security</strong>: The safeguarding of your user data and Discord account integrity is not just a feature; it's our absolute priority and a non-negotiable principle. We take no shortcuts here. This commitment encompasses rigorous technical implementation (e.g., secure OAuth2 authentication, robust credential storage, local-only processing, encrypted communications) and thoughtful user experience design (e.g., clear warnings for potentially destructive actions, transparent data handling, principle of least privilege). We adhere to stringent security best practices, perform constant auditing, and engage with security researchers to provide a truly trustworthy <strong>Discord data management tool</strong>. Your peace of mind is invaluable to us, and we strive to build a fortress around your digital privacy.</li>
+<li><strong>⚡ Peak Performance</strong>: We understand that in today's fast-paced digital world, efficiency matters. Your application experience must be fast, responsive, and seamlessly smooth, regardless of the scale or complexity of the task at hand. This is non-negotiable. Our architecture intelligently leverages asynchronous operations, the native speed of a compiled Rust backend, and optimized frontend rendering to deliver a fluid and high-performance user interface. This ensures your <strong>Discord cleanup</strong> operations are not only swift but also incredibly smooth, resource-efficient, and never leave you waiting. We believe a powerful tool should also be a pleasure to use.</li>
+<li><strong>💖 Total User Empowerment</strong>: The fundamental purpose of this application is to restore complete and unequivocal control to <em>you</em>, the user. We believe that managing your digital presence should be simple, intuitive, and stress-free. This core value manifests through user-friendly, clear, and easy-to-navigate interfaces, coupled with powerful, reliable tools that consistently perform exactly as advertised. We strive to make <strong>Discord privacy</strong> management accessible, straightforward, and ultimately empowering for every single user, regardless of their technical proficiency or prior experience with similar tools. We put the user back in the driver's seat.</li>
+</ol>
+<hr>
+<h2 id="🚀-why-choose-friendly-discord-bot" class="tsd-anchor-link">🚀 Why Choose Friendly Discord Bot?<a href="#🚀-why-choose-friendly-discord-bot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Navigating Discord's vast data landscape can be daunting, frustrating, and often overwhelming. We cut through the complexity, offering a superior, privacy-centric, and exceptionally user-friendly alternative that profoundly respects your digital autonomy.</p>
+<h3 id="the-discord-data-dilemma-a-pressing-problem-in-digital-privacy-🧐" class="tsd-anchor-link">The Discord Data Dilemma: A Pressing Problem in Digital Privacy 🧐<a href="#the-discord-data-dilemma-a-pressing-problem-in-digital-privacy-🧐" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Discord, while an indispensable platform for gaming, vibrant online communities, and casual conversation, presents a significant and often overlooked challenge when it comes to effectively managing your personal data. Currently, Discord inherently lacks a centralized, user-friendly, and truly efficient tool for the comprehensive, mass removal of your personal history across its diverse touchpoints – including direct messages (DMs), private group chats, countless server channels you've participated in (both active and inactive), and various profile fields that accrue over time. Attempting manual deletion at scale is a notoriously tedious, incredibly error-prone, and often outright impossible endeavor, especially for users with years of activity. This critical gap leaves countless users feeling frustrated, helpless, and vulnerable about their ever-growing, often overwhelming, digital footprint on the platform, yearning for a robust and reliable <strong>Discord message purge</strong> solution that genuinely puts them in control of their own narrative.</p>
+<h3 id="our-elegant-solution-reclaiming-your-digital-privacy-with-precision-✅" class="tsd-anchor-link">Our Elegant Solution: Reclaiming Your Digital Privacy with Precision ✅<a href="#our-elegant-solution-reclaiming-your-digital-privacy-with-precision-✅" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><strong>Friendly Discord Bot</strong> emerges as the definitive, powerful, and ethical answer to this pervasive problem. We provide an intuitive, <strong>GUI-driven workflow</strong> that puts you firmly and confidently in command of your Discord data. Our application is meticulously engineered with:</p>
+<ul>
+<li><strong>Powerful Preview Filters</strong>: Offering an unparalleled ability to visualize and meticulously confirm <em>exactly</em> what you're targeting for deletion <em>before</em> any irreversible action is taken. This acts as your ultimate safety net, preventing accidental data loss.</li>
+<li><strong>Secure Defaults</strong>: We prioritize your safety, privacy, and account integrity above all else, with conservative and privacy-enhancing default settings that significantly reduce risk and ensure responsible data handling.</li>
+<li><strong>Multiple Login Options</strong>: Providing flexibility while meticulously maintaining security, including the industry-standard and highly recommended <strong>OAuth2</strong> for token-safe authentication, ensuring your credentials are never directly exposed.</li>
+</ul>
+<p>This meticulous design empowers even non-technical users to effortlessly <strong>reclaim their privacy</strong> and perform a thorough, efficient <strong>Discord cleanup</strong>. A core, non-negotiable tenet of our design is that <strong>your data never leaves your machine</strong>. All processing – from initial data scanning to the final execution of deletion commands – is conducted entirely <strong>locally</strong>. This critical design choice completely bypasses the inherent risks of exposing raw Discord tokens or uploading private information to external, potentially untrusted servers, thereby making us the undisputed #1 <strong>Discord privacy utility</strong> for comprehensive <strong>Discord data removal</strong> in the market today. We are building the future of digital self-sovereignty.</p>
+<h3 id="our-unique-positioning-the-privacy-first-advantage-open-transparency-🏆" class="tsd-anchor-link">Our Unique Positioning: The Privacy-First Advantage &amp; Open Transparency 🏆<a href="#our-unique-positioning-the-privacy-first-advantage-open-transparency-🏆" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>This project proudly stands as the <strong>only truly open-source desktop application</strong> in its category. We are specifically designed from the ground up to be both <strong>exceptionally user-friendly</strong> and uncompromisingly focused on the <strong>privacy-first deletion</strong> of Discord data. Our commitment extends far beyond just offering features; we guarantee unparalleled transparency, robust security, and peak performance in every aspect of the application. This unwavering dedication makes us the trusted and preferred choice for anyone seeking a reliable, ethical, and powerful <strong>Discord purge tool</strong> that genuinely respects their digital autonomy and right to be forgotten. By choosing Friendly Discord Bot, you're not just getting a tool; you're joining a movement towards a more private and secure online experience.</p>
+<hr>
+<h2 id="💎-key-features-dive-deeper" class="tsd-anchor-link">💎 Key Features - Dive Deeper<a href="#💎-key-features-dive-deeper" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Empower yourself with precise, secure control over your Discord data. Each feature within <strong>Friendly Discord Bot</strong> is meticulously crafted to be powerful, intuitive, and deeply integrated with our privacy-first philosophy, offering you a comprehensive toolkit for <strong>Discord cleanup</strong> and digital self-sovereignty.</p>
+<h3 id="🗑️-bulk-message-deletion-your-comprehensive-digital-eraser" class="tsd-anchor-link">🗑️ Bulk Message Deletion: Your Comprehensive Digital Eraser<a href="#🗑️-bulk-message-deletion-your-comprehensive-digital-eraser" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Gain unprecedented control over your past communications. Our bulk message deletion feature allows you to effortlessly <strong>delete Discord messages</strong> in mass from any conversation you own or have permission to manage. This includes a wide array of Discord communication channels, giving you the power to curate your past.</p>
+<ul>
+<li><strong>Direct Messages (DMs)</strong>: Reclaim the privacy of your one-on-one conversations. Whether it's old chats with friends, acquaintances, or sensitive discussions, you can now manage them with ease, ensuring old conversations don't resurface unexpectedly.</li>
+<li><strong>Group Chats</strong>: Purge entire discussions or targeted messages from your group environments. This is particularly useful for project-based groups that are no longer active, or social groups whose conversations you no longer wish to retain.</li>
+<li><strong>Selected Server Channels</strong>: Systematically clean up your individual contributions within specific server communities. This is invaluable for managing your presence in various online groups, especially if you've been part of many.</li>
+</ul>
+<h4 id="⚙️-advanced-filtering-precision-at-your-fingertips" class="tsd-anchor-link">⚙️ Advanced Filtering: Precision at Your Fingertips<a href="#⚙️-advanced-filtering-precision-at-your-fingertips" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<p>Our powerful, granular filter system enables incredibly precise targeting of messages for deletion, ensuring you only remove exactly what you intend, avoiding collateral damage:</p>
+<ul>
+<li><strong>By Date Range</strong>: Effortlessly specify exact start and end dates to pinpoint and delete messages from a particular period. For example, easily &quot;delete Discord messages older than January 1, 2023,&quot; or all messages exchanged last summer between specific individuals. This is perfect for periodic digital hygiene.</li>
+<li><strong>By User</strong>: Within a group chat or server channel where you have administrative permissions, you can isolate and delete messages sent by specific users, providing a clean slate for certain discussion threads. This is particularly useful for moderation or personal archiving.</li>
+<li><strong>By Channel</strong>: Focus your cleanup efforts on particular channels within a server or specific group chats, allowing for segment-specific data management without affecting unrelated conversations.</li>
+<li><strong>By Keyword</strong>: Achieve the most granular control by targeting messages containing specific words, phrases, or even using regular expressions for complex patterns. This allows you to remove content that matches particular criteria (e.g., all messages containing a specific project name or personal information), significantly enhancing your <strong>Discord message purge</strong> capabilities.
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/User-Stories#22-bulk-message-deletion-us-002"><strong>Delve deeper into the full scope and acceptance criteria of Bulk Message Deletion (User Story US-002) in our Wiki</strong></a></li>
+</ul>
+</li>
+</ul>
+<h3 id="👋-bulk-server-departure-effortless-digital-decluttering" class="tsd-anchor-link">👋 Bulk Server Departure: Effortless Digital Decluttering<a href="#👋-bulk-server-departure-effortless-digital-decluttering" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Say goodbye to cluttered sidebars, inactive communities, and overwhelming notification lists. Our bulk server departure feature allows you to easily <strong>leave multiple Discord servers at once</strong>, dramatically streamlining your Discord interface and allowing you to focus on what matters most. This feature includes a critical pre-departure option for managing your data, ensuring a clean exit:</p>
+<ul>
+<li><strong>Crucial Pre-departure Message Purge</strong>: Before making your final exit from selected servers, you have the vital option to <strong>delete all your messages</strong> that exist within the channels of those servers. This ensures your past contributions are removed from communities you no longer wish to be associated with, providing a complete digital detox.</li>
+<li><strong>Intelligent Whitelist Functionality</strong>: Safeguard your most valued and active communities. Our intuitive system allows you to maintain a clear whitelist of servers you explicitly wish to remain in, preventing any accidental departures from important groups or personal communities. Your control, always.
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/User-Stories#23-bulk-server-departure-us-003"><strong>Explore the full details and acceptance criteria of Bulk Server Departure (User Story US-003) in our Wiki</strong></a></li>
+</ul>
+</li>
+</ul>
+<h3 id="👤-relationship-management-curate-your-digital-connections-with-ease" class="tsd-anchor-link">👤 Relationship Management: Curate Your Digital Connections with Ease<a href="#👤-relationship-management-curate-your-digital-connections-with-ease" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Take full, precise control of your social connections and network on Discord. Our powerful tool empowers you to <strong>clean up your Discord account</strong> by systematically purging unwanted or outdated entries from:</p>
+<ul>
+<li><strong>Friends List</strong>: Efficiently remove individuals from your friends list with whom you no longer interact or have lost contact, maintaining a curated and relevant social network.</li>
+<li><strong>Blocked List</strong>: Streamline and manage your list of blocked users, ensuring your communication preferences are respected and your digital space remains comfortable.</li>
+<li><strong>Pending Requests</strong>: Clear out old, forgotten, or unwanted incoming and outgoing friend requests, decluttering your social interactions and keeping your network active and current.</li>
+</ul>
+<h3 id="🧹-profile-data-wipe-rebrand-and-reclaim-your-online-persona" class="tsd-anchor-link">🧹 Profile Data Wipe: Rebrand and Reclaim Your Online Persona<a href="#🧹-profile-data-wipe-rebrand-and-reclaim-your-online-persona" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Manage your public identity and personal information on Discord with confidence and precision. Our profile data wipe feature allows you to clear sensitive or outdated information from various editable profile fields:</p>
+<ul>
+<li><strong>Editable Profile Fields</strong>: Systematically wipe custom &quot;About Me&quot; sections, attached social links (e.g., Twitter, YouTube, Twitch), custom pronouns, or any other editable profile elements that you wish to remove, update, or simply reset for a fresh start. This is crucial for reputation management.</li>
+<li><strong>Custom Statuses</strong>: Erase old, temporary, or potentially sensitive custom statuses that might inadvertently linger on your profile, ensuring your current online presence is accurate, private, and professional.
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Architecture-Account-GDPR#profile-deletion"><strong>Access comprehensive Profile Deletion Guidance and the Account &amp; GDPR Management Flow in our Wiki</strong></a></li>
+</ul>
+</li>
+</ul>
+<h3 id="🛡️-intelligent-rate-limiting-proactive-account-safety-first-always" class="tsd-anchor-link">🛡️ Intelligent Rate-Limiting: Proactive Account Safety First &amp; Always<a href="#🛡️-intelligent-rate-limiting-proactive-account-safety-first-always" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Your Discord account's safety and longevity are our highest priority and a cornerstone of our design. Our dispatcher features a sophisticated, <strong>Discord API rate-limit aware</strong> system that is meticulously engineered to proactively protect your account from suspensions or temporary bans. We navigate Discord's complex API rules with surgical precision:</p>
+<ul>
+<li><strong>Adapts Dynamically</strong>: Our system doesn't just send requests blindly; it continuously monitors Discord API responses for explicit rate limit headers and associated retry-after values. This real-time feedback loop allows the application to dynamically adjust its request pacing, ensuring smooth, uninterrupted operation even during peak API traffic or while performing large-scale <strong>Discord cleanup</strong> tasks, without prematurely hitting API limits.</li>
+<li><strong>Exponential Backoff with Jitter</strong>: We implement a robust, industry-standard strategy for gracefully managing transient network issues, temporary API service unavailability, or unexpected server responses. This involves employing exponential backoff (gradually increasing delay between retries to give the server ample time to recover and prevent further congestion) coupled with randomized jitter (adding a small, random delay component to each backoff interval). This proven technique prevents multiple clients from retrying simultaneously, a scenario that could further exacerbate rate limit issues, and significantly helps safeguard your account from temporary suspensions, ensuring a safe and reliable <strong>Discord data removal</strong> process.
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Architecture-Rate-Limiting"><strong>Dive into the technical specifics of our sophisticated Rate Limiting Actor Architecture in our Wiki for an in-depth understanding</strong></a></li>
+</ul>
+</li>
+</ul>
+<h3 id="🔐-secure-authentication-access-without-compromise-control-without-risk" class="tsd-anchor-link">🔐 Secure Authentication: Access Without Compromise, Control Without Risk<a href="#🔐-secure-authentication-access-without-compromise-control-without-risk" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>We prioritize both flexibility and unyielding security in how you connect to your Discord account. Our application supports multiple authentication methods, always emphasizing the safest approach for your <strong>Discord data management</strong>:</p>
+<ul>
+<li><strong>OAuth2 (Highly Recommended)</strong>: This is the industry gold standard for secure application authentication. The OAuth2 method allows you to log in via Discord's official, trusted consent screen within your default web browser. Crucially, you grant specific, limited permissions to our application without ever exposing your sensitive password or even your raw Discord token directly to our software. This is by far the safest, most robust, and highly recommended way to perform <strong>Discord data removal</strong>, minimizing direct credential exposure.
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Architecture-OAuth2-Flow"><strong>Understand our secure and transparent OAuth2 Flow in intricate detail in our Wiki</strong></a></li>
+</ul>
+</li>
+<li><strong>Token Mode</strong>: Available for advanced users who possess a deep understanding of Discord's API, the associated security risks of token handling, and the implications of direct token access. This mode provides granular control via a user token for specific, power-user operations. Use with extreme caution and only if you are fully confident in managing token security.</li>
+<li><strong>RPC &amp; QR Login</strong>: We also offer convenient alternative authentication methods, including RPC (Remote Procedure Call) and QR code login, to cater to a broader range of specific use cases and integration scenarios, enhancing flexibility for your <strong>Discord cleanup</strong> tasks while maintaining security.</li>
+</ul>
+<h3 id="🏠-local-only-processing-your-data-your-machine-your-absolute-privacy" class="tsd-anchor-link">🏠 Local-Only Processing: Your Data, Your Machine, Your Absolute Privacy<a href="#🏠-local-only-processing-your-data-your-machine-your-absolute-privacy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>This is a fundamental and non-negotiable pillar of our privacy commitment. All processing – from the initial scanning of your messages and server data to the final execution of deletion commands – is performed <strong>exclusively and entirely on your local machine</strong>. This foundational design choice ensures unparalleled privacy and data security:</p>
+<ul>
+<li><strong>Zero Cloud Storage, Zero External Servers</strong>: We provide an absolute, ironclad assurance that we <strong>never</strong> transmit, store, or otherwise interact with your sensitive Discord tokens, the content of your messages, or any other private data on our servers, within any third-party cloud service, or with any external entity whatsoever. Your data remains solely and securely on your device.</li>
+<li><strong>Maximized Privacy &amp; Data Sovereignty</strong>: Every single step of your digital footprint management remains entirely within your secure, personal, and controlled environment. This grants you absolute data sovereignty and peace of mind regarding your <strong>Discord history</strong>.</li>
+</ul>
+<h3 id="🔑-os-keychain-storage-enterprise-grade-credential-protection" class="tsd-anchor-link">🔑 OS Keychain Storage: Enterprise-Grade Credential Protection<a href="#🔑-os-keychain-storage-enterprise-grade-credential-protection" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Your valuable Discord credentials (specifically, the access and refresh tokens securely obtained via the OAuth2 flow) are encrypted and stored using your operating system's native, highly secure keychain mechanism. This provides:</p>
+<ul>
+<li><strong>Robust Security</strong>: Leveraging established, secure, and rigorously tested system-level storage solutions that are designed to protect sensitive user data.</li>
+<li><strong>Platform-Native Protection</strong>: The application intelligently adapts to and utilizes the best security practices of each supported operating system – Windows Credential Manager, macOS Keychain, and Linux Keyring services – for storing your sensitive authentication data.</li>
+<li><strong>Enhanced Peace of Mind</strong>: Eliminating the need for custom, potentially less secure, credential storage solutions within the application itself, thereby reducing attack vectors and bolstering trust in your <strong>Discord cleanup tool</strong>.</li>
+</ul>
+<h3 id="👀-preview-and-dry-run-the-ultimate-safety-net-before-deletion" class="tsd-anchor-link">👀 Preview and Dry Run: The Ultimate Safety Net Before Deletion<a href="#👀-preview-and-dry-run-the-ultimate-safety-net-before-deletion" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Before any permanent and irreversible changes are made to your Discord account, our intuitive user interface provides an absolutely critical step: the ability to <strong>safely preview</strong> the exact scope of your chosen operations. This acts as your ultimate safety net for <strong>Discord data removal</strong>.</p>
+<ul>
+<li><strong>See Exactly Before You Act</strong>: The application will generate a clear, comprehensive, and actionable list detailing precisely what items (individual messages, entire server memberships, specific profile fields, etc.) will be affected and subsequently deleted. This visual confirmation allows you to cross-reference and confirm your intentions.</li>
+<li><strong>Full Confidence &amp; Control</strong>: This &quot;Dry Run&quot; functionality empowers you to proceed with ultimate confidence and complete peace of mind, knowing precisely the outcome of your actions. It's your indispensable safety net, ensuring no unintended data loss during your <strong>Discord cleanup</strong>, and preventing any unpleasant surprises.</li>
+</ul>
+<h3 id="📊-comprehensive-reporting-auditing-transparency-at-your-fingertips" class="tsd-anchor-link">📊 Comprehensive Reporting &amp; Auditing: Transparency at Your Fingertips<a href="#📊-comprehensive-reporting-auditing-transparency-at-your-fingertips" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Stay fully informed and in control throughout your entire <strong>Discord data removal</strong> process. Our reporting features are designed for maximum transparency:</p>
+<ul>
+<li><strong>Real-time UI Progress</strong>: Our user-friendly interface provides dynamic, real-time progress updates, allowing you to visually monitor the status of your operations directly within the application. You'll see channels being processed, items being counted, and deletion percentages.</li>
+<li><strong>Detailed Status Information</strong>: Understand at a glance which specific channels or conversations are currently being processed, how many messages have been successfully deleted, and the overall progress of your comprehensive cleanup task. This level of detail keeps you informed every step of the way.</li>
+<li><strong>Local Logs for Transparent Auditing</strong>: All detailed operational logs, capturing every action and outcome, are stored exclusively on your local machine. This provides a completely transparent and verifiable audit trail of all actions performed, which you can review at any time for verification, compliance, or troubleshooting. You also retain full control to clear these logs, further enhancing your privacy.
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Logging-Strategy"><strong>Learn about our structured Logging Strategy and how it ensures transparency and user control in our Wiki</strong></a></li>
+</ul>
+</li>
+</ul>
+<h3 id="🌐-open-source-auditable-built-on-trust-and-community" class="tsd-anchor-link">🌐 Open Source &amp; Auditable: Built on Trust and Community<a href="#🌐-open-source-auditable-built-on-trust-and-community" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Our commitment to transparency, security, and community collaboration is absolute. The entire <strong>Friendly Discord Bot</strong> codebase is proudly and publicly available under the permissive MIT license. This open-source approach offers profound benefits for everyone involved:</p>
+<ul>
+<li><strong>Fosters Unwavering Transparency</strong>: Anyone, from individual users curious about how their data is handled to seasoned cybersecurity experts, is empowered to inspect every line of code. This allows for independent verification of our privacy claims and rigorous scrutiny of our security practices, fostering unparalleled trust in our <strong>Discord data management tool</strong>.</li>
+<li><strong>Encourages Community-Driven Enhancements</strong>: We warmly welcome and actively encourage developers worldwide to contribute their expertise, suggestions, bug fixes, and new features to enhance and improve the application continuously. Your contributions make the project better for everyone.</li>
+<li><strong>Enables Independent Security Reviews</strong>: The open nature of our code significantly lowers the barrier for security researchers to freely audit our practices, identify potential vulnerabilities, and collectively build a more secure and robust application for everyone. This collaborative security model benefits the entire user base.</li>
+</ul>
+<hr>
+<h2 id="⚡-quick-start-your-data-cleanup-journey" class="tsd-anchor-link">⚡ Quick Start: Your Data Cleanup Journey<a href="#⚡-quick-start-your-data-cleanup-journey" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Embark on your journey to a cleaner, more private Discord presence with <strong>Friendly Discord Bot</strong>. It's designed for unparalleled speed, simplicity, and ultimate user control, making your <strong>Discord cleanup</strong> process effortless and empowering!</p>
+<h3 id="step-by-step-guide-to-reclaiming-your-discord-privacy" class="tsd-anchor-link">Step-by-Step Guide to Reclaiming Your Discord Privacy<a href="#step-by-step-guide-to-reclaiming-your-discord-privacy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Ready to manage your <strong>Discord history</strong>? Follow these simple yet crucial steps to get started:</p>
+<ol>
+<li><strong>⬇️ Download the Application: Your First Step to Digital Autonomy</strong>:
+<ul>
+<li>Begin by visiting our official and secure <a href="https://github.com/TourIT-NL/friendly-discord-bot/releases"><strong>Releases page on GitHub</strong></a>. This is where you'll find the latest stable versions of our application.</li>
+<li>Carefully select and download the executable package that is specifically tailored for your operating system (whether it's Windows, macOS, or a specific Linux distribution). We offer optimized builds for all major platforms to ensure broad accessibility and optimal performance.</li>
+</ul>
+</li>
+<li><strong>📦 Install Friendly Discord Bot on Your System: A Seamless Setup</strong>:
+<ul>
+<li><strong>For Windows/macOS Users</strong>: The installation process is as familiar and straightforward as any other desktop application. Simply run the provided installer (<code>.exe</code> on Windows, <code>.dmg</code> on macOS). Our installers are designed for a smooth, guided, and intuitive user experience, ensuring minimal friction.</li>
+<li><strong>For Linux Users</strong>: We provide AppImage formats for broad compatibility across various distributions. To use an AppImage, first make the downloaded file executable by running <code>chmod +x FriendlyDiscordBot.AppImage</code> in your terminal, then execute it directly using <code>./FriendlyDiscordBot.AppImage</code>. If provided, you may also install via your preferred distribution-specific package manager (e.g., <code>sudo dpkg -i .deb</code> for Debian/Ubuntu).</li>
+</ul>
+</li>
+<li><strong>🚀 Launch and Explore the Intuitive Interface: Welcome to Control</strong>:
+<ul>
+<li>Once successfully installed, open the <strong>Friendly Discord Bot</strong> application from your desktop or applications folder. You will be immediately greeted with its clean, intuitive, and user-friendly graphical interface, meticulously designed for effortless navigation and efficient <strong>Discord data management</strong>.</li>
+</ul>
+</li>
+<li><strong>🔒 Securely Connect Your Discord Account via OAuth2: The Gold Standard</strong>:
+<ul>
+<li>Choose <strong>OAuth2 (recommended)</strong> as your primary and most secure login method. This highly secure process will seamlessly guide you through Discord's official consent screen, which will open in your default web browser. This ensures that your sensitive login credentials (username and password) remain completely private and are never directly exposed to or stored by our application, providing a secure pathway for your <strong>Discord message purge</strong>.</li>
+</ul>
+</li>
+<li><strong>🔍 Scan Your Data and Refine with Powerful Filters: Pinpoint Accuracy</strong>:
+<ul>
+<li>Upon successful authentication, the application will intelligently and safely scan your accessible Direct Messages, all joined servers (both active and inactive), and your current relationship network on Discord.</li>
+<li>Now, utilize the powerful, built-in filters – including options to filter by date range, specific users, particular channels, or even keywords – to precisely define the scope of your desired <strong>Discord cleanup</strong>. For instance, you can easily target and select &quot;delete Discord messages from before January 1, 2023,&quot; or filter by content related to an old project.</li>
+</ul>
+</li>
+<li><strong>👀 Preview Your Actions: The Essential Dry Run &amp; Ultimate Safety Net</strong>:
+<ul>
+<li><strong>This is a crucial and non-negotiable safety step!</strong> Before committing to any permanent and irreversible changes, always activate the &quot;Preview&quot; or &quot;Dry Run&quot; mode. The app will then clearly and comprehensively display <em>exactly</em> what items (individual messages, entire server memberships, specific profile fields, etc.) will be affected and subsequently deleted, without making any actual modifications to your live Discord data. This visual confirmation gives you absolute confidence and a final chance to review before you initiate your <strong>Discord data removal</strong>.</li>
+</ul>
+</li>
+<li><strong>🔥 Execute Your Cleanup: Reclaim Your Digital Footprint with Confidence</strong>:
+<ul>
+<li>Once you are completely satisfied and confident with the outcome presented in your preview, confirm your choices and initiate the purge. Our smart dispatcher will then take over, meticulously handling all interactions with the Discord API while strictly adhering to and respecting Discord's complex rate limits. This ensures a smooth, safe, and efficient operation, allowing you to effectively <strong>control your online presence</strong> and enjoy peace of mind.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="🔒-security-and-privacy-our-core-promise" class="tsd-anchor-link">🔒 Security and Privacy - Our Core Promise<a href="#🔒-security-and-privacy-our-core-promise" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Your digital safety and personal privacy on Discord are not just features; they are the foundational pillars of <strong>Friendly Discord Bot</strong>. We are engineered from the ground up to uphold <strong>Unyielding Security</strong> in every operation and to grant you <strong>Total User Empowerment</strong> over your digital footprint. Our commitment to your privacy is unwavering, making this the trusted <strong>Discord cleanup tool</strong> you can rely on.</p>
+<h3 id="our-ironclad-design-principles-🛡️" class="tsd-anchor-link">Our Ironclad Design Principles 🛡️<a href="#our-ironclad-design-principles-🛡️" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Our architecture is meticulously built on a bedrock of trust, transparency, and user-centric security, ensuring maximum protection for your <strong>Discord history</strong>:</p>
+<ul>
+<li><strong>🛡️ Local Processing Only</strong>: This is our most fundamental and unwavering privacy guarantee, designed to give you absolute control over your data. All operations, from the initial scanning of your personal data to the final execution of deletion commands, are performed <strong>exclusively and entirely on your local machine</strong>. This critical design ensures:
+<ul>
+<li><strong>Your Data Stays Yours</strong>: We provide an absolute assurance that we <strong>never</strong> transmit, store, or otherwise interact with your sensitive Discord tokens, the content of your messages, or any other private data on our servers, within any third-party cloud service, or with any external entity whatsoever. Your data remains solely and completely on your device, under your control.</li>
+<li><strong>Maximized Privacy &amp; Data Sovereignty</strong>: Every single step of your digital footprint management remains entirely within your secure, personal, and controlled environment. This grants you unparalleled autonomy and data sovereignty over your <strong>Discord data removal</strong> process, eliminating external risks.</li>
+</ul>
+</li>
+<li><strong>🔐 OS Keychain Integration</strong>: We leverage the highest industry standards for secure credential management, ensuring your authentication tokens are never exposed. Your valuable Discord access and refresh tokens (securely obtained via the OAuth2 flow) are encrypted and stored utilizing your operating system's native keychain mechanism. This integrated approach provides:
+<ul>
+<li><strong>Enterprise-Grade Protection</strong>: Employing established, secure, and rigorously tested system-level storage solutions that are inherently more robust and resilient against unauthorized access than application-specific storage.</li>
+<li><strong>Eliminates Direct Handling Risks</strong>: You are never required to directly interact with or manually manage raw tokens, thereby significantly reducing the risk of accidental exposure, clipboard sniffing, or other common credential-based attacks.</li>
+</ul>
+</li>
+<li><strong>🐢 Conservative Defaults</strong>: To proactively safeguard your Discord account from any potential negative actions, our application's rate limits and retry logic are meticulously configured with conservative, risk-averse default settings. This thoughtful design choice:
+<ul>
+<li><strong>Minimizes Account Flags</strong>: Drastically reduces the likelihood of triggering Discord's automated abuse detection systems, which could lead to temporary suspensions or even permanent bans.</li>
+<li><strong>Prioritizes Account Longevity</strong>: Ensures that your <strong>Discord cleanup</strong> operations can proceed safely and reliably over extended periods without drawing undue attention, preserving your account's health.</li>
+<li><strong>User-Centric Safety</strong>: Our priority is always the long-term health and uninterrupted access of your Discord account.</li>
+</ul>
+</li>
+<li><strong>🔎 Open Source Transparency</strong>: Our unwavering commitment to transparency is fully embodied by our completely open-source codebase. This means:
+<ul>
+<li><strong>Verifiable Trust</strong>: Anyone, from individual users curious about how their data is handled to seasoned cybersecurity experts, is empowered to inspect every single line of code. This open scrutiny allows for independent verification of our privacy claims and rigorous assessment of our security practices, fostering unparalleled trust in our <strong>Discord data management tool</strong>.</li>
+<li><strong>Community Vetting &amp; Improvement</strong>: Actively encourages collective examination, peer review, and feedback from a global community of developers and security enthusiasts, which invariably leads to a more secure, robust, and community-validated application.</li>
+</ul>
+</li>
+<li><strong>🚫 No Telemetry by Default</strong>: Your usage data is an intensely personal matter, and we respect that unconditionally. By default, all forms of user telemetry (e.g., usage statistics, crash reports, performance data) are strictly <strong>opt-out</strong>. This ensures:
+<ul>
+<li><strong>Full Data Sovereignty</strong>: You retain complete and explicit control over whether any usage data is shared with the project maintainers. Nothing is collected without your clear consent.</li>
+<li><strong>Privacy by Design</strong>: Our application is engineered from the ground up with your privacy as a central design principle, guaranteeing that your interactions remain private unless you explicitly and knowingly grant consent, reinforcing our role as a trusted <strong>Discord privacy utility</strong>.</li>
+</ul>
+</li>
+</ul>
+<h3 id="advanced-security-safeguards-technical-resilience" class="tsd-anchor-link">Advanced Security Safeguards &amp; Technical Resilience<a href="#advanced-security-safeguards-technical-resilience" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Beyond our core principles, <strong>Friendly Discord Bot</strong> integrates cutting-edge technical safeguards and architectural resilience to ensure a robust and secure operation, even under challenging conditions. These features underscore our dedication to providing a safe <strong>Discord cleanup</strong> experience.</p>
+<ul>
+<li><strong>🚨 Adaptive Rate Limit Detection</strong>: Our sophisticated system doesn't just send requests blindly; it intelligently monitors Discord API responses for explicit rate limit headers and associated <code>retry-after</code> values. This real-time feedback loop enables:
+<ul>
+<li><strong>Dynamic Pacing</strong>: The application dynamically adjusts its request pacing, ensuring smooth, uninterrupted operation even during peak API traffic or while performing large-scale <strong>Discord data removal</strong> tasks.</li>
+<li><strong>Proactive Avoidance</strong>: Effectively prevents hitting hard API limits that could disrupt your process or trigger temporary service interruptions, protecting your account from potential penalties.</li>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Architecture-Rate-Limiting">Deep dive into the technical intricacies of our sophisticated Rate Limiting Actor Architecture in our Wiki for a comprehensive understanding of its design and implementation</a></li>
+</ul>
+</li>
+<li><strong>🎲 Intelligent Retry Logic</strong>: We employ a robust, industry-standard strategy for gracefully managing transient network issues, temporary Discord API service unavailability, or unexpected server responses. This includes:
+<ul>
+<li><strong>Exponential Backoff</strong>: Gradually increasing delay between retries to give the Discord server ample time to recover, preventing further congestion and unnecessary retries.</li>
+<li><strong>Randomized Jitter</strong>: Adding a small, random delay component to each backoff interval. This prevents multiple clients from retrying simultaneously (a &quot;thundering herd&quot; problem), a proven technique to avoid overwhelming API endpoints and significantly helps safeguard your account from temporary suspensions, ensuring a safe and reliable <strong>Discord cleanup</strong>.</li>
+</ul>
+</li>
+<li><strong>🔑 Token Safety Guidance</strong>: Understanding the critical importance of security hierarchy, especially concerning authentication, we emphasize:
+<ul>
+<li><strong>OAuth2 as Primary Authentication</strong>: Strongly advocating for OAuth2 as the safest and most recommended authentication method, which fundamentally abstracts away the need for direct token handling by the user. This is crucial for <strong>Discord privacy</strong>.</li>
+<li><strong>Expert-Level Token Mode (Use with Caution)</strong>: While a direct token mode is available for power users, it is intended strictly for expert users who fully comprehend and accept the associated security implications of managing raw Discord tokens. We provide clear warnings and guidance if this mode is selected.</li>
+</ul>
+</li>
+<li><strong>📜 Local &amp; Clearable Logs</strong>: For full transparency, user control, and auditability on your end, allowing you to track every <strong>Discord data removal</strong> operation:
+<ul>
+<li><strong>On-Device Storage</strong>: All detailed operational logs, capturing the application's activities and outcomes, are exclusively stored on your local machine. This ensures they remain private and accessible only to you.</li>
+<li><strong>User Control</strong>: You retain complete control to review these logs for auditing purposes, to understand application behavior, or to securely clear them at any time, further enhancing your privacy and leaving no trace on your system.</li>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Logging-Strategy"><strong>Learn about our structured Logging Strategy and how it ensures transparency and user control in our Wiki</strong></a></li>
+</ul>
+</li>
+<li><strong>Minimal Permissions</strong>: Adhering rigorously to the principle of least privilege, the application is meticulously designed to request only the precise Discord API permissions that are absolutely necessary for the specific data management operations you choose to perform. This crucial aspect ensures:
+<ul>
+<li><strong>Reduced Attack Surface</strong>: By limiting the scope of what the application can access on your behalf, we significantly reduce potential attack vectors and unauthorized data exposure.</li>
+<li><strong>User Consent &amp; Control</strong>: Ensuring that you explicitly grant only the permissions truly required for your <strong>Discord cleanup</strong> tasks, maintaining your control and minimizing unnecessary access.</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="⬇️-installation-for-end-users" class="tsd-anchor-link">⬇️ Installation for End Users<a href="#⬇️-installation-for-end-users" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Getting <strong>Friendly Discord Bot</strong> up and running on your system is designed to be a straightforward and swift process, enabling you to begin your <strong>Discord cleanup</strong> journey without unnecessary delays. We provide platform-specific installers to ensure optimal compatibility and ease of use, making <strong>Discord data removal</strong> accessible to everyone.</p>
+<h3 id="🪟-windows-installation-guide-quick-and-easy-setup" class="tsd-anchor-link">🪟 Windows Installation Guide: Quick and Easy Setup<a href="#🪟-windows-installation-guide-quick-and-easy-setup" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>For users operating on Microsoft Windows, our dedicated installer streamlines the entire setup process, providing a familiar and intuitive experience:</p>
+<ol>
+<li><strong>Download Executable</strong>: Head over to our official and secure <a href="https://github.com/TourIT-NL/friendly-discord-bot/releases"><strong>Releases page on GitHub</strong></a>. It's crucial to download only from this official source to ensure authenticity and security. Locate and download the latest <code>friendly-discord-bot-setup.exe</code> file, which is your comprehensive, all-in-one installer package.</li>
+<li><strong>Run Installer</strong>: Double-click the downloaded <code>.exe</code> file. The application installer will launch, guiding you through intuitive, step-by-step instructions. Simply follow the prompts to select your installation directory, accept the license agreement, and complete the installation process seamlessly.</li>
+<li><strong>Launch Application</strong>: Once the installation successfully concludes, you can effortlessly launch <strong>Friendly Discord Bot</strong> directly from your Start Menu. Look for its icon among your installed applications, ready to begin your <strong>Discord data management</strong>.</li>
+</ol>
+<h3 id="🍎-macos-installation-guide-seamless-integration-with-your-mac-ecosystem" class="tsd-anchor-link">🍎 macOS Installation Guide: Seamless Integration with Your Mac Ecosystem<a href="#🍎-macos-installation-guide-seamless-integration-with-your-mac-ecosystem" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>For Apple macOS users, we provide a familiar and integrated installation experience that feels native to your system:</p>
+<ol>
+<li><strong>Download Disk Image</strong>: Visit our official <a href="https://github.com/TourIT-NL/friendly-discord-bot/releases"><strong>Releases page</strong></a>. Download the latest <code>friendly-discord-bot.dmg</code> (Disk Image) file. This package ensures all necessary components are included for a smooth setup.</li>
+<li><strong>Mount DMG &amp; Install</strong>: Double-click the downloaded <code>.dmg</code> file to mount it. A window will typically appear, often displaying the application icon and a shortcut to your Applications folder. Simply drag the &quot;Friendly Discord Bot&quot; application icon into your Applications folder to complete the installation.</li>
+<li><strong>Open Application</strong>: After successfully dragging the application to your Applications folder, unmount the DMG. You can now open <strong>Friendly Discord Bot</strong> like any other application on your Mac, either from your Applications folder or via Spotlight search, ready to <strong>clean up your Discord account</strong>.</li>
+</ol>
+<h3 id="🐧-linux-installation-guide-flexible-options-for-your-distribution" class="tsd-anchor-link">🐧 Linux Installation Guide: Flexible Options for Your Distribution<a href="#🐧-linux-installation-guide-flexible-options-for-your-distribution" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>For our diverse community of Linux users, we offer flexible installation options to ensure broad compatibility across a wide range of distributions and desktop environments:</p>
+<ol>
+<li><strong>Download Package</strong>: Access our official <a href="https://github.com/TourIT-NL/friendly-discord-bot/releases"><strong>Releases page</strong></a>. Download either the AppImage (recommended for broad compatibility) or a suitable distribution-specific package (e.g., <code>.deb</code> for Debian/Ubuntu, <code>.rpm</code> for Fedora/RHEL-based systems) that best matches your Linux distribution.</li>
+<li><strong>For AppImage (Recommended for Broad Compatibility and Portability)</strong>:
+<ul>
+<li><strong>Make Executable</strong>: Open your terminal and navigate to the directory where you downloaded the AppImage. Use the command: <code>chmod +x FriendlyDiscordBot.AppImage</code> to grant the necessary execution permissions.</li>
+<li><strong>Run Directly</strong>: Execute the AppImage: <code>./FriendlyDiscordBot.AppImage</code>. This method often works across different Linux distributions without needing complex package management, offering great portability for your <strong>Discord data removal tool</strong>.</li>
+</ul>
+</li>
+<li><strong>For Distribution-Specific Packages (if provided, for deeper system integration)</strong>:
+<ul>
+<li>If a <code>.deb</code> package is available for Debian/Ubuntu-based systems (and their derivatives), install it using: <code>sudo dpkg -i friendly-discord-bot.deb</code> followed by <code>sudo apt install -f</code> to resolve any missing dependencies.</li>
+<li>If an <code>.rpm</code> package is available for Fedora/RHEL-based systems (and their derivatives), install it using: <code>sudo rpm -i friendly-discord-bot.rpm</code> or <code>sudo dnf install friendly-discord-bot.rpm</code>.</li>
+<li><em>(Always follow any specific post-installation steps or dependency resolutions prompted by your package manager for optimal system integration of your <strong>Discord cleanup</strong> tool.)</em></li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="🛠️-technical-stack-powering-your-privacy-with-cutting-edge-technology" class="tsd-anchor-link">🛠️ Technical Stack: Powering Your Privacy with Cutting-Edge Technology<a href="#🛠️-technical-stack-powering-your-privacy-with-cutting-edge-technology" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><strong>Friendly Discord Bot</strong> is meticulously crafted using a modern, highly performant, and secure technical stack. Our technology choices are deliberate and strategic, specifically designed to deliver on our core tenets of <strong>unyielding security, peak performance, and total user empowerment</strong> in <strong>Discord cleanup</strong> and data management.</p>
+<h3 id="backend-rust-🦀-the-epitome-of-performance-safety-and-concurrency" class="tsd-anchor-link">Backend: Rust 🦀 - The Epitome of Performance, Safety, and Concurrency<a href="#backend-rust-🦀-the-epitome-of-performance-safety-and-concurrency" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>At the very core of our application's robust engine lies <strong>Rust</strong>, a systems programming language that consistently ranks high for developer satisfaction and is universally celebrated for its unparalleled memory safety, blazing-fast performance, and robust concurrency features.</p>
+<ul>
+<li><strong>Memory Safety Without Garbage Collection</strong>: Rust’s innovative ownership and borrowing system is a game-changer. It eliminates entire classes of bugs common in other languages – such as null pointer dereferences, data races, and buffer overflows – at compile time. This provides an ironclad, verifiable foundation for sensitive operations like <strong>Discord data removal</strong>, drastically reducing runtime errors and security vulnerabilities.</li>
+<li><strong>Blazing-Fast Performance</strong>: Leveraging zero-cost abstractions and compiling directly to native code, Rust delivers raw execution speed comparable to C and C++. This exceptional efficiency ensures that even the most complex and large-scale <strong>Discord message purge</strong> tasks are processed swiftly, with minimal resource consumption and without compromising responsiveness.</li>
+<li><strong>Fearless Concurrency</strong>: Rust's type system and strict compiler guarantees make it uniquely possible and far easier to write correct, safe, and performant concurrent code. This is absolutely crucial for gracefully handling asynchronous Discord API interactions, managing multiple cleanup tasks, and respecting rate limits effectively.</li>
+<li><strong>Unwavering Reliability</strong>: The strict compiler guarantees and robust error handling capabilities inherent in Rust lead to the development of highly reliable and resilient software, minimizing crashes and unexpected behavior, thus providing a trustworthy <strong>Discord cleanup</strong> tool.</li>
+</ul>
+<h3 id="desktop-framework-tauri-✨-a-secure-modern-and-lightweight-cross-platform-experience" class="tsd-anchor-link">Desktop Framework: Tauri ✨ - A Secure, Modern, and Lightweight Cross-Platform Experience<a href="#desktop-framework-tauri-✨-a-secure-modern-and-lightweight-cross-platform-experience" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><strong>Tauri</strong> is a revolutionary framework that empowers us to build truly cross-platform desktop applications. It achieves this by intelligently utilizing standard web technologies (HTML, CSS, JavaScript/TypeScript) for the user interface, while seamlessly leveraging the raw power and security of Rust for the native backend logic.</p>
+<ul>
+<li><strong>Native Performance &amp; Deep Integration</strong>: Unlike heavier alternatives, Tauri compiles your application to a lean, native binary, offering exceptional performance. It also provides direct, secure access to OS-level functionalities, such as the system keychain for credential storage, which web-only solutions or heavier frameworks struggle to match.</li>
+<li><strong>Minimal Bundle Sizes</strong>: Compared to frameworks like Electron, Tauri applications are significantly smaller in footprint, often resulting in binaries that are orders of magnitude smaller. This leads to faster downloads, less disk space usage, and a more eco-friendly application experience for <strong>Discord data management</strong>.</li>
+<li><strong>Security-First Design</strong>: Tauri is architected from the ground up with security as a paramount concern. It provides a robust and secure bridge between the webview (frontend) and the Rust backend, featuring built-in security protocols, context isolation, and mitigations against common web vulnerabilities.</li>
+<li><strong>Unmatched Cross-Platform Compatibility</strong>: From a single, unified codebase, we can seamlessly deploy <strong>Friendly Discord Bot</strong> across all major desktop operating systems – Windows, macOS, and Linux – ensuring broad accessibility and a consistent, high-quality user experience for all users performing <strong>Discord cleanup</strong>.</li>
+</ul>
+<h3 id="frontend-typescript-🚀-robust-scalable-and-maintainable-user-interfaces" class="tsd-anchor-link">Frontend: TypeScript 🚀 - Robust, Scalable, and Maintainable User Interfaces<a href="#frontend-typescript-🚀-robust-scalable-and-maintainable-user-interfaces" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Our intuitive, responsive, and visually appealing user interface is expertly crafted with <strong>TypeScript</strong>, building on top of the incredibly popular and declarative <strong>React</strong> library. This powerful combination brings modern web development best practices to the desktop environment:</p>
+<ul>
+<li><strong>Strong Typing for Robustness</strong>: TypeScript extends JavaScript with static type definitions. This drastically enhances code quality, catches errors early in the development cycle, makes the codebase far more maintainable, and significantly improves scalability for our complex GUI. This translates directly to fewer bugs and a more stable, predictable user experience when you <strong>delete Discord messages</strong>.</li>
+<li><strong>React for Dynamic &amp; Responsive Interfaces</strong>: React's component-based architecture allows us to build highly dynamic, responsive, and reusable UI elements. This ensures a fluid, stable, and intuitive user experience for managing your <strong>Discord privacy</strong>, adapting gracefully to various screen sizes and user interactions.</li>
+<li><strong>Enhanced Developer Productivity</strong>: The synergistic combination of TypeScript and React provides an exceptional developer experience, enabling faster iteration, easier debugging, and the development of higher quality, more reliable user interfaces.</li>
+</ul>
+<h3 id="testing-quality-assurance-vitest-codeql--cargo-audit-🧪---uncompromising-standards" class="tsd-anchor-link">Testing &amp; Quality Assurance: Vitest, CodeQL, &amp; Cargo Audit 🧪 - Uncompromising Standards<a href="#testing-quality-assurance-vitest-codeql--cargo-audit-🧪---uncompromising-standards" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Our unwavering commitment to delivering a high-quality, secure, and reliable application is robustly backed by a multi-faceted and rigorous testing and quality assurance strategy, integrated throughout our development pipeline.</p>
+<ul>
+<li><strong>Vitest (Frontend Testing Suite)</strong>: Our choice for rapid and efficient frontend unit and integration testing. Vitest ensures that our React components, utility functions, and complex frontend logic are robust, bug-free, and behave precisely as expected across various scenarios, contributing to a smooth and reliable <strong>Discord cleanup</strong> experience.</li>
+<li><strong>CodeQL (Deep Semantic Security Analysis)</strong>: Integrated seamlessly into our Continuous Integration/Continuous Deployment (CI/CD) pipeline, CodeQL provides industry-leading deep semantic security analysis across our entire codebase (including both Rust backend and TypeScript frontend). It proactively identifies potential vulnerabilities, common weaknesses, and ensures adherence to secure coding best practices, thereby maintaining our unwavering commitment to <strong>Unyielding Security</strong> for your <strong>Discord data management</strong>.</li>
+<li><strong>Cargo Audit (Rust Dependency Security Auditing)</strong>: A crucial and continuously run Rust tool that meticulously scans our <code>Cargo.lock</code> file. Its primary function is to detect and report any known vulnerabilities in our Rust dependencies, ensuring that our highly performant and secure Rust backend remains protected against supply chain attacks and common security flaws.
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Testing-Methodology"><strong>Explore our comprehensive Testing Methodology and detailed QA processes in our Wiki for more technical depth</strong></a></li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="🗺️-roadmap-future-vision" class="tsd-anchor-link">🗺️ Roadmap &amp; Future Vision<a href="#🗺️-roadmap-future-vision" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>We are passionately committed to continuously enhancing <strong>Friendly Discord Bot</strong>, striving to offer even greater control, flexibility, and robust privacy features. Your invaluable input, insightful suggestions, and dedicated contributions are the lifeblood that shapes our exciting journey forward!</p>
+<h3 id="immediate-horizon-key-enhancements-refinements-🔭" class="tsd-anchor-link">Immediate Horizon: Key Enhancements &amp; Refinements 🔭<a href="#immediate-horizon-key-enhancements-refinements-🔭" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Enhanced Keyword Filtering</strong>: We are actively developing a next-generation keyword filtering system for message deletion. This will include more granular control with robust support for regular expressions, complex boolean logic (AND/OR/NOT combinations), and advanced exclusion rules. This will enable incredibly precise and powerful <strong>Discord message purge</strong> operations, giving you fine-tuned control over your digital content.</li>
+<li><strong>Scheduled Cleanup Tasks</strong>: Introducing a highly anticipated feature that allows users to set up and automate recurring cleanup operations. This is ideal for continuous <strong>Discord data management</strong>, ensuring your privacy settings are maintained automatically and consistently without manual intervention. Imagine scheduling weekly purges of all messages older than six months from specific channels.</li>
+<li><strong>GDPR Data Package Integration</strong>: We aim to develop intuitive tools directly within the application that assist users in interpreting, analyzing, and directly managing data sourced from Discord's official GDPR data packages. This will streamline your personal data oversight and compliance efforts, offering unprecedented insights into your complete <strong>Discord history</strong>.
+<ul>
+<li><em>(Note: Comprehensive guidance for official Discord-side GDPR Data Request and Profile Deletion processes is already available and detailed in our <a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Architecture-Account-GDPR#34-account--gdpr-management-flow">Project Blueprint Wiki</a>)</em>.</li>
+</ul>
+</li>
+</ul>
+<h3 id="mid-term-aspirations-expanding-customization-reach-✨" class="tsd-anchor-link">Mid-Term Aspirations: Expanding Customization &amp; Reach ✨<a href="#mid-term-aspirations-expanding-customization-reach-✨" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Customizable Theming</strong>: Empowering users with the ability to fully personalize their application's aesthetic. This will include comprehensive support for customizable themes, seamless dark/light mode switching, and granular UI preferences, ensuring a comfortable and visually appealing experience tailored to your preferences for all your <strong>Discord cleanup</strong> needs.</li>
+<li><strong>Robust Plugin/Extension System</strong>: Envisioning a powerful and flexible plugin/extension system. This will enable our vibrant community to build and share their own tools, integrations, and specialized cleanup modules, vastly extending the application's core capabilities and fostering innovative solutions for <strong>Discord data management</strong>.</li>
+<li><strong>Multi-Account Support</strong>: Implementing seamless support for managing privacy across multiple Discord accounts simultaneously from a single application instance, simplifying <strong>Discord data management</strong> for users with several profiles or roles.</li>
+</ul>
+<h3 id="long-term-vision-intelligent-automation-comprehensive-archiving-🌠" class="tsd-anchor-link">Long-Term Vision: Intelligent Automation &amp; Comprehensive Archiving 🌠<a href="#long-term-vision-intelligent-automation-comprehensive-archiving-🌠" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>AI-Assisted Data Categorization</strong>: Exploring the cutting-edge integration of advanced Artificial Intelligence (AI) and Machine Learning (ML) models. These models will assist users in intelligently categorizing their old messages (e.g., &quot;work,&quot; &quot;personal,&quot; &quot;spam,&quot; &quot;memes,&quot; &quot;project-related&quot;) for more sophisticated and intelligent bulk deletion suggestions.</li>
+<li><strong>Comprehensive Data Archiving &amp; Export</strong>: Developing enhanced and flexible data export options, allowing users to securely archive their entire Discord data history in various user-friendly formats (e.g., JSON, CSV, HTML) <em>before</em> initiating any deletion. This provides a robust personal backup solution for your valuable <strong>Discord history</strong>.</li>
+<li><strong>Advanced Audit Trails &amp; Visualizations</strong>: Further enhancing our auditing capabilities with even more detailed reports, graphical representations of cleanup activities, and interactive dashboards to provide deeper insights into your <strong>Discord data removal</strong> actions.</li>
+</ul>
+<p>Your ideas and invaluable feedback are the lifeblood of our innovation! Stay tuned for frequent updates and contribute your valuable thoughts and suggestions in our <a href="https://TourIT-NL/friendly-discord-bot/discussions">GitHub Discussions</a>!</p>
+<hr>
+<h2 id="🤝-community-support" class="tsd-anchor-link">🤝 Community &amp; Support<a href="#🤝-community-support" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>We are a truly community-driven project, and your active involvement is the heart and soul of <strong>Friendly Discord Bot</strong>. We are dedicated to providing comprehensive support and fostering an engaging, collaborative environment for all users and contributors. Join us in shaping the future of <strong>Discord privacy</strong> and <strong>Discord cleanup</strong>!</p>
+<h3 id="official-channels-connect-with-us" class="tsd-anchor-link">Official Channels: Connect With Us!<a href="#official-channels-connect-with-us" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>💬 GitHub Discussions</strong>: This is your primary hub for all support inquiries, asking questions about <strong>Discord cleanup</strong>, sharing innovative ideas for new features, and requesting technical assistance. Join the conversation and help us grow and evolve!</li>
+<li><strong>📢 Official Discord Server</strong>: For real-time assistance, dynamic discussions with fellow users, and direct interaction with the development team. Get instant answers to your queries, share your experiences, and connect with a like-minded community passionate about <strong>Discord data management</strong>! <a href="https://discord.gg/YOUR_INVITE_LINK"><strong>Join our Discord Community today!</strong></a> <!-- Placeholder: Replace with actual Discord invite --></li>
+<li><strong>📚 Subreddit (r/FriendlyDiscordBot)</strong>: Follow us for important project announcements, fascinating user stories showcasing the application's impact, and engaging community content related to <strong>Discord data management</strong> and privacy best practices.</li>
+<li><strong>▶️ YouTube Channel</strong>: Discover our growing library of in-depth tutorials, practical feature demonstrations, and engaging showcases of <strong>Friendly Discord Bot</strong> in action. Learn how to maximize your <strong>Discord privacy</strong> and leverage the app's full potential!</li>
+</ul>
+<h3 id="how-to-get-help-were-here-for-you" class="tsd-anchor-link">How to Get Help: We're Here For You!<a href="#how-to-get-help-were-here-for-you" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>We understand that questions and technical issues may arise during your <strong>Discord cleanup</strong> journey. Here's how you can find the support you need quickly and efficiently:</p>
+<ol>
+<li><strong>Consult Our Extensive FAQ &amp; Wiki</strong>: Your first stop for comprehensive answers! Many common questions, detailed explanations of features, and step-by-step guides are readily available in our <a href="#frequently-asked-questions-faq"><strong>Frequently Asked Questions (FAQ)</strong></a> section below and our comprehensive <a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki"><strong>Project Wiki</strong></a>. These resources are constantly updated.</li>
+<li><strong>Open a Detailed GitHub Issue</strong>: If you encounter a bug, have a specific feature request that isn't covered, or require technical assistance that isn't addressed in the Wiki or FAQ, please open a detailed issue on our GitHub repository. To help us assist you most efficiently, remember to include all relevant logs, clear reproduction steps, and any specific error messages you've encountered. This structured approach helps us provide the best support for your <strong>Discord data removal</strong>.</li>
+<li><strong>Ask in Our Discord Community</strong>: For quick questions, general discussions, or real-time assistance from the vibrant community and dedicated maintainers, our Official Discord Server is the perfect place. Get immediate feedback, collaborative solutions, and connect with other users of <strong>Friendly Discord Bot</strong>!</li>
+</ol>
+<hr>
+<h2 id="ℹ️-additional-resources-project-information" class="tsd-anchor-link">ℹ️ Additional Resources &amp; Project Information<a href="#ℹ️-additional-resources-project-information" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>This section is dedicated to providing further insights for all stakeholders – from users seeking detailed documentation to developers looking to contribute, and anyone interested in the legal and security aspects of <strong>Friendly Discord Bot</strong>.</p>
+<h3 id="detailed-usage-guides" class="tsd-anchor-link">Detailed Usage Guides<a href="#detailed-usage-guides" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Beyond the Quick Start, these step-by-step guides offer granular control and a deeper understanding of various <strong>Discord data management</strong> operations. Each guide is linked to our extensive Project Wiki for comprehensive, up-to-date information:</p>
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/User-Stories#22-bulk-message-deletion-us-002"><strong>Bulk Message Deletion (User Story US-002)</strong></a>: Dive deep into the full scope, advanced filtering options, and implications of purging your Discord messages. Learn how to truly <strong>delete all Discord messages in bulk</strong> with confidence and precision.</li>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/User-Stories#23-bulk-server-departure-us-003"><strong>Bulk Server Departure (User Story US-003)</strong></a>: Understand the efficient and safe process of leaving multiple servers, including the crucial option for pre-departure data cleanup to manage your <strong>Discord history</strong>.</li>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Architecture-Account-GDPR#34-account--gdpr-management-flow"><strong>Account &amp; GDPR Management Flow</strong></a>: Access comprehensive guidance on how to manage your Discord account and personal data, including navigating official Discord processes for GDPR requests and profile deletion, in line with our <strong>Discord privacy</strong> commitment.</li>
+</ul>
+<h3 id="advanced-usage-integration" class="tsd-anchor-link">Advanced Usage &amp; Integration<a href="#advanced-usage-integration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Unlock the full potential for sophisticated <strong>Discord cleanup</strong> and data control, tailored for power users and developers seeking deeper integration and automation capabilities:</p>
+<ul>
+<li><strong>Token Mode</strong>: Specifically for advanced users who require direct Discord API interaction via user tokens. This mode offers maximum flexibility but demands a full understanding and acceptance of the associated security implications of handling raw tokens. Use with extreme caution.</li>
+<li><strong>RPC Mode</strong>: Facilitates robust and seamless integration with other local client applications or custom scripts, enabling highly tailored, automated workflows within your local ecosystem for advanced <strong>Discord data management</strong>.</li>
+<li><strong>Scripting</strong>: Leverage our powerful Command Line Interface (CLI) helper for advanced, script-driven automation of cleanup tasks. This is perfect for power users and system administrators looking to integrate <strong>Discord data management</strong> into their existing routines.</li>
+<li><strong>Custom Rate Profiles</strong>: Fine-tune Discord API request rates to perfectly match unique scenarios, personal usage patterns, or specific Discord account histories. This feature allows for optimization of performance while maintaining optimal safety and avoiding rate limits, crucial for effective <strong>Discord message purge</strong>.</li>
+<li><strong>Headless Mode</strong>: An advanced, opt-in feature specifically designed for executing fully automated, background cleanup tasks without the need for a graphical user interface. Ideal for server environments or continuous integration setups for large-scale <strong>Discord cleanup</strong>.</li>
+</ul>
+<h3 id="🖼️-screenshots-and-demo" class="tsd-anchor-link">🖼️ Screenshots and Demo<a href="#🖼️-screenshots-and-demo" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Visual insights into <strong>Friendly Discord Bot</strong> in action! See its intuitive interface and powerful capabilities at a glance.
+<em>(<strong>Call to Action</strong>: Help us showcase the app! If you create compelling screenshots or a dynamic demo video, please consider sharing them with our community so others can visualize the power of <strong>Discord data removal</strong>!)</em></p>
+<ul>
+<li><strong>Screenshots</strong>: We encourage users and contributors to capture high-quality screenshots of the application's various features and workflows. Place these visual assets in the <code>/assets/screenshots</code> directory within the repository and link them here directly within the README.</li>
+<li><strong>Demo GIF</strong>: Consider creating a short, compelling GIF animation that visually walks users through a quick purge preview, demonstrating the real-time progress bar during an operation, highlighting the responsiveness and clarity of the UI.</li>
+<li><strong>Demo Video</strong>: A concise 60-second demo video (preferably hosted on platforms like YouTube or our project website) highlighting key features, ease of use, and the intuitive workflow would be an invaluable asset for new users and significantly boosts discoverability for <strong>Discord privacy</strong> tools.</li>
+<li><em>(<strong>Pro-Tip for SEO</strong>: For all visual assets, it is absolutely crucial to utilize descriptive <code>alt</code> text. This not only significantly enhances accessibility for users with screen readers, ensuring inclusivity, but also plays a vital role in boosting your search engine indexing and overall discoverability!)</em></li>
+</ul>
+<hr>
+<h3 id="📊-comparison-with-alternatives" class="tsd-anchor-link">📊 Comparison with Alternatives<a href="#📊-comparison-with-alternatives" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Transparency and informed choice are paramount for responsible <strong>Discord data management</strong>. See how <strong>Friendly Discord Bot</strong> stands out as the superior solution for <strong>Discord cleanup</strong> and privacy, offering a unique blend of security, features, and unparalleled user control.</p>
+<p><strong>Why Friendly Discord Bot is the definitive choice for secure, comprehensive Discord data deletion:</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Attribute</th>
+<th style="text-align:center">Friendly Discord Bot</th>
+<th style="text-align:center">Manual deletion</th>
+<th style="text-align:center">Browser scripts &amp; bots</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Intuitive Graphical User Interface (GUI)</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">❌ No</td>
+<td style="text-align:center">🤔 Varies</td>
+</tr>
+<tr>
+<td style="text-align:left">Robust Bulk DM deletion</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">❌ No</td>
+<td style="text-align:center">⚠️ Limited</td>
+</tr>
+<tr>
+<td style="text-align:left">Intelligent Rate-limit aware Operations</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">N/A</td>
+<td style="text-align:center">❌ Often no</td>
+</tr>
+<tr>
+<td style="text-align:left">Secure Local-only Storage of Data</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">N/A</td>
+<td style="text-align:center">❌ Often no</td>
+</tr>
+<tr>
+<td style="text-align:left">Fully Transparent Open Source</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">N/A</td>
+<td style="text-align:center">🤔 Varies</td>
+</tr>
+<tr>
+<td style="text-align:left">Essential Preview &amp; Dry Run Functionality</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">❌ No</td>
+<td style="text-align:center">🤔 Varies</td>
+</tr>
+<tr>
+<td style="text-align:left">Broad Cross-Platform Support</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">N/A</td>
+<td style="text-align:center">🤔 Varies</td>
+</tr>
+<tr>
+<td style="text-align:left">Actively Maintained &amp; Community Driven</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">N/A</td>
+<td style="text-align:center">🤔 Varies</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Feature-Level Comparison: Going Beyond the Basics for Superior Discord Cleanup</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Feature</th>
+<th style="text-align:center">Friendly Discord Bot</th>
+<th style="text-align:center">Other GUI tools</th>
+<th style="text-align:center">CLI scripts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Interactive Preview before deletion</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">🤔 Varies</td>
+<td style="text-align:center">❌ No</td>
+</tr>
+<tr>
+<td style="text-align:left">OAuth2 Recommended Login</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">❌ Rare</td>
+<td style="text-align:center">❌ Rare</td>
+</tr>
+<tr>
+<td style="text-align:left">OS Keychain Credential Storage</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">❌ Rare</td>
+<td style="text-align:center">❌ No</td>
+</tr>
+<tr>
+<td style="text-align:left">Advanced Rate Limit Handling &amp; Adapting</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">🤔 Varies</td>
+<td style="text-align:center">⚠️ Poor</td>
+</tr>
+<tr>
+<td style="text-align:left">Active Community Support &amp; Development</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">🤔 Varies</td>
+<td style="text-align:center">🤔 Varies</td>
+</tr>
+<tr>
+<td style="text-align:left">Comprehensive Filter Options (Date, User, Keyword)</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">🤔 Varies</td>
+<td style="text-align:center">✅ Yes</td>
+</tr>
+<tr>
+<td style="text-align:left">Bulk Server Leave with Pre-Purge Option</td>
+<td style="text-align:center"><strong>✅ Yes</strong></td>
+<td style="text-align:center">❌ No</td>
+<td style="text-align:center">❌ No</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Detailed Capability Matrix: A Holistic View of Your Discord Data Management</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Capability</th>
+<th style="text-align:center">Friendly Discord Bot</th>
+<th style="text-align:center">Browser extensions</th>
+<th style="text-align:center">Manual</th>
+<th style="text-align:center">Third-party cloud services</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Delete DMs in bulk</td>
+<td style="text-align:center">✅</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+</tr>
+<tr>
+<td style="text-align:left">Delete server messages in bulk</td>
+<td style="text-align:center">✅</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+</tr>
+<tr>
+<td style="text-align:left">Leave servers in bulk</td>
+<td style="text-align:center">✅</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+</tr>
+<tr>
+<td style="text-align:left">Wipe Discord profile fields</td>
+<td style="text-align:center">✅</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">❌</td>
+</tr>
+<tr>
+<td style="text-align:left">Guarantees Local-only processing</td>
+<td style="text-align:center">✅</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">✅</td>
+<td style="text-align:center">❌</td>
+</tr>
+<tr>
+<td style="text-align:left">Intelligent Rate limit aware operations</td>
+<td style="text-align:center">✅</td>
+<td style="text-align:center">❌</td>
+<td style="text-align:center">N/A</td>
+<td style="text-align:center">❌</td>
+</tr>
+<tr>
+<td style="text-align:left">Provides Cryptographically Signed Releases</td>
+<td style="text-align:center">✅</td>
+<td style="text-align:center">Varies</td>
+<td style="text-align:center">N/A</td>
+<td style="text-align:center">Varies</td>
+</tr>
+<tr>
+<td style="text-align:left">Offers Comprehensive Filtering Options</td>
+<td style="text-align:center">✅</td>
+<td style="text-align:center">Varies</td>
+<td style="text-align:center">N/A</td>
+<td style="text-align:center">Varies</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="developer-build-and-contribution" class="tsd-anchor-link">Developer Build and Contribution<a href="#developer-build-and-contribution" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>We warmly welcome and highly encourage contributions from our vibrant community! Your expertise and efforts are truly essential to the growth, continuous improvement, and security of <strong>Friendly Discord Bot</strong>. Please refer to our comprehensive <code>CONTRIBUTING.md</code> guide for detailed guidelines on how to get started, our preferred code style, and the efficient pull request process.</p>
+<p><strong>Prerequisites for Developers:</strong></p>
+<p>Before you dive into the codebase and start building, ensure you have the following essential tools and dependencies installed on your system. These are critical for a smooth development experience:</p>
+<ul>
+<li><a href="https://www.rust-lang.org/tools/install"><strong>Rust toolchain</strong></a> (stable version recommended) 🦀: This is the robust backbone of our secure and performant backend logic. Ensure you install <code>rustup</code> first, which allows for easy management of Rust versions.</li>
+<li><a href="https://nodejs.org/en/"><strong>Node.js LTS</strong></a> (Long Term Support version) 🟢: Essential for managing frontend dependencies (like React and TypeScript), executing build scripts, and running development servers. We recommend using the latest LTS version for stability.</li>
+<li><a href="https://yarnpkg.com/"><strong>Yarn</strong></a> or npm 📦: Our preferred package managers for efficient management of frontend development dependencies. Choose the one you are most comfortable with; consistency within your project is key.</li>
+<li><a href="https://tauri.app/v1/guides/getting-started/prerequisites"><strong>Tauri prerequisites</strong></a> for your specific development platform 🖥️: Depending on your operating system (Windows, macOS, Linux), you may need to install additional system-level dependencies (e.g., specific compilers, libraries) for proper Tauri development setup. Please consult the official Tauri documentation for detailed instructions tailored to your environment.</li>
+</ul>
+<p><strong>Step-by-Step Build Instructions for a Local Development Environment:</strong></p>
+<p>Getting a local development environment for <strong>Friendly Discord Bot</strong> up and running is straightforward. Follow these steps meticulously:</p>
+<pre><code class="bash"><span class="hl-0"># Step 1: Clone the Friendly Discord Bot repository from its official GitHub source</span><br/><span class="hl-0"># This command fetches the entire project codebase to your local machine.</span><br/><span class="hl-1">git</span><span class="hl-2"> </span><span class="hl-3">clone</span><span class="hl-2"> </span><span class="hl-3">https://github.com/TourIT-NL/friendly-discord-bot.git</span><br/><br/><span class="hl-0"># Step 2: Navigate into the project&#39;s designated root directory</span><br/><span class="hl-0"># It is crucial to ensure you are in the correct workspace root (discord-privacy-util)</span><br/><span class="hl-0"># for subsequent commands to execute correctly.</span><br/><span class="hl-1">cd</span><span class="hl-2"> </span><span class="hl-3">friendly-discord-bot/discord-privacy-util</span><br/><br/><span class="hl-0"># Step 3: Install all necessary frontend dependencies (React, TypeScript, Vite, etc.)</span><br/><span class="hl-0"># This command fetches all required JavaScript/TypeScript packages for building the UI.</span><br/><span class="hl-0"># Choose your preferred package manager:</span><br/><span class="hl-1">yarn</span><span class="hl-2"> </span><span class="hl-3">install</span><span class="hl-2"> </span><span class="hl-0"># Alternatively, use &#39;npm install&#39; if you prefer npm</span><br/><br/><span class="hl-0"># Step 4: Build the optimized frontend assets for the user interface (using Vite)</span><br/><span class="hl-0"># This compiles your React/TypeScript code into static assets that Tauri can display,</span><br/><span class="hl-0"># optimizing them for production performance.</span><br/><span class="hl-1">yarn</span><span class="hl-2"> </span><span class="hl-3">build</span><span class="hl-2"> </span><span class="hl-0"># Alternatively, use &#39;npm run build&#39;</span><br/><br/><span class="hl-0"># Step 5: Build the high-performance Rust backend in release mode</span><br/><span class="hl-0"># This command meticulously compiles the entire Rust workspace, including the core</span><br/><span class="hl-0"># Tauri backend and all associated Rust crates, in an optimized release configuration.</span><br/><span class="hl-0"># The &#39;--workspace&#39; flag ensures all Rust crates within the project are built.</span><br/><span class="hl-1">cargo</span><span class="hl-2"> </span><span class="hl-3">build</span><span class="hl-2"> </span><span class="hl-4">--release</span><span class="hl-2"> </span><span class="hl-4">--workspace</span><br/><br/><span class="hl-0"># Step 6: Package the cross-platform desktop application binaries</span><br/><span class="hl-0"># This step utilizes Tauri&#39;s powerful CLI to create distributable installers or executables</span><br/><span class="hl-0"># specifically for your current operating system, ready for testing or deployment.</span><br/><span class="hl-1">yarn</span><span class="hl-2"> </span><span class="hl-3">tauri</span><span class="hl-2"> </span><span class="hl-3">build</span><span class="hl-2"> </span><span class="hl-0"># Alternatively, use &#39;npm run tauri build&#39;</span>
+</code><button type="button">Copy</button></pre>
+
+<p><em>(<strong>Important Note for Contributors</strong>: For a complete and optimized release build across the entire Rust workspace, always utilize the <code>cargo build --release --workspace</code> command. This ensures all Rust crates within the project are compiled with maximum optimizations and are production-ready. For development, <code>cargo run --workspace</code> can be used to run the app directly.)</em></p>
+<h3 id="testing-and-quality-assurance-our-unwavering-commitment-to-excellence" class="tsd-anchor-link">Testing and Quality Assurance: Our Unwavering Commitment to Excellence<a href="#testing-and-quality-assurance-our-unwavering-commitment-to-excellence" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Ensuring the stability, functionality, and ironclad security of <strong>Friendly Discord Bot</strong> is not just a goal; it is a paramount commitment woven into every single stage of our development and release process. We employ a multi-layered and rigorous testing strategy to deliver a reliable <strong>Discord cleanup</strong> tool:</p>
+<ul>
+<li><strong>🔬 Unit Tests</strong>: We implement robust and granular unit tests for all critical core logic, our sophisticated Discord API dispatcher, and essential utility functions. These tests meticulously isolate individual components, verifying their correctness, reliability, and adherence to design specifications, ensuring every piece of your <strong>Discord cleanup</strong> tool works perfectly in isolation.</li>
+<li><strong>🧪 Integration Tests</strong>: Comprehensive integration tests are carefully designed to rigorously evaluate interactions with the Discord API. We frequently employ mocked endpoints and controlled test environments to simulate real-world API responses and various edge-case scenarios, ensuring seamless communication and flawless error handling between our application and Discord's services.</li>
+<li><strong>🤖 End-to-End Tests</strong>: Our complete UI workflows undergo rigorous end-to-end testing, often utilizing headless automation frameworks. These tests meticulously simulate authentic user interactions, from launching the application and navigating its interface to executing complex cleanup sequences, thereby verifying the entire user journey and functionality of the <strong>Discord data management</strong> process from start to finish.</li>
+<li><strong>🔒 Security Tests</strong>: Proactive security is a fundamental cornerstone of our development. We integrate regular static analysis (e.g., CodeQL), perform thorough dependency scanning (via <code>cargo audit</code> for our Rust dependencies and <code>npm audit</code> for Node.js/frontend dependencies), and strictly adhere to industry-leading secure coding practices throughout the entire development lifecycle, safeguarding your <strong>Discord privacy</strong>.</li>
+<li><strong>Manual QA Across Platforms</strong>: Extensive manual Quality Assurance (QA) is diligently performed by our dedicated team across all supported operating systems – Windows, macOS, and Linux – utilizing dedicated test accounts to rigorously identify edge cases, confirm cross-platform compatibility, and ensure a polished, intuitive, and bug-free user experience.
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Testing-Methodology"><strong>Explore our comprehensive Testing Methodology and detailed QA processes in our Wiki for more technical depth</strong></a></li>
+</ul>
+</li>
+</ul>
+<h3 id="troubleshooting-common-issues" class="tsd-anchor-link">Troubleshooting Common Issues<a href="#troubleshooting-common-issues" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Encountering an unexpected behavior or a technical hiccup during your <strong>Discord cleanup</strong>? Don't worry, it happens! We've compiled a list of common issues and their effective solutions to help you get back on track with your operations as quickly as possible.</p>
+<ul>
+<li>For a highly detailed compendium of common issues, their known fixes, and in-depth logging information, please consult our comprehensive <a href="media/SUPPORT.md"><strong>Troubleshooting Guide</strong></a> or explore the relevant sections of our <a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki"><strong>Project Wiki</strong></a>. These resources are continuously updated based on user feedback.</li>
+<li><strong>Typical User Issues &amp; Resolutions</strong>:
+<ul>
+<li><strong>Login Fails</strong>:
+<ul>
+<li><strong>Problem</strong>: You are unable to successfully log in to your Discord account via the application, or the OAuth2 flow encounters an error.</li>
+<li><strong>Resolution</strong>: First, double-check that your OAuth2 redirect configuration is correctly set up in your Discord Developer portal if you are building from source or managing your own application ID. The redirect URI must precisely match. Also, ensure your system's date and time are accurate and synchronized, as time discrepancies can cause authentication failures with secure protocols.</li>
+</ul>
+</li>
+<li><strong>Persistent Rate Limit Errors</strong>:
+<ul>
+<li><strong>Problem</strong>: The application reports repeated or unrecoverable Discord API rate limit errors, causing operations to stall or fail.</li>
+<li><strong>Resolution</strong>: Our application automatically handles most rate limits intelligently. However, if you encounter persistent issues, try utilizing the application's &quot;conservative&quot; rate profile (if available in the settings menu) to further reduce API call frequency. Also, ensure the exponential backoff feature is actively enabled, which helps in graceful recovery from temporary API blocks.</li>
+</ul>
+</li>
+<li><strong>Messages or Servers Missing in Preview</strong>:
+<ul>
+<li><strong>Problem</strong>: Items you expect to see (e.g., old messages, certain servers you are a member of) do not appear in the preview list for <strong>Discord data removal</strong>.</li>
+<li><strong>Resolution</strong>: Confirm that the Discord account currently connected to the application has the necessary permissions to access and read the specific conversations, channels, or servers you are trying to scan. Also, thoroughly verify that the application has been granted all the required permissions during the initial OAuth2 authentication process. Old servers you've been removed from or private channels you no longer have access to might not appear.</li>
+</ul>
+</li>
+<li><strong>Application Crashes Unexpectedly</strong>:
+<ul>
+<li><strong>Problem</strong>: The application closes abruptly, becomes unresponsive, or displays a generic error message.</li>
+<li><strong>Resolution</strong>: Retrieve the crash logs from your local system. On Windows, these are typically found at <code>%APPDATA%/FriendlyDiscordBot/logs</code>. On macOS, look in <code>~/Library/Logs/FriendlyDiscordBot</code>. On Linux, check <code>~/.config/FriendlyDiscordBot/logs</code>. Once you have the logs, please open a detailed issue on our GitHub repository and attach the log files for our development team to analyze. This greatly assists in diagnostics and helps us improve stability.
+<ul>
+<li><a href="https://github.com/TourIT-NL/friendly-discord-bot/wiki/Logging-Strategy">Learn about our structured Logging Strategy and how it's implemented in our Wiki</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="frequently-asked-questions-faq" class="tsd-anchor-link">Frequently Asked Questions (FAQ)<a href="#frequently-asked-questions-faq" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Find quick, concise, and helpful answers to the most common inquiries about <strong>Friendly Discord Bot</strong> and responsible <strong>Discord data management</strong>.</p>
+<ul>
+<li><strong>Is using this application safe for my Discord account?</strong>
+<ul>
+<li><strong>Answer</strong>: Yes, your account's safety is our absolute top priority. The application is meticulously designed with paramount security in mind, incorporating robust features like secure OAuth2 authentication, intelligent rate-limiting, and strictly local-only processing of your data. While no third-party tool can definitively guarantee zero risk due to platform-specific Terms of Service which are subject to change, we strive to minimize it significantly. We strongly recommend always using the OAuth2 login method and diligently following our in-app safety checklist for the best possible protection.</li>
+</ul>
+</li>
+<li><strong>Does the app store or upload any of my Discord messages or personal data to external servers?</strong>
+<ul>
+<li><strong>Answer</strong>: Absolutely not. This is a cornerstone of our unwavering privacy commitment. All your messages and personal data are processed <strong>exclusively and entirely on your local machine</strong>. They are never uploaded, stored, or transmitted remotely to our servers or any external service whatsoever. Your data remains solely on your device, under your complete control.</li>
+</ul>
+</li>
+<li><strong>Will using this tool lead to my Discord account being banned or suspended by Discord?</strong>
+<ul>
+<li><strong>Answer</strong>: We cannot provide an absolute, ironclad guarantee against any potential account actions by Discord, as platform policies can change, and interpretations vary. However, our application is engineered to operate with utmost caution and responsibility, employing sophisticated API interaction patterns and strictly respecting all known Discord rate limits. Our primary goal is to drastically minimize any potential risk of account action. We always advise users to proceed with discretion and to be fully aware of Discord's current Terms of Service before initiating large-scale <strong>Discord cleanup</strong>.</li>
+</ul>
+</li>
+<li><strong>If I delete messages using the app, can I recover them later?</strong>
+<ul>
+<li><strong>Answer</strong>: No. Once messages are permanently deleted through <strong>Friendly Discord Bot</strong>, they are irrecoverable by the application or by Discord itself. We emphasize the critical importance of backing up any messages, conversations, or data you wish to retain <em>before</em> initiating any deletion processes. Always utilize the &quot;Preview&quot; or &quot;Dry Run&quot; functionality carefully!</li>
+</ul>
+</li>
+<li><strong>Is Friendly Discord Bot an open-source project that I can inspect and contribute to?</strong>
+<ul>
+<li><strong>Answer</strong>: Yes, proudly so! We are fully an open-source project, released under the permissive MIT license. This unwavering commitment to open source fosters unparalleled transparency, actively encourages valuable community contributions, and allows for independent security audits by experts worldwide. Your contributions are highly encouraged and valued!</li>
+</ul>
+</li>
+<li><strong>What is the recommended process for reporting a security vulnerability I might discover?</strong>
+<ul>
+<li><strong>Answer</strong>: We take all security vulnerabilities with the utmost seriousness and appreciate your vigilance. Please follow our clear, confidential, and responsible disclosure process meticulously outlined in our dedicated <code>SECURITY.md</code> file. This ensures that any potential issues are addressed swiftly, securely, and with full transparency.</li>
+</ul>
+</li>
+</ul>
+<h3 id="legal-and-risk-disclaimer" class="tsd-anchor-link">Legal and Risk Disclaimer<a href="#legal-and-risk-disclaimer" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><strong>Critical Notice: User Responsibility &amp; Terms of Service Adherence</strong>: The use of this software, <strong>Friendly Discord Bot</strong>, involves direct interaction with the Discord platform and its API. As such, it may potentially intersect with or even violate Discord's prevailing Terms of Service and/or community guidelines. The project maintainers expressly disclaim any and all responsibility for any account actions (including, but not limited to, temporary suspensions or permanent bans) that may be taken by Discord against a user's account as a direct or indirect consequence of using this software. Users, and users alone, assume full and complete responsibility for their actions when employing this tool and are solely responsible for ensuring their usage remains in full compliance with all relevant local laws, international regulations, and Discord's platform terms. We strongly advise all users to read and understand Discord's policies before proceeding with any <strong>Discord data removal</strong>.</p>
+<p><strong>No Warranty Clause</strong>: This software is provided &quot;as-is&quot; and &quot;as-available,&quot; without any warranty of any kind, whether express, implied, statutory, or otherwise. This includes, but is not limited to, implied warranties of merchantability, fitness for a particular purpose, and non-infringement. The entire risk as to the quality and performance of the software is with you. Should the software prove defective, you assume the cost of all necessary servicing, repair, or correction.</p>
+<h3 id="responsible-disclosure-policy" class="tsd-anchor-link">Responsible Disclosure Policy<a href="#responsible-disclosure-policy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>We maintain an unwavering commitment to the security and integrity of <strong>Friendly Discord Bot</strong> and, by extension, the safety and privacy of its users. If you believe you have discovered a security vulnerability within our application, we urge you to adhere strictly to the responsible disclosure process meticulously outlined in our dedicated <code>SECURITY.md</code> file. Please provide a clear, detailed, and concise reproduction path for the vulnerability, including any relevant steps, code, or context. Crucially, we request that you kindly refrain from any public disclosure of the vulnerability until a fix has been developed, thoroughly tested, and officially deployed to ensure the safety of all users. The project maintainers will acknowledge receipt of your report promptly, work diligently on a resolution, and provide a transparent timeline for remediation efforts, ensuring the highest standards of <strong>Discord privacy</strong>.</p>
+<hr>
+<h3 id="end-of-readme" class="tsd-anchor-link">End of README<a href="#end-of-readme" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#✨-friendly-discord-bot-your-ultimate-discord-privacy--data-cleanup-utility-✨"><span>✨ <wbr/>Friendly <wbr/>Discord <wbr/>Bot -<wbr/> <wbr/>Your <wbr/>Ultimate <wbr/>Discord <wbr/>Privacy &amp; <wbr/>Data <wbr/>Cleanup <wbr/>Utility ✨</span></a><ul><li><a href="#📖-table-of-contents"><span>📖 <wbr/>Table of <wbr/>Contents</span></a></li><li><a href="#🌟-overview"><span>🌟 <wbr/>Overview</span></a></li><li><a href="#🎯-our-philosophy-vision"><span>🎯 <wbr/>Our <wbr/>Philosophy &amp; <wbr/>Vision</span></a></li><li><ul><li><a href="#core-tenets-guiding-our-development"><span>Core <wbr/>Tenets <wbr/>Guiding <wbr/>Our <wbr/>Development:</span></a></li></ul></li><li><a href="#🚀-why-choose-friendly-discord-bot"><span>🚀 <wbr/>Why <wbr/>Choose <wbr/>Friendly <wbr/>Discord <wbr/>Bot?</span></a></li><li><ul><li><a href="#the-discord-data-dilemma-a-pressing-problem-in-digital-privacy-🧐"><span>The <wbr/>Discord <wbr/>Data <wbr/>Dilemma: <wbr/>A <wbr/>Pressing <wbr/>Problem in <wbr/>Digital <wbr/>Privacy 🧐</span></a></li><li><a href="#our-elegant-solution-reclaiming-your-digital-privacy-with-precision-✅"><span>Our <wbr/>Elegant <wbr/>Solution: <wbr/>Reclaiming <wbr/>Your <wbr/>Digital <wbr/>Privacy with <wbr/>Precision ✅</span></a></li><li><a href="#our-unique-positioning-the-privacy-first-advantage-open-transparency-🏆"><span>Our <wbr/>Unique <wbr/>Positioning: <wbr/>The <wbr/>Privacy-<wbr/>First <wbr/>Advantage &amp; <wbr/>Open <wbr/>Transparency 🏆</span></a></li></ul></li><li><a href="#💎-key-features-dive-deeper"><span>💎 <wbr/>Key <wbr/>Features -<wbr/> <wbr/>Dive <wbr/>Deeper</span></a></li><li><ul><li><a href="#🗑️-bulk-message-deletion-your-comprehensive-digital-eraser"><span>🗑️ <wbr/>Bulk <wbr/>Message <wbr/>Deletion: <wbr/>Your <wbr/>Comprehensive <wbr/>Digital <wbr/>Eraser</span></a></li><li><ul><li><a href="#⚙️-advanced-filtering-precision-at-your-fingertips"><span>⚙️ <wbr/>Advanced <wbr/>Filtering: <wbr/>Precision at <wbr/>Your <wbr/>Fingertips</span></a></li></ul></li><li><a href="#👋-bulk-server-departure-effortless-digital-decluttering"><span>👋 <wbr/>Bulk <wbr/>Server <wbr/>Departure: <wbr/>Effortless <wbr/>Digital <wbr/>Decluttering</span></a></li><li><a href="#👤-relationship-management-curate-your-digital-connections-with-ease"><span>👤 <wbr/>Relationship <wbr/>Management: <wbr/>Curate <wbr/>Your <wbr/>Digital <wbr/>Connections with <wbr/>Ease</span></a></li><li><a href="#🧹-profile-data-wipe-rebrand-and-reclaim-your-online-persona"><span>🧹 <wbr/>Profile <wbr/>Data <wbr/>Wipe: <wbr/>Rebrand and <wbr/>Reclaim <wbr/>Your <wbr/>Online <wbr/>Persona</span></a></li><li><a href="#🛡️-intelligent-rate-limiting-proactive-account-safety-first-always"><span>🛡️ <wbr/>Intelligent <wbr/>Rate-<wbr/>Limiting: <wbr/>Proactive <wbr/>Account <wbr/>Safety <wbr/>First &amp; <wbr/>Always</span></a></li><li><a href="#🔐-secure-authentication-access-without-compromise-control-without-risk"><span>🔐 <wbr/>Secure <wbr/>Authentication: <wbr/>Access <wbr/>Without <wbr/>Compromise, <wbr/>Control <wbr/>Without <wbr/>Risk</span></a></li><li><a href="#🏠-local-only-processing-your-data-your-machine-your-absolute-privacy"><span>🏠 <wbr/>Local-<wbr/>Only <wbr/>Processing: <wbr/>Your <wbr/>Data, <wbr/>Your <wbr/>Machine, <wbr/>Your <wbr/>Absolute <wbr/>Privacy</span></a></li><li><a href="#🔑-os-keychain-storage-enterprise-grade-credential-protection"><span>🔑 <wbr/>OS <wbr/>Keychain <wbr/>Storage: <wbr/>Enterprise-<wbr/>Grade <wbr/>Credential <wbr/>Protection</span></a></li><li><a href="#👀-preview-and-dry-run-the-ultimate-safety-net-before-deletion"><span>👀 <wbr/>Preview and <wbr/>Dry <wbr/>Run: <wbr/>The <wbr/>Ultimate <wbr/>Safety <wbr/>Net <wbr/>Before <wbr/>Deletion</span></a></li><li><a href="#📊-comprehensive-reporting-auditing-transparency-at-your-fingertips"><span>📊 <wbr/>Comprehensive <wbr/>Reporting &amp; <wbr/>Auditing: <wbr/>Transparency at <wbr/>Your <wbr/>Fingertips</span></a></li><li><a href="#🌐-open-source-auditable-built-on-trust-and-community"><span>🌐 <wbr/>Open <wbr/>Source &amp; <wbr/>Auditable: <wbr/>Built on <wbr/>Trust and <wbr/>Community</span></a></li></ul></li><li><a href="#⚡-quick-start-your-data-cleanup-journey"><span>⚡ <wbr/>Quick <wbr/>Start: <wbr/>Your <wbr/>Data <wbr/>Cleanup <wbr/>Journey</span></a></li><li><ul><li><a href="#step-by-step-guide-to-reclaiming-your-discord-privacy"><span>Step-<wbr/>by-<wbr/>Step <wbr/>Guide to <wbr/>Reclaiming <wbr/>Your <wbr/>Discord <wbr/>Privacy</span></a></li></ul></li><li><a href="#🔒-security-and-privacy-our-core-promise"><span>🔒 <wbr/>Security and <wbr/>Privacy -<wbr/> <wbr/>Our <wbr/>Core <wbr/>Promise</span></a></li><li><ul><li><a href="#our-ironclad-design-principles-🛡️"><span>Our <wbr/>Ironclad <wbr/>Design <wbr/>Principles 🛡️</span></a></li><li><a href="#advanced-security-safeguards-technical-resilience"><span>Advanced <wbr/>Security <wbr/>Safeguards &amp; <wbr/>Technical <wbr/>Resilience</span></a></li></ul></li><li><a href="#⬇️-installation-for-end-users"><span>⬇️ <wbr/>Installation for <wbr/>End <wbr/>Users</span></a></li><li><ul><li><a href="#🪟-windows-installation-guide-quick-and-easy-setup"><span>🪟 <wbr/>Windows <wbr/>Installation <wbr/>Guide: <wbr/>Quick and <wbr/>Easy <wbr/>Setup</span></a></li><li><a href="#🍎-macos-installation-guide-seamless-integration-with-your-mac-ecosystem"><span>🍎 mac<wbr/>OS <wbr/>Installation <wbr/>Guide: <wbr/>Seamless <wbr/>Integration with <wbr/>Your <wbr/>Mac <wbr/>Ecosystem</span></a></li><li><a href="#🐧-linux-installation-guide-flexible-options-for-your-distribution"><span>🐧 <wbr/>Linux <wbr/>Installation <wbr/>Guide: <wbr/>Flexible <wbr/>Options for <wbr/>Your <wbr/>Distribution</span></a></li></ul></li><li><a href="#🛠️-technical-stack-powering-your-privacy-with-cutting-edge-technology"><span>🛠️ <wbr/>Technical <wbr/>Stack: <wbr/>Powering <wbr/>Your <wbr/>Privacy with <wbr/>Cutting-<wbr/>Edge <wbr/>Technology</span></a></li><li><ul><li><a href="#backend-rust-🦀-the-epitome-of-performance-safety-and-concurrency"><span>Backend: <wbr/>Rust 🦀 -<wbr/> <wbr/>The <wbr/>Epitome of <wbr/>Performance, <wbr/>Safety, and <wbr/>Concurrency</span></a></li><li><a href="#desktop-framework-tauri-✨-a-secure-modern-and-lightweight-cross-platform-experience"><span>Desktop <wbr/>Framework: <wbr/>Tauri ✨ -<wbr/> <wbr/>A <wbr/>Secure, <wbr/>Modern, and <wbr/>Lightweight <wbr/>Cross-<wbr/>Platform <wbr/>Experience</span></a></li><li><a href="#frontend-typescript-🚀-robust-scalable-and-maintainable-user-interfaces"><span>Frontend: <wbr/>Type<wbr/>Script 🚀 -<wbr/> <wbr/>Robust, <wbr/>Scalable, and <wbr/>Maintainable <wbr/>User <wbr/>Interfaces</span></a></li><li><a href="#testing-quality-assurance-vitest-codeql--cargo-audit-🧪---uncompromising-standards"><span>Testing &amp; <wbr/>Quality <wbr/>Assurance: <wbr/>Vitest, <wbr/>Code<wbr/>QL, &amp; <wbr/>Cargo <wbr/>Audit 🧪 -<wbr/> <wbr/>Uncompromising <wbr/>Standards</span></a></li></ul></li><li><a href="#🗺️-roadmap-future-vision"><span>🗺️ <wbr/>Roadmap &amp; <wbr/>Future <wbr/>Vision</span></a></li><li><ul><li><a href="#immediate-horizon-key-enhancements-refinements-🔭"><span>Immediate <wbr/>Horizon: <wbr/>Key <wbr/>Enhancements &amp; <wbr/>Refinements 🔭</span></a></li><li><a href="#mid-term-aspirations-expanding-customization-reach-✨"><span>Mid-<wbr/>Term <wbr/>Aspirations: <wbr/>Expanding <wbr/>Customization &amp; <wbr/>Reach ✨</span></a></li><li><a href="#long-term-vision-intelligent-automation-comprehensive-archiving-🌠"><span>Long-<wbr/>Term <wbr/>Vision: <wbr/>Intelligent <wbr/>Automation &amp; <wbr/>Comprehensive <wbr/>Archiving 🌠</span></a></li></ul></li><li><a href="#🤝-community-support"><span>🤝 <wbr/>Community &amp; <wbr/>Support</span></a></li><li><ul><li><a href="#official-channels-connect-with-us"><span>Official <wbr/>Channels: <wbr/>Connect <wbr/>With <wbr/>Us!</span></a></li><li><a href="#how-to-get-help-were-here-for-you"><span>How to <wbr/>Get <wbr/>Help: <wbr/>We&#39;re <wbr/>Here <wbr/>For <wbr/>You!</span></a></li></ul></li><li><a href="#ℹ️-additional-resources-project-information"><span>ℹ️ <wbr/>Additional <wbr/>Resources &amp; <wbr/>Project <wbr/>Information</span></a></li><li><ul><li><a href="#detailed-usage-guides"><span>Detailed <wbr/>Usage <wbr/>Guides</span></a></li><li><a href="#advanced-usage-integration"><span>Advanced <wbr/>Usage &amp; <wbr/>Integration</span></a></li><li><a href="#🖼️-screenshots-and-demo"><span>🖼️ <wbr/>Screenshots and <wbr/>Demo</span></a></li><li><a href="#📊-comparison-with-alternatives"><span>📊 <wbr/>Comparison with <wbr/>Alternatives</span></a></li><li><a href="#developer-build-and-contribution"><span>Developer <wbr/>Build and <wbr/>Contribution</span></a></li><li><a href="#testing-and-quality-assurance-our-unwavering-commitment-to-excellence"><span>Testing and <wbr/>Quality <wbr/>Assurance: <wbr/>Our <wbr/>Unwavering <wbr/>Commitment to <wbr/>Excellence</span></a></li><li><a href="#troubleshooting-common-issues"><span>Troubleshooting <wbr/>Common <wbr/>Issues</span></a></li><li><a href="#frequently-asked-questions-faq"><span>Frequently <wbr/>Asked <wbr/>Questions (<wbr/>FAQ)</span></a></li><li><a href="#legal-and-risk-disclaimer"><span>Legal and <wbr/>Risk <wbr/>Disclaimer</span></a></li><li><a href="#responsible-disclosure-policy"><span>Responsible <wbr/>Disclosure <wbr/>Policy</span></a></li><li><a href="#end-of-readme"><span>End of <wbr/>README</span></a></li></ul></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">discord-privacy-util</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
