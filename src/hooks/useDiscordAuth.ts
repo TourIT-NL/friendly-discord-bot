@@ -192,8 +192,12 @@ export const useDiscordAuth = () => {
           .replace(/^Bearer\s+/i, "")
           .replace(/^"|"$/g, ""),
       });
+      setError(null); // Clear any previous errors
+      setLoading(false); // End loading state on success
+      setView("dashboard"); // Navigate to dashboard
     } catch (err: any) {
       handleApiError(err, "Identity validation failed.");
+      setLoading(false); // Ensure loading is false on error too
     }
   };
 
