@@ -15,7 +15,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.2.8",

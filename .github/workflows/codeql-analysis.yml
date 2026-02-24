@@ -19,25 +19,44 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["javascript", "rust"] # Analyze both JavaScript/TypeScript and Rust
+        language: ["javascript", "rust"]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Mandatory for CodeQL
+          fetch-depth: 0
+
+      - name: Install system dependencies (Linux)
+        if: ${{ matrix.language == 'rust' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libglib2.0-dev libgirepository1.0-dev
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci || npm install
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           config-file: ./.github/codeql-config.yml
-          # If you want to analyze compiled languages, you can specify a build command here.
-          # For Rust, CodeQL can often build it automatically, but you might need to adjust.
-          # For JavaScript/TypeScript, often no explicit build command is needed if dependencies are installed.
 
-      - name: Autobuild (for compiled languages like Rust, if needed)
+      - name: Build Rust (Manual for CodeQL capture)
         if: ${{ matrix.language == 'rust' }}
+        working-directory: src-tauri
+        run: |
+          # We only need a debug build for CodeQL analysis, which is faster.
+          cargo build --verbose
+
+      - name: Autobuild (for JavaScript)
+        if: ${{ matrix.language == 'javascript' }}
         uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
