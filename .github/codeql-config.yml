@@ -2,4 +2,4 @@
 # This file is used to configure CodeQL analysis.
 
 paths-ignore:
-  - 'coverage/frontend/sorter.js'
+  - "coverage/frontend/sorter.js"
