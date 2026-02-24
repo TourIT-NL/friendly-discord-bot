@@ -1,619 +1,320 @@
-# Friendly Discord Bot - Delete All Discord Messages & Data (Privacy Tool)
+# ✨ Friendly Discord Bot - Your Ultimate Discord Privacy & Data Cleanup Utility ✨
 
 [![Release](https://img.shields.io/badge/release-v1.0.3-blue)](https://github.com/TourIT-NL/friendly-discord-bot/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/TourIT-NL/friendly-discord-bot)
+[![Discord Server](https://img.shields.io/discord/YOUR_DISCORD_SERVER_ID?label=Discord&logo=discord&color=7289DA)](https://discord.gg/YOUR_INVITE_LINK) <!-- Placeholder: Replace with actual Discord invite -->
+[![GitHub Stars](https://img.shields.io/github/stars/TourIT-NL/friendly-discord-bot?style=social)](https://github.com/TourIT-NL/friendly-discord-bot/stargazers)
 
-**One-line summary**  
-**Friendly Discord Bot** is the secure, user‑friendly desktop application to safely delete and purge Discord messages, DMs, server messages, relationships, and profile data with conservative rate‑limit handling and local‑only processing.
-
----
-
-## Table of contents
-
-- **Overview**
-- **Why Friendly Discord Bot**
-- **Key features**
-- **Supported platforms**
-- **Security and privacy**
-- **How it works**
-- **Quick start**
-- **Detailed usage**
-- **Advanced usage**
-- **Screenshots and demo**
-- **Comparison with alternatives**
-- **SEO and discoverability notes**
-- **Release and update policy**
-- **Installation for end users**
-- **Developer build and contribution**
-- **Testing and QA**
-- **Troubleshooting**
-- **FAQ**
-- **Legal and risk disclaimer**
-- **Responsible disclosure**
-- **Changelog template**
-- **Marketing and launch checklist**
-- **SEO content plan**
-- **Community and support**
-- **Contact and maintainers**
-- **Appendix JSON‑LD for website**
-- **Appendix command line examples**
-- **Appendix release checklist**
+**Friendly Discord Bot** is the secure, privacy-focused, and incredibly user-friendly desktop application designed for comprehensive Discord data management. Effortlessly **delete Discord messages**, purge DMs, clean up server content, manage relationships, and wipe profile data with **intelligent rate-limit handling** and **local-only processing**. Take back control of your digital footprint and enhance your Discord privacy today!
 
 ---
 
-# Overview
+## 📖 Table of Contents
 
-**Friendly Discord Bot** is an open‑source, cross‑platform desktop application built with **Rust**, **Tauri**, and **TypeScript** that enables users to remove their Discord history and personal data safely and efficiently. The application focuses on usability, security, and minimizing account risk through rate‑limit aware dispatching and conservative defaults.
-A secure, user‑friendly desktop tool to delete all your Discord messages, DMs, servers, relationships, and personal data. The #1 Discord privacy utility.
-
-This repository contains source code, release artifacts, documentation, and community resources for users, contributors, and reviewers.
-
----
-
-# Why Friendly Discord Bot
-
-**Problem**  
-Discord does not provide a single user‑friendly tool to remove all personal history across DMs, servers, and profile fields. Manual deletion is slow, error‑prone, and often impossible at scale.
-
-**Solution**  
-Friendly Discord Bot provides a GUI‑driven workflow with preview filters, safe defaults, and multiple login modes so non‑technical users can reclaim privacy without exposing tokens or uploading data to third‑party servers.
-
-**Positioning**  
-This project is the only open‑source desktop application designed specifically to be user‑friendly while focusing on privacy‑first deletion of Discord data.
+- [🌟 Overview](#-overview)
+- [🚀 Why Choose Friendly Discord Bot?](#-why-choose-friendly-discord-bot)
+- [💎 Key Features](#-key-features)
+- [⚡ Quick Start: How It Works](#-quick-start-how-it-works)
+- [🔒 Security and Privacy - Our Core Promise](#-security-and-privacy---our-core-promise)
+- [⬇️ Installation for End Users](#️-installation-for-end-users)
+- [🗺️ Roadmap & Future Vision](#️-roadmap--future-vision)
+- [🤝 Community & Support](#-community--support)
+- [🛠️ Developer & Project Information](#️-developer--project-information)
 
 ---
 
-# Key features
+## 🌟 Overview
 
-- **Bulk message deletion** for DMs, group chats, and server channels.
-- **DM & group purge** with filters by date range, user, channel, and keyword.
-- **Server cleanup** with optional message deletion before leaving servers.
-- **Relationship purge** for friends, blocked, and pending lists.
-- **Webhook and bot cleanup** utilities for server owners and admins.
-- **Profile field wipes** for removable profile fields and custom statuses.
-- **Rate‑limit aware dispatcher** with exponential backoff and jitter.
-- **Multiple login modes**: OAuth2 (recommended), token mode, RPC, QR login.
-- **Local‑only processing**: no cloud storage of tokens or messages by default.
-- **OS keychain secure storage** for credentials on Windows, macOS, and Linux.
-- **Preview and dry run**: preview changes before executing destructive actions.
-- **Progress reporting and logs**: real‑time UI progress and local logs for audit.
-- **Open source**: auditable code, MIT license, security policy.
+**Friendly Discord Bot** is an open-source, cross-platform desktop application built with the robust power of **Rust** 🦀, the modern UI capabilities of **Tauri** ✨, and the dynamic frontend of **TypeScript** 🚀. It empowers Discord users with unparalleled control to safely and efficiently **remove their Discord chat history and personal data**. Engineered for both **usability and unyielding security**, it intelligently minimizes account risk through advanced rate-limit aware dispatching and conservative defaults.
+
+This powerful utility is your definitive solution to:
+
+- **Delete all Discord messages in bulk** from Direct Messages, group chats, and server channels.
+- **Remove Discord history safely** and securely, without ever exposing your sensitive tokens to third-party servers.
+- **Master your Discord privacy** by purging old, unwanted data and easily departing from multiple servers.
+
+This repository serves as the central hub for our project, providing source code, ready-to-use release artifacts, comprehensive documentation, and a vibrant community space for users, contributors, and security researchers.
 
 ---
 
-# Supported platforms
+## 🚀 Why Choose Friendly Discord Bot?
 
-| Platform            |                      Status |
-| ------------------- | --------------------------: |
-| **Windows**         |                   Supported |
-| **macOS**           |                   Supported |
-| **Linux**           |                   Supported |
-| **Portable builds** | Provided for common distros |
+At the heart of **Friendly Discord Bot** lie three core tenets: **Unyielding Security**, **Peak Performance**, and **Total User Empowerment**.
 
----
+### The Discord Data Dilemma 🧐
 
-# Security and privacy
+Discord, while fantastic for communication, lacks a centralized, user-friendly tool to comprehensively manage and remove personal history across DMs, servers, and profile fields. Manual deletion is a tedious, error-prone, and often impossible endeavor at scale, leaving many users feeling helpless about their digital footprint.
 
-**Design principles**
+### Our Elegant Solution ✅
 
-- **Local processing only** — All deletion operations are executed locally on the user machine. No message content or tokens are uploaded to third‑party servers.
-- **OS keychain** — Credentials are stored in the operating system keychain using platform native secure storage.
-- **Conservative defaults** — Rate limits and retries are conservative to reduce the chance of account flags.
-- **Open source auditability** — All code is public for review and security researchers.
-- **No telemetry by default** — Telemetry is disabled by default and opt‑in only with explicit consent.
+**Friendly Discord Bot** provides an intuitive, **GUI-driven workflow** that puts you in command. With powerful preview filters, secure defaults, and multiple login options (including the highly recommended **OAuth2**), even non-technical users can effortlessly **reclaim their privacy**. We ensure your data never leaves your machine, processing everything locally without the need to expose raw tokens or upload private information to external servers. This makes us the #1 **Discord privacy utility** for comprehensive **Discord data removal**.
 
-**Security features**
+### Our Unique Positioning 🏆
 
-- **Rate limit detection** — Automatic detection of Discord API rate limit headers and adaptive pacing.
-- **Retry with jitter** — Exponential backoff with randomized jitter to avoid synchronized retries.
-- **Token safety** — Token mode is available for advanced users but OAuth2 is recommended to avoid storing tokens.
-- **Local logs** — Logs are stored locally and can be cleared by the user.
-- **Permission minimization** — The app requests only the permissions required for the selected operations.
+This project is the **only open-source desktop application** specifically designed to be **user-friendly** while uncompromisingly focusing on **privacy-first deletion** of Discord data. We are committed to transparency, security, and performance.
 
 ---
 
-# How it works
+## 💎 Key Features
 
-1. **Login** — Choose OAuth2 (recommended) or token mode. OAuth2 uses a temporary authorization code flow and stores credentials in the OS keychain.
-2. **Scan** — The app scans accessible DMs, servers, and relationships and builds a preview list of deletable items.
-3. **Filter** — Use date, user, channel, and keyword filters to narrow the scope.
-4. **Preview** — Review the exact items that will be deleted in a safe preview mode.
-5. **Execute** — Start the purge. The dispatcher respects rate limits and shows progress.
-6. **Audit** — Local logs and a summary report are generated for the user.
+Empower yourself with precise, secure control over your Discord data. Each feature is crafted to be powerful yet intuitive.
 
----
-
-# Quick start
-
-**Download** the latest release from the Releases page.  
-**Install** run the installer or extract the archive for your platform.  
-**Run** open the app and follow the onboarding checklist.  
-**Login** use OAuth2 (recommended).  
-**Preview** run a dry run to see what will be deleted.  
-**Execute** confirm and start the purge.
-
----
-
-# Detailed usage
-
-## Onboarding checklist
-
-- **Backup** — Export any messages you want to keep using Discord export or manual copy.
-- **Read safety guide** — Review the in‑app safety checklist.
-- **Choose login** — OAuth2 recommended for most users.
-- **Run dry run** — Always run a preview before executing destructive actions.
-
-## DM purge flow
-
-1. Open DM purge.
-2. Select conversation or all DMs.
-3. Set date range start and end.
-4. Add optional keyword filters or user filters.
-5. Click **Preview** to generate a list.
-6. Confirm and **Execute**.
-
-## Server cleanup flow
-
-1. Open Server cleanup.
-2. Select servers to process.
-3. Choose whether to delete your messages in channels before leaving.
-4. Optionally select channels to exclude.
-5. Preview then **Execute**.
-
-## Relationship purge flow
-
-1. Open Relationship purge.
-2. Choose friends, blocked, or pending lists.
-3. Preview and confirm.
-
-## Profile wipe flow
-
-1. Open Profile wipe.
-2. Select fields to clear.
-3. Preview and **Execute**.
+- **🗑️ Bulk Message Deletion**: Effortlessly **delete Discord messages** in mass from Direct Messages, group chats, and selected server channels. _(MVP: End-to-end Bulk Message Deletion)_
+  - **Advanced Filtering**: **Purge DMs and group chats** with intelligent filters by specific date ranges, by user, by channel, and even by keyword.
+  - **Targeted Cleanup**: Select precisely which conversations or channels you wish to clear.
+- **👋 Bulk Server Departure**: Easily **leave multiple Discord servers at once**, with the crucial option to **delete all your messages** in those servers _before_ departing. _(MVP: End-to-end Bulk Server Departure)_
+  - **Whitelist Functionality**: Maintain a whitelist of servers you wish to remain in.
+- **👤 Relationship Management**: **Clean up your Discord account** by purging unwanted entries from your friends list, blocked list, and pending requests.
+- **🧹 Profile Data Wipe**: Take control of your public persona by clearing sensitive or outdated information from your Discord profile fields and custom statuses.
+- **🛡️ Intelligent Rate-Limiting**: Features a sophisticated, **Discord API rate-limit aware dispatcher** with exponential backoff and randomized jitter to safeguard your account from suspensions.
+- **🔐 Secure Authentication**: Supports **multiple login modes** for flexibility and security:
+  - **OAuth2 (Recommended)**: The most secure method, allowing you to log in via Discord's official consent screen without ever exposing your password or token. _(MVP: Secure Discord OAuth2 Login)_
+  - **Token Mode**: Available for advanced users who understand the associated risks.
+  - **RPC & QR Login**: Convenient alternatives for specific use cases.
+- **🏠 Local-Only Processing**: Guarantees **no cloud storage** of your sensitive tokens or message content. All deletion operations are executed directly on your local machine, ensuring maximum privacy.
+- **🔑 OS Keychain Storage**: Your Discord credentials are encrypted and stored securely within your operating system's native keychain on Windows, macOS, and Linux.
+- **👀 Preview and Dry Run**: **Safely preview changes** before any destructive actions are executed. See exactly what will be deleted, giving you full confidence and control.
+- **📊 Comprehensive Reporting**: Provides real-time UI progress updates, detailed status information, and local logs for transparent auditing of all operations.
+- **🌐 Open Source & Auditable**: Our entire codebase is publicly available under the MIT license, fostering transparency, community contributions, and independent security reviews.
 
 ---
 
-# Advanced usage
+## ⚡ Quick Start: How It Works
 
-- **Token mode** for advanced users who understand token risks.
-- **RPC mode** for local client integration.
-- **Scripting** advanced automation via local CLI helper for power users.
-- **Custom rate profiles** for users in different regions or with different account histories.
-- **Headless mode** for automated workflows (advanced, opt‑in).
+Begin your journey to a cleaner, more private Discord presence with **Friendly Discord Bot** today!
+
+1.  **⬇️ Download**: Grab the latest release for your operating system (Windows, macOS, Linux) directly from our [**Releases page**](https://github.com/TourIT-NL/friendly-discord-bot/releases).
+2.  **📦 Install**:
+    - **Windows/macOS**: Run the provided installer or mount the DMG and drag to Applications.
+    - **Linux**: Execute the AppImage or install via your preferred distribution package.
+3.  **🚀 Run**: Launch the application. You'll be greeted with an intuitive interface.
+4.  **🔒 Login Securely**: Choose **OAuth2 (recommended)** to securely connect your Discord account. This guides you through Discord's official consent process, ensuring your token remains safe.
+5.  **🔍 Scan & Filter**: The app will intelligently scan your accessible DMs, servers, and relationships. Utilize powerful filters (date, user, channel, keyword) to precisely define your cleanup scope, like "delete Discord messages from before 2023."
+6.  **👀 Preview (Dry Run)**: **Crucial step!** Always run a preview first. The app will show you exactly what will be deleted without making any permanent changes. This is your safety net.
+7.  **🔥 Execute**: Once you're confident with the preview, confirm and initiate the purge. Our smart dispatcher will handle all API interactions, respecting Discord's rate limits automatically.
 
 ---
 
-# Screenshots and demo
+## 🔒 Security and Privacy - Our Core Promise
 
-Place screenshots in `/assets/screenshots` and link them here. Include a short GIF showing a purge preview and progress bar. Include a 60‑second demo video on the website and YouTube. Use clear captions and alt text for accessibility.
+Our design is rooted in **Unyielding Security** and a commitment to your privacy. We believe you should have total control over your digital footprint.
+
+### Core Design Principles
+
+- **🛡️ Local Processing Only**: **Your data stays local.** All operations are performed exclusively on your machine. We **never** upload message content, Discord tokens, or any other sensitive data to our servers or any third-party cloud service.
+- **🔐 OS Keychain Integration**: Your valuable Discord credentials (obtained via OAuth2) are encrypted and stored using your operating system's native, highly secure keychain mechanism.
+- **🐢 Conservative Defaults**: To protect your Discord account, our rate limits and retry logic are set conservatively by default, significantly reducing the risk of account flags or temporary suspensions.
+- **🔎 Open Source Transparency**: Full transparency is paramount. Our entire codebase is open to public scrutiny, enabling security researchers and the community to audit our practices and build trust.
+- **🚫 No Telemetry by Default**: Your usage data is private. Telemetry is strictly opt-in, meaning it's disabled unless you explicitly grant consent.
+
+### Advanced Security Safeguards
+
+- **🚨 Adaptive Rate Limit Detection**: Our system intelligently monitors Discord API rate limit headers and dynamically adjusts its pacing to ensure smooth, uninterrupted operation without hitting API limits.
+- **🎲 Intelligent Retry Logic**: Implements robust exponential backoff with randomized jitter, a proven strategy to manage transient API errors and avoid synchronized retries that could trigger further rate limits.
+- **🔑 Token Safety Guidance**: While a token mode exists for expert users, we strongly advocate for **OAuth2**. This method eliminates the need for you to handle or store raw tokens, significantly reducing security risks.
+- **📜 Local & Clearable Logs**: All operational logs detailing activity are stored exclusively on your local machine. You have full control to review and clear them at any time.
+- **Minimal Permissions**: We adhere to the principle of least privilege, ensuring the application requests only the precise Discord API permissions absolutely necessary for the operations you choose to perform.
 
 ---
 
-# Comparison with alternatives
+## ⬇️ Installation for End Users
 
-**Why Friendly Discord Bot is the best choice for users who want to delete Discord history**
+Get the **Friendly Discord Bot** running on your system quickly and easily.
+
+### 🪟 Windows
+
+1.  Download the latest `friendly-discord-bot-setup.exe` from the [**Releases page**](https://github.com/TourIT-NL/friendly-discord-bot/releases).
+2.  Run the installer and follow the intuitive on-screen prompts.
+3.  Launch the application directly from your Start Menu.
+
+### 🍎 macOS
+
+1.  Download the latest `friendly-discord-bot.dmg` from the [**Releases page**](https://github.com/TourIT-NL/friendly-discord-bot/releases).
+2.  Mount the DMG file and simply drag the "Friendly Discord Bot" application icon into your Applications folder.
+3.  Open the application from your Applications folder.
+
+### 🐧 Linux
+
+1.  Download the AppImage or a suitable distribution package for your system from the [**Releases page**](https://github.com/TourIT-NL/friendly-discord-bot/releases).
+2.  **For AppImage**:
+    - Make the downloaded file executable: `chmod +x FriendlyDiscordBot.AppImage`
+    - Run it directly: `./FriendlyDiscordBot.AppImage`
+    - _(Alternatively, install via a provided distribution package if available for your distro.)_
+
+---
+
+## 🗺️ Roadmap & Future Vision
+
+We are committed to continuously improving **Friendly Discord Bot** to provide even greater control and privacy features. Here's a glimpse into our exciting future:
+
+- **Keyword Filtering Enhancements**: More granular control over message deletion with advanced keyword matching and exclusion rules.
+- **Scheduled Cleanup Tasks**: Automate recurring cleanup operations for ongoing Discord data management.
+- **GDPR Data Package Integration**: Tools to help users interpret and manage data from Discord's GDPR data packages. _(Guidance for official GDPR Data Request/Profile Deletion is already in place as per [Project Blueprint](https://github.com/TourIT-NL/friendly-discord-bot/wiki/Architecture-Account-GDPR#34-account--gdpr-management-flow))_
+- **Customizable Theming**: Personalize your application's look and feel.
+- **Plugin/Extension System**: Empower the community to build and share their own tools and integrations.
+
+Stay tuned for updates and contribute your ideas in our [GitHub Discussions](https://github.com/TourIT-NL/friendly-discord-bot/discussions)!
+
+---
+
+## 🤝 Community & Support
+
+We thrive on community involvement and are here to help you every step of the way!
+
+### Official Channels
+
+- **💬 GitHub Discussions**: Your primary hub for support, asking questions, sharing ideas, and requesting new features.
+- **📢 Official Discord Server**: Join our real-time community for quick help, discussions, and direct interaction with the development team. [Join now!](https://discord.gg/YOUR_INVITE_LINK) <!-- Placeholder: Replace with actual Discord invite -->
+- **📚 Subreddit (r/FriendlyDiscordBot)**: Follow us for announcements, user stories, and community content.
+- **▶️ YouTube Channel**: Watch our tutorials, demos, and feature showcases.
+
+### How to Get Help
+
+1.  **Consult the FAQ & Wiki**: Many common questions are answered in our [Frequently Asked Questions](#frequently-asked-questions-faq) and comprehensive [Wiki](https://github.com/TourIT-NL/friendly-discord-bot/wiki).
+2.  **Open an Issue**: For bugs or feature requests, please open a detailed issue on GitHub, including logs and reproduction steps.
+3.  **Ask in Discord**: For quick questions or real-time assistance, our Discord community is always ready to help!
+
+---
+
+## 🛠️ Developer & Project Information
+
+This section is dedicated to those who wish to delve deeper into the project, contribute, or understand its inner workings.
+
+### Detailed Usage Guides
+
+Explore specific, step-by-step workflows for various cleanup operations. These guides provide more granular control and understanding:
+
+- [**Bulk Message Deletion (US-002)**](https://github.com/TourIT-NL/friendly-discord-bot/wiki/User-Stories#22-bulk-message-deletion-us-002)
+- [**Bulk Server Departure (US-003)**](https://github.com/TourIT-NL/friendly-discord-bot/wiki/User-Stories#23-bulk-server-departure-us-003)
+- [**Account & GDPR Management Flow**](https://github.com/TourIT-NL/friendly-discord-bot/wiki/Architecture-Account-GDPR#34-account--gdpr-management-flow)
+
+### Advanced Usage & Integration
+
+Unlock the full potential of Friendly Discord Bot:
+
+- **Token Mode**: For advanced users who fully understand the associated security risks and require direct token access.
+- **RPC Mode**: Facilitates integration with local client applications for custom workflows.
+- **Scripting**: Leverage our CLI helper for powerful, automated cleanup tasks for power users.
+- **Custom Rate Profiles**: Fine-tune API request rates for unique scenarios or specific Discord account histories.
+- **Headless Mode**: Implement automated workflows (an advanced, opt-in feature).
+
+### Screenshots and Demo
+
+Help us visualize the power of **Friendly Discord Bot**!
+
+- **Screenshots**: Place your high-quality screenshots in the `/assets/screenshots` directory and link them here.
+- **Demo GIF**: Include a short, compelling GIF that showcases a purge preview and the real-time progress bar.
+- **Demo Video**: Link a 60-second demo video from YouTube or your website, highlighting key features and ease of use.
+- _(**Pro-Tip for SEO**: Ensure all images have descriptive `alt` text for accessibility and better search engine indexing!)_
+
+### Comparison with Alternatives
+
+Transparency and informed choice are vital. See how **Friendly Discord Bot** stands out:
+
+**Why Friendly Discord Bot is the definitive choice for secure Discord data deletion:**
 
 | Attribute            | Friendly Discord Bot | Manual deletion | Browser scripts & bots |
-| -------------------- | -------------------: | --------------: | ---------------------: |
-| GUI                  |              **Yes** |              No |                 Varies |
-| Bulk DM deletion     |              **Yes** |              No |                Limited |
-| Rate‑limit aware     |              **Yes** |             N/A |               Often no |
-| Secure local storage |              **Yes** |             N/A |               Often no |
-| Open source          |              **Yes** |             N/A |                 Varies |
-| Preview & dry run    |              **Yes** |              No |                 Varies |
-| Cross platform       |              **Yes** |             N/A |                 Varies |
+| :------------------- | :------------------: | :-------------: | :--------------------: |
+| GUI                  |      **✅ Yes**      |      ❌ No      |       🤔 Varies        |
+| Bulk DM deletion     |      **✅ Yes**      |      ❌ No      |       ⚠️ Limited       |
+| Rate-limit aware     |      **✅ Yes**      |       N/A       |      ❌ Often no       |
+| Secure local storage |      **✅ Yes**      |       N/A       |      ❌ Often no       |
+| Open source          |      **✅ Yes**      |       N/A       |       🤔 Varies        |
+| Preview & dry run    |      **✅ Yes**      |      ❌ No      |       🤔 Varies        |
+| Cross platform       |      **✅ Yes**      |       N/A       |       🤔 Varies        |
 
-**Feature level comparison**
+**Feature-Level Comparison:**
 
 | Feature               | Friendly Discord Bot | Other GUI tools | CLI scripts |
-| --------------------- | -------------------: | --------------: | ----------: |
-| Preview before delete |              **Yes** |          Varies |          No |
-| OAuth2 recommended    |              **Yes** |            Rare |        Rare |
-| OS keychain storage   |              **Yes** |            Rare |          No |
-| Rate limit handling   |              **Yes** |          Varies |  Often poor |
-| Community support     |              **Yes** |          Varies |      Varies |
+| :-------------------- | :------------------: | :-------------: | :---------: |
+| Preview before delete |      **✅ Yes**      |    🤔 Varies    |    ❌ No    |
+| OAuth2 recommended    |      **✅ Yes**      |     ❌ Rare     |   ❌ Rare   |
+| OS keychain storage   |      **✅ Yes**      |     ❌ Rare     |    ❌ No    |
+| Rate limit handling   |      **✅ Yes**      |    🤔 Varies    |   ⚠️ Poor   |
+| Community support     |      **✅ Yes**      |    🤔 Varies    |  🤔 Varies  |
 
-**Detailed capability matrix**
+**Detailed Capability Matrix:**
 
-| Capability             | Friendly Discord Bot | Browser extensions | Manual | Third‑party cloud services |
-| ---------------------- | -------------------: | -----------------: | -----: | -------------------------: |
-| Delete DMs in bulk     |                   ✅ |                 ❌ |     ❌ |                         ❌ |
-| Delete server messages |                   ✅ |                 ❌ |     ❌ |                         ❌ |
-| Leave servers in bulk  |                   ✅ |                 ❌ |     ❌ |                         ❌ |
-| Wipe profile fields    |                   ✅ |                 ❌ |     ❌ |                         ❌ |
-| Local processing only  |                   ✅ |                 ❌ |     ✅ |                         ❌ |
-| Rate limit aware       |                   ✅ |                 ❌ |    N/A |                         ❌ |
-| Signed releases        |                   ✅ |             Varies |    N/A |                     Varies |
+| Capability             | Friendly Discord Bot | Browser extensions | Manual | Third-party cloud services |
+| :--------------------- | :------------------: | :----------------: | :----: | :------------------------: |
+| Delete DMs in bulk     |          ✅          |         ❌         |   ❌   |             ❌             |
+| Delete server messages |          ✅          |         ❌         |   ❌   |             ❌             |
+| Leave servers in bulk  |          ✅          |         ❌         |   ❌   |             ❌             |
+| Wipe profile fields    |          ✅          |         ❌         |   ❌   |             ❌             |
+| Local processing only  |          ✅          |         ❌         |   ✅   |             ❌             |
+| Rate limit aware       |          ✅          |         ❌         |  N/A   |             ❌             |
+| Signed releases        |          ✅          |       Varies       |  N/A   |           Varies           |
 
----
+### Developer Build and Contribution
 
-# SEO and discoverability notes
+We welcome and encourage contributions from the community! Please refer to our `CONTRIBUTING.md` for detailed guidelines, code style, and the pull request process.
 
-**Primary target keywords**
+**Prerequisites:**
 
-- delete discord messages
-- delete discord history
-- discord message purge
-- discord dm deleter
-- discord data removal
-- discord privacy tool
-- discord purge tool
+- [Rust toolchain](https://www.rust-lang.org/tools/install) (stable) 🦀
+- [Node.js LTS](https://nodejs.org/en/) 🟢
+- [Yarn](https://yarnpkg.com/) or npm 📦
+- [Tauri prerequisites](https://tauri.app/v1/guides/getting-started/prerequisites) for your specific platform 🖥️
 
-**Secondary keywords**
+**Build Steps:**
 
-- discord cleanup tool
-- discord bulk delete
-- discord dm purge
-- discord server leave tool
-- discord account cleanup
-
-**Long tail keywords**
-
-- how to delete all discord messages at once
-- how to remove discord history safely
-- best discord message deletion tool
-- delete discord dms in bulk safely
-
-**On‑page SEO recommendations**
-
-- Use exact match keywords in headings (H1, H2, H3).
-- Add long‑form how‑to guides and step‑by‑step tutorials.
-- Publish a sitemap and JSON‑LD structured data for the website.
-- Add release notes and changelog pages for freshness signals.
-- Add canonical tags and social meta tags for sharing.
-
-**Off‑page SEO recommendations**
-
-- Submit to Product Hunt, Hacker News, Reddit, and relevant directories.
-- Acquire backlinks from privacy blogs, tech sites, and YouTube descriptions.
-- Encourage GitHub stars, forks, and community discussions.
-
-**Content opportunities**
-
-- “How to delete all Discord messages in 2026 — step‑by‑step”
-- “Why rate limit handling matters for Discord deletion tools”
-- “How to safely back up Discord messages before deleting”
-- “Comparison: Discord cleanup tools and scripts”
-- “Case study: reclaiming privacy with Friendly Discord Bot”
-
----
-
-# Release and update policy
-
-- **Semantic versioning** — Use MAJOR.MINOR.PATCH.
-- **Release artifacts** — Provide signed binaries for Windows, macOS, and Linux.
-- **Changelog** — Maintain `CHANGELOG.md` with clear notes.
-- **Security advisories** — Publish advisories and patches promptly.
-- **Support window** — Provide community support via Discussions and Discord.
-
----
-
-# Installation for end users
-
-## Windows
-
-1. Download `friendly-discord-bot-setup.exe` from Releases.
-2. Run installer and follow prompts.
-3. Launch from Start Menu.
-
-## macOS
-
-1. Download `friendly-discord-bot.dmg` from Releases.
-2. Mount and drag to Applications.
-3. Open from Applications.
-
-## Linux
-
-1. Download the AppImage or distribution package from Releases.
-2. Make AppImage executable:
-   ```bash
-   chmod +x FriendlyDiscordBot.AppImage
-   ./FriendlyDiscordBot.AppImage
-   Or install via distro package if provided.
-   ```
-
-Developer build and contribution
-Prerequisites
-Rust toolchain (stable)
-
-Node.js LTS
-
-Yarn or npm
-
-Tauri prerequisites for your platform
-
-Build steps
-bash
+```bash
+# Clone the repository
 git clone https://github.com/TourIT-NL/friendly-discord-bot.git
-cd friendly-discord-bot
+cd friendly-discord-bot/discord-privacy-util # Navigate to the project root
 
-# install frontend deps
+# Install frontend dependencies
+yarn install # or npm install
 
-yarn install
+# Build frontend (Vite)
+yarn build # or npm run build
 
-# build frontend
+# Build backend (Rust)
+cargo build --release --workspace # Build the entire workspace in release mode
 
-yarn build
+# Package the desktop application
+yarn tauri build # or npm run tauri build
+```
 
-# build backend
+_(Note: Use `cargo build --release --workspace` for a complete release build across the Rust workspace.)_
 
-cargo build --release
+### Testing and Quality Assurance
 
-# package
+Ensuring the stability and security of **Friendly Discord Bot** is paramount.
 
-yarn tauri build
-Contributing guidelines
-Fork the repo and create feature branches.
+- **Unit Tests**: Robust tests for core logic, dispatcher, and utility functions.
+- **Integration Tests**: Comprehensive tests for Discord API interactions, often using mocked endpoints to simulate real-world scenarios.
+- **End-to-End Tests**: UI flows are rigorously tested using headless automation to simulate user interactions.
+- **Security Tests**: Regular static analysis, dependency scanning (via `cargo audit` and `npm audit`), and adherence to secure coding practices.
+- **Manual QA**: Extensive manual testing is performed across Windows, macOS, and Linux using dedicated test accounts.
 
-Write tests for new features.
+### Troubleshooting
 
-Follow code style and linting rules.
+Encountering an issue? Here's how to get back on track:
 
-Open a pull request with a clear description and changelog entry.
+- For common issues, fixes, and detailed logging information, please consult our comprehensive [**Troubleshooting Guide**](SUPPORT.md) or explore our [**Project Wiki**](https://github.com/TourIT-NL/friendly-discord-bot/wiki).
+- **Common Issues**:
+  - **Login fails**: Verify OAuth2 redirect configuration and ensure your system time is accurate.
+  - **Rate limit errors**: Utilize the conservative rate profile and ensure exponential backoff is enabled.
+  - **Missing messages in preview**: Confirm account access to the conversation and correct app permissions.
+  - **App crashes**: Check local logs (`%APPDATA%/FriendlyDiscordBot/logs` on Windows, `~/Library/Logs/FriendlyDiscordBot` on macOS, `~/.config/FriendlyDiscordBot/logs` on Linux) and open a detailed issue on GitHub.
 
-Use issue templates for bug reports and feature requests.
+### Frequently Asked Questions (FAQ)
 
-Code of conduct
-Be respectful and constructive. Follow the Contributor Covenant code of conduct in CODE_OF_CONDUCT.md.
+- **Is this safe for my account?** While designed with security in mind (OAuth2, rate-limiting), no tool can guarantee zero risk due to platform ToS. Use at your own discretion, and follow our safety checklist.
+- **Does the app store my messages?** Absolutely not. Messages are processed locally and never uploaded or stored remotely.
+- **Will Discord ban me?** We cannot provide a guarantee. Our app minimizes risk through careful API interaction, but we recommend discretion.
+- **Can I recover deleted messages?** No. Once deleted via the app, messages cannot be recovered. Always back up what you wish to keep!
+- **Is the app open source?** Yes, it's MIT licensed. Contributions are highly encouraged!
+- **How do I report a security issue?** Please follow the responsible disclosure process in our `SECURITY.md` file.
 
-Testing and QA
-Unit tests for core logic and dispatcher.
+### Legal and Risk Disclaimer
 
-Integration tests for API interactions using mocked endpoints.
+**Important**: The use of this software may potentially violate Discord's terms of service or community guidelines. The project maintainers are not responsible for any account actions (e.g., temporary suspension or permanent ban) taken by Discord. Users assume full responsibility for their actions and must ensure compliance with all relevant local laws and Discord's platform terms.
 
-End‑to‑end tests for UI flows using headless automation.
+**No Warranty**: This software is provided "as-is" without any warranty of any kind, express or implied.
 
-Security tests: static analysis and dependency scanning.
+### Responsible Disclosure
 
-Manual QA on Windows, macOS, and Linux with test accounts.
-
-Troubleshooting
-Common issues and fixes
-
-Login fails — Ensure OAuth2 redirect is allowed and system time is correct.
-
-Rate limit errors — Use the conservative rate profile and enable backoff.
-
-Missing messages in preview — Ensure the account has access to the conversation and the app has permission to read messages.
-
-App crashes — Check logs in the app data folder and open an issue with logs attached.
-
-Log locations
-
-Platform Log path
-Windows %APPDATA%/FriendlyDiscordBot/logs
-macOS ~/Library/Logs/FriendlyDiscordBot
-Linux ~/.config/FriendlyDiscordBot/logs
-FAQ
-Is this safe for my account?  
-The app is designed to minimize risk through rate‑limit handling and conservative defaults. No tool can guarantee zero risk. Use OAuth2 and follow the safety checklist.
-
-Does the app store my messages?  
-No. Messages are processed locally and not uploaded.
-
-Will Discord ban me?  
-No guarantee. The app reduces risk but cannot eliminate it. Use at your own discretion.
-
-Can I recover deleted messages?  
-Deleted messages cannot be recovered through the app. Back up any messages you want to keep before deletion.
-
-Is the app open source?  
-Yes — MIT license. Contributions welcome.
-
-How do I report a security issue?  
-See SECURITY.md and the responsible disclosure section below.
-
-Legal and risk disclaimer
-Important — Use of this software may violate Discord terms of service or community guidelines. The maintainers are not responsible for account actions taken by Discord. Users accept responsibility for their actions and must ensure compliance with local laws and platform terms.
-
-No warranty — The software is provided as‑is without warranty of any kind.
-
-Responsible disclosure
-If you discover a security vulnerability please follow the process in SECURITY.md. Provide a clear reproduction and avoid public disclosure until a fix is available. The maintainers will acknowledge receipt and provide a timeline for remediation.
-
-Changelog template
-Use CHANGELOG.md with the following format for each release:
-
-markdown
-
-## [Unreleased]
-
-### Added
-
-- Feature description
-
-### Changed
-
-- Behavior changes
-
-### Fixed
-
-- Bug fixes
-
-### Security
-
-- Security fixes and CVE references
-  Marketing and launch checklist
-  Pre‑launch
-
-Finalize README, screenshots, logo, and demo video.
-
-Register domain and deploy landing page with JSON‑LD and sitemap.
-
-Prepare Product Hunt assets and press kit.
-
-Create Discord server, subreddit, and GitHub Discussions.
-
-Launch day
-
-Publish release on GitHub with signed binaries.
-
-Launch Product Hunt and coordinate Reddit, Hacker News, and Twitter posts.
-
-Publish demo video on YouTube and embed on site.
-
-Engage with early users and respond to feedback.
-
-Post‑launch
-
-Outreach to YouTube creators and privacy blogs.
-
-Submit to AlternativeTo, Slant, and software directories.
-
-Publish SEO blog posts and tutorials.
-
-Monitor analytics and iterate.
-
-SEO content plan
-Core pages to publish on website
-
-Home landing page with clear CTA and download links
-
-Features page with comparison table
-
-How to delete all Discord messages guide
-
-How to remove Discord history safely guide
-
-FAQ and safety checklist
-
-Changelog and release notes
-
-Security and privacy page
-
-Blog for long tail content and tutorials
-
-Suggested blog posts
-
-How to delete all Discord messages in 2026 — step‑by‑step
-
-Why rate limit handling matters for Discord deletion tools
-
-How to safely back up Discord messages before deleting
-
-Comparison of Discord cleanup tools and scripts
-
-Case study: reclaiming privacy with Friendly Discord Bot
-
-On‑page elements
-
-Use H1, H2, H3 with target keywords
-
-Add JSON‑LD product schema
-
-Add Open Graph and Twitter card meta
-
-Add canonical tags and sitemap
-
-Community and support
-Official channels
-
-GitHub Discussions for support and feature requests
-
-Official Discord server for real‑time help and community
-
-Subreddit r/FriendlyDiscordBot for announcements and user stories
-
-YouTube channel for tutorials and demos
-
-How to get help
-
-Search the FAQ and Wiki
-
-Open an issue with logs and reproduction steps
-
-Ask in Discord support channel for quick help
-
-Contact and maintainers
-Maintainers
-
-Primary maintainer: TourIT NL (GitHub profile)
-
-Contact: use GitHub Discussions or the project contact email in repository settings
-
-Contributing  
-See CONTRIBUTING.md for contribution guidelines, code style, and PR process.
-
-Appendix — JSON‑LD for website
-json
-{
-"@context": "https://schema.org",
-"@type": "SoftwareApplication",
-"name": "Friendly Discord Bot",
-"url": "https://friendlydiscordbot.com",
-"description": "A secure user friendly desktop app to delete Discord messages, DMs, servers, relationships and profile data with rate limit aware processing",
-"applicationCategory": "Utilities",
-"operatingSystem": "Windows macOS Linux",
-"license": "MIT",
-"author": {
-"@type": "Organization",
-"name": "TourIT NL",
-"url": "https://github.com/TourIT-NL"
-},
-"offers": {
-"@type": "Offer",
-"price": "0",
-"priceCurrency": "USD"
-}
-}
-Appendix — command line examples
-Build for development
-
-bash
-yarn install
-yarn dev
-Build release
-
-bash
-yarn build
-yarn tauri build
-Run tests
-
-bash
-cargo test
-yarn test
-Appendix — release checklist
-[ ] Update CHANGELOG.md with release notes
-
-[ ] Bump version in package.json and Cargo.toml
-
-[ ] Build signed binaries for Windows, macOS, and Linux
-
-[ ] Create GitHub Release with assets and release notes
-
-[ ] Publish blog post and social announcements
-
-[ ] Update website download links and changelog
-
-[ ] Tag release and create release branch
-
-Final notes for repository maintainers
-SEO best practices for README
-
-Keep the README H1 as the project name and include the primary keyword phrase within the first 20 words.
-
-Use descriptive headings that match search queries such as "How to delete Discord messages" and "Discord data removal tool".
-
-Include a comparison table and FAQ to capture featured snippet opportunities.
-
-Add a short demo video and screenshots to increase time on page and click‑through rates.
-
-Keep the README updated with release notes and changelog links.
-
-Community growth tips
-
-Encourage users to star the repo and share feedback in Discussions.
-
-Run periodic community events and AMAs in the Discord server.
-
-Offer early access to reviewers and creators to generate reviews and backlinks.
-
-Security and trust
-
-Maintain SECURITY.md and PRIVACY.md and link them prominently in the README.
-
-Provide signed releases and checksums for binaries.
-
-Respond to security reports promptly and publish advisories.
+We take security seriously. If you discover a vulnerability, please adhere to the process outlined in our `SECURITY.md` file. Provide a clear and concise reproduction path, and kindly refrain from public disclosure until a fix is available and deployed. The maintainers will acknowledge receipt promptly and provide a timeline for remediation.
