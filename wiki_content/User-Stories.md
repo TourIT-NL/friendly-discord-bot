@@ -1,35 +1,61 @@
-# Discord Purge User Stories: Defining Key Features and User Benefits
+# 📋 User Stories: Defining the Mission
 
-This section outlines the primary **user stories and acceptance criteria** that guide the development of core features for the **Discord Purge utility**. These stories articulate the needs of users and the desired functionality of this **Discord message deletion and privacy management tool**, ensuring that it delivers tangible value for managing your Discord digital footprint.
+This document translates user needs into actionable technical requirements. Every feature in **Discord Purge** is driven by a specific user goal, ensuring we build a tool that solves real problems for privacy-conscious individuals.
 
-### 2.1. Authentication (US-001): Secure Discord Login
+---
 
-- **User Story**: As a new user, I want to **securely log in** to the **Discord Purge desktop application** using my Discord account so that I can access its powerful features (like **bulk message deletion** and **privacy cleanup**) without ever exposing my Discord password or token directly.
+## 🔐 2.1. Authentication (US-001)
+
+**"Secure Access Without Compromise"**
+
+- **User Story**: As a new user, I want to **securely log in** using my Discord account so that I can access features like bulk deletion without ever exposing my raw token or password to the application.
 - **Acceptance Criteria**:
-  1.  The **Discord Purge application** must prominently display a "Login with Discord" button on its initial screen.
-  2.  Clicking this button must open my default web browser to the official Discord consent screen, ensuring a secure **OAuth2 flow**.
-  3.  The requested permissions (scopes) for the **Discord cleanup tool** must be clearly listed and transparent on the Discord consent screen.
-  4.  After approving the permissions, I am securely redirected to a page that confirms successful authorization and instructs me to return to the application.
-  5.  The **Discord Purge** application window must automatically transition to the main authenticated interface, ready for **Discord account management**.
-  6.  On subsequent launches, the application must intelligently remember my session and log me in automatically, maintaining secure access for **Discord privacy tasks**.
+  1.  The app presents a prominent "Login with Discord" button on launch.
+  2.  Clicking opens the system browser to the official Discord authorization page.
+  3.  Scopes are clearly listed (Identity, Guilds, etc.).
+  4.  Redirect is handled by a temporary local server, ensuring code-to-token exchange happens securely.
+  5.  Success transitions the UI instantly to the Dashboard.
+  6.  Session is persisted via OS Keychain for automatic login on next start.
 
-### 2.2. Bulk Message Deletion (US-002): Erase Discord Chat History
+---
 
-- **User Story**: As a privacy-conscious user, I want to **permanently delete Discord messages in bulk** from specific channels, Direct Messages (DMs), or group chats so that I can effectively manage and **erase my Discord chat history** and digital footprint.
+## 🗑️ 2.2. Bulk Message Deletion (US-002)
+
+**"Erasure at Scale"**
+
+- **User Story**: As a privacy-conscious user, I want to **permanently delete my messages in bulk** from channels, DMs, and groups so that I can sanitize my chat history across the entire platform.
 - **Acceptance Criteria**:
-  1.  I can view an organized list of all my Discord servers, channels, and DM conversations within the **Discord message deletion tool**.
-  2.  I can easily select one or more of these locations for a **bulk message deletion** operation.
-  3.  I can select a flexible time frame for deletion: "Last 24 Hours," "Last 7 Days," "All Time," or specify a custom date range for targeted **Discord message cleanup**.
-  4.  Before initiating the **mass deletion**, a final confirmation modal must appear, clearly stating exactly what will be deleted (e.g., "This will permanently delete all messages from #general and 2 other channels."), ensuring user awareness.
-  5.  To proceed with the **Discord message purge**, I must explicitly type the word `DELETE` into a confirmation field within the modal, preventing accidental deletions.
-  6.  During the process, the UI must provide a real-time progress bar and status text, showing which channel is currently being processed and how many messages have been deleted, providing transparent feedback for **Discord cleanup operations**.
+  1.  Users can see a full list of all DMs, Groups, and Servers.
+  2.  Multi-selection is supported for massive cleanup operations.
+  3.  Filters include: "Last 24 Hours," "Last 7 Days," "All Time," and Custom Date Ranges.
+  4.  A **Confirmation Modal** must appear before execution, detailing the count of targets.
+  5.  Users must type `DELETE` to proceed, preventing accidental data loss.
+  6.  Real-time progress bars show exactly what is being deleted and how many remain.
 
-### 2.3. Bulk Server Departure (US-003): Manage Discord Server Memberships
+---
 
-- **User Story**: As a user looking to declutter my Discord account, I want to **leave multiple Discord servers at once** while easily identifying and staying in a select few, thus streamlining my **Discord server management**.
+## 👋 2.3. Bulk Server Departure (US-003)
+
+**"Digital Decluttering"**
+
+- **User Story**: As a user cleaning up my account, I want to **leave multiple servers at once** while easily whitelisting the communities I want to keep.
 - **Acceptance Criteria**:
-  1.  I can view a comprehensive list of all servers I am a member of, with checkboxes next to each for easy selection within the **Discord Purge application**.
-  2.  By default, all servers are checked, allowing for quick selection for **mass server departure**.
-  3.  I can uncheck specific servers to create a "whitelist" of servers I wish to remain in, ensuring I don't accidentally leave important communities.
-  4.  The final confirmation modal for **bulk server leaving** requires me to type `LEAVE` to proceed, preventing unintended actions.
-  5.  The UI provides real-time feedback as the **Discord Purge tool** processes and leaves each server, offering transparency during the **Discord account cleanup** process.
+  1.  A checkbox list of every server the user is currently in.
+  2.  "Select All" and "Unselect All" helpers for rapid management.
+  3.  A final confirmation requiring the word `LEAVE` to proceed.
+  4.  The application provides live feedback as it processes each departure.
+  5.  Optional: Delete all user messages _before_ leaving the guild.
+
+---
+
+## 👤 2.4. Relationship Purge (US-004)
+
+**"Social Reset"**
+
+- **User Story**: As a user wanting a social fresh start, I want to remove friend connections, clear blocked lists, and cancel pending requests in bulk.
+- **Acceptance Criteria**:
+  1.  View categorized lists of Friends, Blocked, and Pending users.
+  2.  Select multiple relationships for removal.
+  3.  Immediate execution with rate-limit protection.
+
+_Last updated: February 25, 2026_

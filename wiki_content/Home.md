@@ -1,20 +1,44 @@
-# Discord Purge: The Ultimate Discord Privacy & Cleanup Tool (Official Wiki Home)
+# 🏠 Discord Purge Official Wiki: The Ultimate Privacy Hub
 
-Welcome to the official Wiki for **Discord Purge**, the definitive **desktop application** designed for advanced **Discord message deletion** and comprehensive **privacy management**. This document serves as the central blueprint, detailing the vision, core tenets, and foundational aspects of this powerful **Discord cleanup utility** built with **Rust** and **Tauri**.
+Welcome to the official **Discord Purge Wiki**, your comprehensive guide to the definitive **desktop application** for advanced **Discord message deletion**, massive **server departures**, and total **digital footprint management**. 
 
-## 1. Vision & Core Tenets: Shaping the Discord Purge Experience
+Built with the speed of **Rust** 🦀 and the security of **Tauri** ✨, this utility is engineered for users who demand the highest standards of privacy and performance. This Wiki serves as the living blueprint for our project, detailing everything from high-level vision to deep architectural specifics.
 
-The overarching vision for **Discord Purge** is to deliver a powerful, aesthetically pleasing, and high-performance **desktop application** that grants Discord users unparalleled control over their digital footprint.
+---
 
+## 🧭 Navigation Guide
 
-1.  **Unyielding Security**: The security of the user's data and Discord account integrity are our highest priorities. This encompasses both technical implementation (e.g., secure **OAuth2 authentication**, OS-level secure storage for tokens) and user experience design (e.g., clear warnings for destructive actions like **bulk message deletion**).
-2.  **Peak Performance**: The **Discord Purge application** must feel exceptionally fast and responsive, regardless of the scale of the task (e.g., deleting thousands of messages). This necessitates the use of asynchronous operations and a compiled backend (Rust) as fundamental requirements for an efficient **Discord cleanup tool**.
-3.  **Total User Empowerment**: The primary purpose of **Discord Purge** is to empower users by giving them back control. This translates into clear, intuitive interfaces and powerful, reliable tools that perform as advertised for all **Discord privacy management** tasks.
+### 🚀 Getting Started
+*   **[User Stories](./User-Stories)**: Understand the core features and how they solve real-world privacy problems.
+*   **[Project Management](./Project-Management)**: Review our scope, current MVP status, and development phasing.
+*   **[CI/CD Pipeline](./CI-CD-Pipeline)**: Explore how we automate builds, tests, and releases to maintain elite quality.
 
-## 11.2. Minimum Viable Product (MVP) Definition for Discord Purge
+### 🏗️ Architecture & Security
+*   **[OAuth2 Flow](./Architecture-OAuth2-Flow)**: Deep dive into our secure, token-free authentication protocol.
+*   **[Rate Limiting](./Architecture-Rate-Limiting)**: Learn how our intelligent actor system prevents account flags.
+*   **[Account & GDPR](./Architecture-Account-GDPR)**: See how we handle sensitive profile data and official Discord data requests.
+*   **[Error Handling](./Architecture-Error-Handling)**: Understand our robust protocol for cross-platform stability.
 
-The MVP for **Discord Purge** represents the smallest, yet most valuable, version of the product that can be released to early adopters. This strategic focus ensures immediate utility and validates the core architectural decisions. The MVP for this **Discord message deletion tool** is defined as:
+### 🛠️ Technical Insights
+*   **[Logging Strategy](./Logging-Strategy)**: How we maintain transparency with zero data leakage.
+*   **[Project Structure](./Project-Structure)**: A map of the codebase for developers and contributors.
+*   **[Testing Methodology](./Testing-Methodology)**: Our rigorous standards for unit, integration, and E2E testing.
 
-> A fully distributable and installable **desktop application** that enables a user to securely log in via Discord OAuth2 and seamlessly utilize the **Bulk Message Deletion** feature from end-to-end, all presented through a functional, clear, and intuitive user interface.
+---
 
-This MVP prioritizes the delivery of the most complex and high-value **Discord cleanup** feature first, thereby proving the viability and foundational architecture of the entire **Discord Purge project**.
+## 🎯 Vision & Core Tenets
+
+Our mission is to restore **Digital Sovereignty** to every Discord user. We operate under three unbreakable laws:
+
+1.  **🛡️ Unyielding Security**: Your data stays local. Your tokens are encrypted in the OS keychain. Every line of code is auditable.
+2.  **⚡ Peak Performance**: Deleting 10,000 messages should feel as fast as deleting one. Our asynchronous Rust backend makes this a reality.
+3.  **💖 Total User Empowerment**: We don't hide behind complex menus. We provide a powerful, intuitive GUI that makes privacy accessible to everyone.
+
+---
+
+## 🏆 Current MVP Definition
+
+The **Minimum Viable Product (MVP)** for Discord Purge is:
+> A fully distributable and installable **desktop application** that enables a user to securely log in via Discord OAuth2 and seamlessly utilize the **Bulk Message Deletion** feature from end-to-end, all presented through a professional, M3-compliant user interface.
+
+*Last updated: February 25, 2026*

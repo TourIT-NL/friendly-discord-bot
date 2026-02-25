@@ -1,27 +1,47 @@
-# Discord Purge Project Management: Scope, Phasing & MVP Definition
+# 🎯 Project Management: Vision & Roadmap
 
-This document outlines the **project management strategies**, scope, and phasing for the **Discord Purge utility**. It details what is included in the project's development, what is out of scope for the initial version, and defines the Minimum Viable Product (MVP) for this **Discord message deletion and privacy management tool**.
+This document outlines the scope, phasing, and MVP definition for **Discord Purge**. We focus on shipping early, shipping often, and never compromising on our core tenets.
 
-### 11.1. Project Scope
+---
 
-The project scope defines the boundaries of the **Discord Purge desktop application** development.
+## 🛠️ Project Scope
 
-- **In Scope**:
-  - All core features defined in the User Stories (US-001, US-002, US-003) for **Discord message deletion**, **server cleanup**, and **privacy management**.
-  - A fully installable **desktop application** compatible with Windows, macOS, and Linux platforms.
-  - Secure user authentication using Discord's official OAuth2 protocol for safe access to **Discord API functions**.
-  - A clean, modern, and intuitive graphical user interface (GUI) for an optimal user experience.
-  - Robust error handling, clear user feedback, and comprehensive application logging for stability and transparency.
-- **Out of Scope (for v1.0)**:
-  - A separate Command-Line Interface (CLI) for the **Discord Purge tool**.
-  - Localization/Internationalization (the UI will primarily be in English).
-  - The "Keyword Filtering" feature, which is considered a potential v2 addition for advanced **Discord message filtering**.
-  - User-configurable themes or a plugin/extension system for customization.
+### In Scope (v1.0)
 
-### 11.2. Minimum Viable Product (MVP) Definition
+- **Authentication**: Secure OAuth2 with PKCE + Session Persistence.
+- **Cleanup**: Bulk message deletion (DMs, Groups, Servers).
+- **Management**: Bulk server leave with pre-purge option.
+- **Privacy**: Relationship removal (Friends, Blocked).
+- **Platform**: Desktop installers for Windows, macOS, and Linux.
 
-The MVP represents the smallest, most fundamental version of the **Discord Purge application** that can be shipped to provide immediate value to early adopters. The MVP for this project is defined as:
+### Out of Scope (v1.0)
 
-> A distributable and installable **desktop application** that allows a user to securely log in via Discord OAuth2 and fully utilize the **Bulk Message Deletion** feature, end-to-end, through a functional and clear user interface.
+- Mobile applications (Android/iOS) - _Currently in Roadmap_.
+- Cloud synchronization of settings.
+- Automated bots for server moderation.
 
-This MVP focuses our initial development efforts on delivering the most complex and high-value feature first, validating the architectural design of the **Discord privacy cleanup tool**.
+---
+
+## 🗺️ Roadmap (Future Vision)
+
+### Phase 2: Advanced Cleanup
+
+- **Keyword Filtering**: Regex-based deletion.
+- **Attachment Purge**: Isolate and delete only files/images.
+- **Thread Support**: Extend cleanup to Discord threads and forum posts.
+
+### Phase 3: Automation & Scale
+
+- **Scheduled Tasks**: Daily/Weekly auto-purge.
+- **Multi-Account**: Manage several digital identities simultaneously.
+- **GDPR Tooling**: Auto-download and parse Discord data packages.
+
+---
+
+## 🏆 MVP Definition
+
+The **Minimum Viable Product** is defined as:
+
+> A standalone desktop application that allows a user to log in via OAuth2, select multiple DM/Server channels, and delete their message history while respecting rate limits.
+
+_Last updated: February 25, 2026_

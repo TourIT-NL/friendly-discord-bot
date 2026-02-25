@@ -1,60 +1,35 @@
-# Discord Purge Rate Limiting Architecture: Preventing Discord API Abuse
+# 🚨 Architecture: Intelligent Rate Limiting Actor
 
-This document details the critical **Rate Limiting Actor architecture** within the **Discord Purge utility**. To ensure stable operation and prevent exceeding Discord's API rate limits during intensive operations like **bulk message deletion** or **DM cleanup**, a dedicated, asynchronous actor handles all outgoing Discord API requests. This intelligent system is vital for maintaining the integrity of the user's Discord account and the reliability of the **Discord cleanup tool**.
+Performance and reliability depend on how well we interact with Discord's API. This document details the asynchronous **Actor system** that manages global rate limits.
 
-A dedicated, asynchronous actor, implemented in **Rust**, is responsible for managing global rate limiting for all **Discord API requests** originating from the **Discord Purge application**.
+---
 
-```rust
-// Scaffolding for src-tauri/src/api/rate_limiter.rs
-// This Rust module defines the core components of the rate limiting actor for Discord API interactions.
+## 🏗️ The Actor Design Pattern
 
-use tokio::sync::{mpsc, Mutex};
-use std::sync::Arc;
-use std::time::Duration;
+In **Discord Purge**, all API requests are routed through a single, centralized "Rate Limiter Actor" in the Rust backend. This prevents multiple threads from accidentally slamming the API and causing account flags.
 
-// Represents a pending API request that needs to be sent to the Discord API.
-pub struct ApiRequest { /* ... fields for method, url, request body, and a channel to send the response back ... */ }
-// Represents the response received from a Discord API request.
-pub struct ApiResponse { /* ... fields for status, response body, and relevant headers ... */ }
+### Workflow:
 
-// The actor's state, containing its internal message queue and current rate limit information.
-pub struct RateLimiterActor {
-    // An MPSC (Multiple Producer, Single Consumer) channel to receive incoming API requests
-    // from various parts of the Discord Purge application.
-    inbox: mpsc::Receiver<ApiRequest>,
-    // Shared, mutable state holding the current rate limit information, protected by a Mutex.
-    rate_limit_info: Arc<Mutex<RateLimitInfo>>,
-}
+1.  **Request**: Any module (Message Deleter, Server Leaver) sends an `ApiRequest` message to the Actor's inbox.
+2.  **Queueing**: The Actor holds an MPSC (Multi-Producer, Single-Consumer) queue.
+3.  **Throttling**: The Actor checks the `remaining` requests for the current bucket.
+4.  **Suspension**: If the limit is reached, the Actor **asynchronously sleeps** (`tokio::time::sleep`) until the `reset_after` duration expires.
+5.  **Execution**: The Actor executes the request using `reqwest`.
+6.  **Header Parsing**: The Actor parses `X-RateLimit-Remaining` and `X-RateLimit-Reset-After` from the response to update its internal state.
+7.  **Response**: The result is sent back to the original caller via a one-shot channel.
 
-// Struct to store dynamic rate limit data extracted from Discord API response headers.
-#[derive(Clone, Default)]
-pub struct RateLimitInfo {
-    // Number of requests remaining in the current rate limit window.
-    remaining: u32,
-    // Duration after which the current rate limit window resets.
-    reset_after: Duration,
-}
+---
 
-impl RateLimiterActor {
-    // The main execution loop for the RateLimiterActor.
-    pub async fn run(&mut self) {
-        // Continuously process requests as they arrive in the inbox.
-        while let Some(request) = self.inbox.recv().await {
-            // Acquire a lock on the rate limit information to check and update it.
-            let mut info = self.rate_limit_info.lock().await;
-            // If no requests are remaining in the current window, pause execution
-            // until the rate limit resets, preventing Discord API abuse.
-            if info.remaining == 0 {
-                tokio::time::sleep(info.reset_after).await;
-            }
-            // TODO:
-            // - Execute the actual HTTP request to the Discord API using `reqwest`.
-            // - Parse `X-RateLimit-*` headers from the Discord API response to update `info.remaining` and `info.reset_after`.
-            // - Decrement `info.remaining` for the executed request.
-            // - Send the `ApiResponse` back to the original caller of the API request.
-        }
-    }
-}
-```
+## 🎲 Advanced Safeguards
 
-This architecture is crucial for the stability and responsible operation of the **Discord Purge desktop application**, ensuring that **Discord message management** tasks are performed efficiently without leading to temporary account suspensions or blocks due to excessive API calls.
+- **Randomized Jitter**: We add a small random delay (50ms - 200ms) to every request. This prevents "robotic" patterns that could trigger anti-automation systems.
+- **Exponential Backoff**: If we hit a `429 Too Many Requests` error, we don't just wait; we exponentially increase the wait time for subsequent retries.
+- **Global vs. Local**: The Actor intelligently distinguishes between Global (IP-wide) and Route-specific (per channel) rate limits.
+
+---
+
+## ⚡ Performance Impact
+
+By using non-blocking asynchronous Rust, we ensure that while the background Actor is waiting for a reset, the UI remains perfectly responsive and fluid.
+
+_Last updated: February 25, 2026_

@@ -1,38 +1,63 @@
-# Discord Purge Testing Methodology: Ensuring Quality and Reliability
+# 🧪 Testing Methodology: Our Quality Standard
 
-This document outlines the comprehensive **testing methodology** employed for the **Discord Purge utility**. A rigorous testing approach is crucial to ensure the stability, security, and performance of this **Discord message deletion and privacy management tool**. Our strategy encompasses various testing levels for both the Rust backend and TypeScript frontend.
+Reliability is non-negotiable. This document outlines the rigorous testing strategy that ensures **Discord Purge** performs safely and correctly.
 
-### 6.1. Rust Backend Testing
+---
 
-The **Rust backend** of Discord Purge undergoes thorough testing to guarantee its robustness and efficiency in handling **Discord API interactions** and core logic.
+## 🦀 1. Rust Backend Testing (Native)
 
-- **Unit Tests**: Pure functions and isolated logic components (e.g., data transformation, rate limiting algorithms, secure storage interactions) are tested in isolation. This ensures the foundational elements of the **Discord cleanup tool** function correctly.
-  ```rust
-  #[cfg(test)]
-  mod tests {
-      #[test]
-      fn it_works() {
-          assert_eq!(2 + 2, 4);
-      }
-  }
-  ```
-- **Integration Tests**: The Discord API client, responsible for communicating with Discord's services for **message deletion** and **account management**, is tested via integration tests. These tests utilize a mock HTTP server (e.g., `wiremock-rs`) to simulate realistic Discord API responses, including critical aspects like rate limit headers and error codes, ensuring the application behaves correctly under various API conditions.
+### Unit Tests
 
-### 6.2. TypeScript Frontend Testing
+We test the "brains" of the app in isolation.
 
-The **TypeScript frontend** of Discord Purge, built with React and Tauri, is equally subjected to rigorous testing to ensure a smooth and reliable user experience for **Discord privacy management**.
+- **Rate Limiter logic**: Ensuring jitter and backoff calculations are correct.
+- **Data Parsers**: Verifying Discord API responses are mapped correctly to our types.
+- **Encryption wrappers**: Testing the interface with the OS Keychain.
 
-- **Component Tests**: Individual UI components, such as buttons, forms, and data displays, are tested using `Vitest` and `React Testing Library`. This verifies that each part of the user interface renders correctly and responds to user interactions as expected, contributing to a stable **desktop application** experience.
+### Integration Tests
 
-  ```typescript
-  // Example: src/components/Button.test.tsx
-  import { render, screen } from '@testing-library/react';
-  import { Button } from './Button';
+We test the interaction with external services.
 
-  test('it should render the button with text', () => {
-    render(<Button>Click Me</Button>);
-    expect(screen.getByText('Click Me')).toBeInTheDocument();
-  });
-  ```
+- **Mock API**: We use `wiremock` to simulate Discord servers, ensuring our app handles `429`, `403`, and `500` status codes gracefully.
 
-- **E2E (End-to-End) Tests**: Once major features are complete, Tauri's built-in `webdriver` support will be utilized for end-to-end tests. These tests simulate a real user's journey through the entire **Discord Purge application flow**, from authentication to executing complex operations like **bulk message deletion**, ensuring all integrated components work seamlessly together.
+---
+
+## 🚀 2. Frontend Testing (Web)
+
+### Component Tests (`Vitest`)
+
+We test our React UI components using **React Testing Library**.
+
+- **Rendering**: Do buttons and inputs appear correctly?
+- **Logic**: Does clicking "Delete" trigger the confirmation modal?
+- **Accessibility**: Ensuring the app is usable by everyone (Aria labels, focus management).
+
+---
+
+## 🤖 3. End-to-End (E2E) Testing
+
+Using **Webdriver** support in Tauri, we automate a "real user" session:
+
+1.  Launch the app.
+2.  Navigate the login screens.
+3.  Simulate a dry run of a message deletion.
+4.  Verify that the progress bar updates.
+
+---
+
+## 🛡️ 4. Security Audits
+
+- **`cargo audit`**: Scans the backend for vulnerable crates.
+- **`npm audit`**: Scans the frontend for compromised packages.
+- **`cargo deny`**: Checks our entire dependency tree for license violations and banned sources.
+- **Static Analysis**: We use `clippy` (Rust) and `eslint` (TS) to catch bugs before they are even compiled.
+
+---
+
+## 📊 Quality Targets
+
+- **Coverage**: We aim for 80% code coverage on core logic modules.
+- **Performance**: Any UI action must respond in under 100ms.
+- **Zero Criticals**: No release is allowed if any security audit fails.
+
+_Last updated: February 25, 2026_

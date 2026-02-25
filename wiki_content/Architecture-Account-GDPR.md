@@ -1,13 +1,44 @@
-# Discord Purge Account & GDPR Management Flow: Ensuring Privacy Compliance
+# 👮 Account & GDPR Management Flow
 
-This document details the **Account and GDPR Management flow** within the **Discord Purge utility**. Recognizing Discord's API limitations regarding direct programmatic account deletion or bulk GDPR data removal, this **privacy management tool** is designed to securely and efficiently guide users through Discord's official processes, ensuring **privacy compliance** and user control over their digital footprint.
+Privacy is more than just deleting messages; it's about navigating complex legal and platform-specific data policies. This document explains how **Discord Purge** facilitates deep data removal while respecting Discord's technical constraints.
 
-- **Multi-Server Message Deletion**: The Rust backend's `bulk_delete_messages` command is already capable of processing a `Vec<String>` of channel IDs. This means it can efficiently handle **Discord message deletion** across multiple guilds (servers) and Direct Messages (DMs) in a single operation. The primary user interface challenge is to provide an intuitive frontend mechanism for multi-selection across these locations within the **Discord cleanup tool**.
-- **Profile Deletion Guidance**:
-  - **Backend (`src-tauri/src/api/discord.rs`)**: A new Tauri command, `open_discord_url_for_action(action_type: String)`, will be implemented. This command will take an `action_type` (e.g., "account_deletion") and securely use `tauri::api::shell::open` to launch the user's default web browser to the relevant official Discord URL (e.g., Discord's account settings page specifically for deletion). This guides users directly to the necessary **Discord account management** interface.
-  - **Frontend (`src/App.tsx`)**: A dedicated "Delete Profile" button will trigger a confirmation modal with strong warnings to ensure the user understands the irreversible nature of the action. Upon user confirmation, it will call the `open_discord_url_for_action` backend command, guiding the user to Discord's official account deletion process. Following this, the **Discord Purge application** UI will then log out the user, ensuring security.
-- **GDPR Data Request Assistance**:
-  - **Backend**: The `open_discord_url_for_action` command can also be utilized to securely open official Discord web pages related to Data & Privacy settings or support portals, facilitating **GDPR data requests**.
-  - **Frontend**: A "GDPR Data Request" button (or similar UI element within the **Discord privacy utility**) will provide clear, step-by-step instructions to the user:
-    1.  Guidance on how to download their personal data package directly from Discord's User Settings > Data & Privacy.
-    2.  Information on how to formally contact Discord Support to request more extensive **bulk message deletion**, potentially including advice on providing a CSV of channel IDs (which can be derived from their downloaded data package). This will likely involve opening Discord's support portal via `open_discord_url_for_action`, streamlining the **Discord data management** process.
+---
+
+## 🌍 Multi-Server Strategy
+
+Our Rust backend is built for parallel efficiency. The `bulk_delete_messages` command accepts a `Vec<String>` of channel IDs, allowing it to:
+
+1.  Map channels to their respective guilds or DMs.
+2.  Queue requests per-rate-limit-bucket.
+3.  Execute deletions across multiple servers in a single logical operation from the user's perspective.
+
+---
+
+## 🗑️ Profile Deletion Protocol
+
+Direct programmatic account deletion is restricted by Discord for safety. We solve this by guiding the user through the verified official process:
+
+1.  **Backend Integration**: The `open_discord_url_for_action(action_type)` command uses `tauri::api::shell::open` to launch the browser directly to the relevant settings page.
+2.  **Safety First**: The Frontend triggers a high-severity warning modal.
+3.  **Handoff**: Once the user confirms, the app opens the browser and **automatically logs the user out** of the application to prevent any session conflicts.
+
+---
+
+## 📊 GDPR Data Request Assistance
+
+We empower users to utilize their legal rights under the General Data Protection Regulation (GDPR):
+
+- **Instructional GUI**: The app provides a dedicated "Data Request" portal.
+- **Step-by-Step**: It provides clear instructions on downloading the official Discord Data Package (Settings > Data & Privacy).
+- **Next Level Cleanup**: We provide templates for contacting Discord Support to request bulk message deletion using the channel IDs derived from their data package.
+
+---
+
+## 🛡️ Identity Persistence
+
+User identities are managed via a local secure buffer.
+
+- **OAuth2 IDs**: Saved using OS-native encryption.
+- **Switching**: Fast account switching allows users to manage multiple digital identities without re-authenticating every time.
+
+_Last updated: February 25, 2026_

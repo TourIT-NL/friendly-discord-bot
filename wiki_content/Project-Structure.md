@@ -1,7 +1,50 @@
-# Discord Purge Project Structure and Scaffolding: Understanding the Codebase
+# 📂 Project Structure: Mapping the Masterpiece
 
-This document details the **project structure and scaffolding** for the **Discord Purge utility**. Understanding the organization of the codebase is crucial for development, maintenance, and contributing to this **Discord message deletion and privacy management tool**. The project adheres to a clean, modular structure, leveraging the strengths of **Rust** and **Tauri**.
+A clean architecture is essential for long-term maintainability. This document provides a directory map for developers and contributors.
 
-The directory structure and setup commands from the previous version are sound and will be adhered to, providing a clear roadmap for **Discord Purge development**.
+---
 
-(Further detailed insights into the exact directory structure, including specific folders for the Rust backend, TypeScript frontend, and Tauri configurations, can be found within the project's repository. This organized approach facilitates efficient **Discord cleanup tool** development and scalability.)
+## 🌲 Tree Overview
+
+```text
+discord-privacy-util/
+├── .github/                # CI/CD Workflows & Config
+├── src/                    # Frontend (React + TypeScript)
+│   ├── components/         # M3-compliant UI Components
+│   ├── hooks/              # Custom React Hooks (Auth, API)
+│   ├── store/              # Zustand State Management
+│   └── types/              # TypeScript Interfaces
+├── src-tauri/              # Backend (Rust)
+│   ├── src/
+│   │   ├── api/            # Discord API Client & Actor
+│   │   ├── auth/           # OAuth2 & Token Logic
+│   │   ├── core/           # Error Handling & Utilities
+│   │   └── main.rs         # Tauri Command Entrypoints
+│   ├── capabilities/       # Tauri Security Permissions
+│   └── Cargo.toml          # Rust Dependencies
+├── wiki_content/           # Documentation (Auto-Syncs to Wiki)
+├── package.json            # Frontend Dependencies & Scripts
+├── README.md               # SEO Masterpiece Documentation
+└── LICENSE                 # MIT License
+```
+
+---
+
+## 🏗️ Architectural Split
+
+### 1. The Frontend (Vite + React)
+
+- **Responsibility**: UI rendering, user interaction, and event listening.
+- **Communication**: Uses `@tauri-apps/api` to call Rust functions via IPC (Inter-Process Communication).
+
+### 2. The Backend (Tauri + Rust)
+
+- **Responsibility**: Secure network requests, encryption, OS Keychain access, and global rate limiting.
+- **Communication**: Emits events to the frontend (e.g., `deletion_progress`) and returns `Result` objects for commands.
+
+### 3. Documentation (Wiki)
+
+- **Responsibility**: Maintaining the project blueprint.
+- **Workflow**: Managed as code within `wiki_content/`, ensuring all technical docs are versioned.
+
+_Last updated: February 25, 2026_
