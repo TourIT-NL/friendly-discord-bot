@@ -1,0 +1,30 @@
+name: 'Setup Rust Environment'
+description: 'Standardizes Rust installation, system dependencies, and caching'
+
+inputs:
+  platform:
+    description: 'The OS platform'
+    required: true
+  cache-key:
+    description: 'Additional cache key'
+    default: 'v1'
+
+runs:
+  using: "composite"
+  steps:
+    - name: install dependencies (ubuntu)
+      if: inputs.platform == 'ubuntu-22.04'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libglib2.0-dev libgirepository1.0-dev
+
+    - name: install Rust stable
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt, llvm-tools-preview
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        cache-directories: "src-tauri"
+        key: ${{ inputs.platform }}-${{ inputs.cache-key }}

@@ -4,6 +4,11 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
+# Cancel outdated PR checks if the user pushes again
+concurrency:
+  group: pr-quality-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -12,45 +17,15 @@ permissions:
 jobs:
   # 1. Enforce Conventional Commits on PR Titles
   pr-title-lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: amannn/action-semantic-pull-request@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            chore
-            docs
-            style
-            refactor
-            perf
-            test
-            build
-            ci
-            revert
 
-  # 2. Advanced Rust Quality (License Compliance & Duplicate Health)
-  rust-deep-audit:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-      - name: install cargo-deny
-        run: cargo install cargo-deny
-      - name: License and Health Audit
-        working-directory: src-tauri
-        run: |
-          cargo deny --config ../deny.toml check licenses
-          cargo deny --config ../deny.toml check advisories
-          cargo deny --config ../deny.toml check bans
-          cargo deny --config ../deny.toml check sources
-
-  # 3. Frontend Quality Gate (Unused code detection)
+  # 2. Frontend Quality Gate (Unused code detection)
   frontend-health:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: setup node

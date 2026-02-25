@@ -1,32 +1,17 @@
-name: "Advanced Security Audit"
+name: "Advanced Security Compliance"
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   schedule:
-    - cron: "0 0 * * 0" # Weekly
+    - cron: "0 0 * * 0" # Weekly compliance audit
+  workflow_dispatch: # Manual trigger
 
 permissions:
   contents: read
   security-events: write
 
 jobs:
-  license-check:
-    name: License & Ban Check (cargo-deny)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v2
-        with:
-          command: check
-          arguments: --workspace --config deny.toml
-          manifest-path: src-tauri/Cargo.toml
-          rust-version: stable
-
   sbom-generation:
-    name: Generate SBOM
+    name: Generate Software Bill of Materials
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -12,8 +12,13 @@ on:
   pull_request:
     branches: [main]
 
+# Automatically cancel older runs when a new commit is pushed to the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # 0. The Change Detector - Determines what actually needs to run
+  # 0. The Change Detector
   changes:
     if: always()
     runs-on: ubuntu-22.04
@@ -41,8 +46,8 @@ jobs:
               - '**/*.md'
               - 'wiki_content/**'
 
-  # 1. High-Speed Frontend CI
-  lint-frontend:
+  # 1. Frontend CI
+  frontend-gate:
     needs: changes
     if: needs.changes.outputs.frontend == 'true' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-22.04
@@ -53,28 +58,12 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: package-lock.json
       - name: install
         run: npm ci
       - name: lint & format
         run: |
           npm run lint
           npm run format:check
-
-  test-frontend:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true' || startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-          cache-dependency-path: package-lock.json
-      - name: install
-        run: npm ci
       - name: test
         run: npm test
       - name: Upload Coverage
@@ -83,49 +72,22 @@ jobs:
           name: frontend-coverage
           path: coverage/
 
-  # 2. Optimized Rust CI
-  lint-rust:
+  # 2. Rust CI
+  rust-gate:
     needs: changes
     if: needs.changes.outputs.backend == 'true' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Env
+        uses: ./.github/actions/setup-rust-env
         with:
-          components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-directories: "src-tauri"
-      - name: install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libglib2.0-dev libgirepository1.0-dev
+          platform: 'ubuntu-22.04'
       - name: fmt & clippy
         working-directory: src-tauri
         run: |
           cargo fmt -- --check
           cargo clippy -- -D warnings
-
-  test-rust:
-    needs: changes
-    if: needs.changes.outputs.backend == 'true' || startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: llvm-tools-preview
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-directories: "src-tauri"
-      - name: install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libglib2.0-dev libgirepository1.0-dev
-      - name: install grcov
-        run: cargo install grcov
       - name: test
         working-directory: src-tauri
         env:
@@ -134,37 +96,36 @@ jobs:
           LLVM_PROFILE_FILE: "target/debug/cov-%p-%m.profraw"
         run: cargo test
       - name: grcov
-        working-directory: src-tauri
         run: |
-          mkdir -p ./target/debug/coverage/
-          grcov . --binary-path ./target/debug/ -s . -t html --keep-only src -o ./target/debug/coverage/
+          cargo install grcov
+          mkdir -p ./src-tauri/target/debug/coverage/
+          grcov . --binary-path ./src-tauri/target/debug/ -s . -t html --keep-only "src/*" -o ./src-tauri/target/debug/coverage/
       - name: Upload Coverage
         uses: actions/upload-artifact@v4
         with:
           name: rust-coverage
           path: src-tauri/target/debug/coverage/
 
-  # 3. Security & Compliance
+  # 3. Security Audit (Consolidated)
   audit:
     needs: changes
     if: always() && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: install cargo-audit
-        run: cargo install cargo-audit
-      - name: audit
-        working-directory: src-tauri
-        run: cargo audit
+      - name: Cargo Deny
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --workspace --config deny.toml
+          rust-version: stable
       - name: npm audit
         run: npm audit --audit-level=high
 
   # 4. Multi-Platform Release Engine
   publish-tauri:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [lint-frontend, lint-rust, test-frontend, test-rust, audit]
-    permissions:
-      contents: write
+    needs: [frontend-gate, rust-gate, audit]
     strategy:
       fail-fast: false
       matrix:
@@ -180,24 +141,15 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Rust Env
+        uses: ./.github/actions/setup-rust-env
+        with:
+          platform: ${{ matrix.platform }}
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: package-lock.json
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-directories: "src-tauri"
-      - name: install dependencies (ubuntu)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libglib2.0-dev libgirepository1.0-dev
       - name: install frontend
         run: npm ci
       - uses: tauri-apps/tauri-action@v0
@@ -206,37 +158,30 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: "Discord Purge v__VERSION__"
-          releaseBody: "Release notes available in the Wiki and Release Drafts."
+          releaseBody: "Release notes available in the Wiki."
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
 
   # 5. Nightly Builds (Main Branch)
   nightly-build:
-    if: github.ref == 'refs/heads/main'
-    needs: [lint-frontend, lint-rust, test-frontend, test-rust, audit]
+    if: github.ref == 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')
+    needs: [frontend-gate, rust-gate, audit]
     strategy:
       matrix:
         platform: [ubuntu-22.04, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Rust Env
+        uses: ./.github/actions/setup-rust-env
+        with:
+          platform: ${{ matrix.platform }}
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: package-lock.json
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-directories: "src-tauri"
-      - name: install dependencies (ubuntu)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libglib2.0-dev libgirepository1.0-dev
       - name: install frontend
         run: npm ci
       - name: Build
