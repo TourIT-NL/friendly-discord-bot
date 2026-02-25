@@ -3,22 +3,22 @@
 # Frontend changes
 frontend:
   - changed-files:
-      - any-glob-to-any-file: 'src/**'
-      - any-glob-to-any-file: 'package.json'
-      - any-glob-to-any-file: 'vite.config.ts'
+      - any-glob-to-any-file: "src/**"
+      - any-glob-to-any-file: "package.json"
+      - any-glob-to-any-file: "vite.config.ts"
 
 # Backend (Rust/Tauri) changes
 backend:
   - changed-files:
-      - any-glob-to-any-file: 'src-tauri/**'
+      - any-glob-to-any-file: "src-tauri/**"
 
 # Documentation
 docs:
   - changed-files:
-      - any-glob-to-any-file: '**/*.md'
-      - any-glob-to-any-file: 'wiki_content/**'
+      - any-glob-to-any-file: "**/*.md"
+      - any-glob-to-any-file: "wiki_content/**"
 
 # CI/CD
 ci:
   - changed-files:
-      - any-glob-to-any-file: '.github/**'
+      - any-glob-to-any-file: ".github/**"

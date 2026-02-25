@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'wiki_content/**'
+      - "wiki_content/**"
 
 jobs:
   sync:

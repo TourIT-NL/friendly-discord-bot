@@ -17,16 +17,16 @@ jobs:
             ## Welcome to Friendly Discord Bot! 🚀
 
             Thank you for opening your first issue! We are excited to have you here. 
-            
+
             Please make sure you've checked the [Wiki](https://github.com/TourIT-NL/friendly-discord-bot/wiki) and existing issues to ensure this isn't a duplicate.
-            
+
             Our maintainers will review this shortly. In the meantime, feel free to join our [Discord Community](https://discord.gg/kRFhXPTm).
 
           pr-message: |
             ## Welcome, Contributor! 🎉
 
             Thank you for submitting your first Pull Request! 
-            
+
             Please ensure you have:
             - [ ] Added a description of your changes.
             - [ ] Verified that the build passes (`npm run build` / `cargo build`).

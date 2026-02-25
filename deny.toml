@@ -31,10 +31,8 @@ copyleft = "deny"
 allow-osi-fsf-free = "either"
 
 [bans]
-version = 2
 multiple-versions = "warn"
 
 [sources]
-version = 2
 allow-git = []
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
