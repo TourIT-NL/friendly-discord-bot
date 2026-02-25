@@ -55,6 +55,7 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -145,6 +146,9 @@ fn main() {
             api::discord::fetch_billing_subscriptions,
             api::discord::fetch_entitlements,
             api::discord::set_max_privacy_settings,
+            api::discord::start_attachment_harvest,
+            api::discord::start_chat_html_export,
+            api::discord::start_guild_user_archive,
             clear_all_app_data
         ])
         .run(tauri::generate_context!())

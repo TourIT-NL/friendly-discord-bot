@@ -6,6 +6,7 @@ import {
   Shield,
   Fingerprint,
   CreditCard,
+  Download,
 } from "lucide-react";
 import { Sidebar } from "../dashboard/Sidebar";
 import { MessagesMode } from "../dashboard/modes/MessagesMode";
@@ -14,6 +15,7 @@ import { IdentityMode } from "../dashboard/modes/IdentityMode";
 import { SecurityMode } from "../dashboard/modes/SecurityMode";
 import { PrivacyMode } from "../dashboard/modes/PrivacyMode";
 import { AccountMode } from "../dashboard/modes/AccountMode";
+import { ExportMode } from "../dashboard/modes/ExportMode";
 import { IconButton } from "../common/M3Components";
 import { Guild, Channel, Relationship } from "../../types/discord";
 
@@ -36,7 +38,8 @@ interface DashboardViewProps {
     | "identity"
     | "security"
     | "privacy"
-    | "account";
+    | "account"
+    | "export";
   setMode: (mode: any) => void;
   timeRange: "24h" | "7d" | "all";
   setTimeRange: (range: "24h" | "7d" | "all") => void;
@@ -78,6 +81,12 @@ interface DashboardViewProps {
   relationships: Relationship[] | null;
   selectedRelationships: Set<string>;
   setSelectedRelationships: (ids: Set<string>) => void;
+  exportDirection: "sent" | "received" | "both";
+  setExportDirection: (dir: "sent" | "received" | "both") => void;
+  includeAttachmentsInHtml: boolean;
+  setIncludeAttachmentsInHtml: (inc: boolean) => void;
+  handleStartExport: (format: "html" | "raw") => void;
+  handleStartGuildArchive: () => void;
 }
 
 export const DashboardView = ({
@@ -180,6 +189,8 @@ export const DashboardView = ({
                     "Privacy Hardening"
                   ) : mode === "account" ? (
                     "Financial Footprint"
+                  ) : mode === "export" ? (
+                    "Data Extraction"
                   ) : selectedGuilds.size === 0 ? (
                     "Select Sources"
                   ) : selectedGuilds.size === 1 ? (
@@ -226,6 +237,13 @@ export const DashboardView = ({
                 className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "identity" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 Friends
+              </button>
+              <button
+                disabled={isProcessing}
+                onClick={() => setMode("export")}
+                className={`px-8 py-2.5 rounded-m3-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === "export" ? "bg-m3-primary text-m3-onPrimary" : "text-m3-onSurfaceVariant"} ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                Export
               </button>
               <div className="w-px bg-white/10 mx-2" />
               <button
@@ -360,6 +378,22 @@ export const DashboardView = ({
               info={billingInfo}
               fetchAudit={fetchAccountAudit}
               onOpenDiscordUrl={handleOpenDiscordUrl}
+            />
+          )}
+          {mode === "export" && (
+            <ExportMode
+              guilds={guilds}
+              selectedGuilds={selectedGuilds}
+              channelsByGuild={channelsByGuild}
+              selectedChannels={selectedChannels}
+              onToggleChannel={handleToggleChannel}
+              exportDirection={exportDirection}
+              setExportDirection={setExportDirection}
+              includeAttachmentsInHtml={includeAttachmentsInHtml}
+              setIncludeAttachmentsInHtml={setIncludeAttachmentsInHtml}
+              onStartExport={handleStartExport}
+              onStartGuildArchive={handleStartGuildArchive}
+              isProcessing={isProcessing}
             />
           )}
         </motion.div>

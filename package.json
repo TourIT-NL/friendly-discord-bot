@@ -64,6 +64,6 @@
       "prettier --write"
     ],
     "*.{json,css,md}": "prettier --write",
-    "src-tauri/**/*.rs": "cd src-tauri && cargo fmt"
+    "src-tauri/**/*.rs": "cargo fmt --manifest-path src-tauri/Cargo.toml"
   }
 }

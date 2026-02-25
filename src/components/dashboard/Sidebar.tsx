@@ -12,6 +12,7 @@ import {
   Shield,
   Fingerprint,
   CreditCard,
+  Download,
 } from "lucide-react";
 import { SectionLabel } from "../common/M3Components";
 import { DiscordIdentity, Guild, DiscordUser } from "../../types/discord";
@@ -58,14 +59,14 @@ export const Sidebar = ({
         <SectionLabel>
           <Terminal className="w-3.5 h-3.5" /> Protocol Modes
         </SectionLabel>
-        <div className="grid grid-cols-3 gap-3 px-2">
+        <div className="grid grid-cols-2 gap-3 px-2">
           <button
             disabled={isProcessing}
             onClick={() => setMode("messages")}
             title="Manage and delete message history"
-            className={`flex flex-col items-center gap-2 p-4 rounded-m3-xl transition-all border-2 ${mode === "messages" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
+            className={`flex items-center gap-3 p-3 rounded-m3-xl transition-all border-2 ${mode === "messages" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
           >
-            <MessageSquare className="w-5 h-5" />
+            <MessageSquare className="w-4 h-4" />
             <span className="text-[9px] font-black uppercase tracking-tighter">
               Messages
             </span>
@@ -74,9 +75,9 @@ export const Sidebar = ({
             disabled={isProcessing}
             onClick={() => setMode("servers")}
             title="Leave servers and manage memberships"
-            className={`flex flex-col items-center gap-2 p-4 rounded-m3-xl transition-all border-2 ${mode === "servers" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
+            className={`flex items-center gap-3 p-3 rounded-m3-xl transition-all border-2 ${mode === "servers" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
           >
-            <Server className="w-5 h-5" />
+            <Server className="w-4 h-4" />
             <span className="text-[9px] font-black uppercase tracking-tighter">
               Servers
             </span>
@@ -85,20 +86,31 @@ export const Sidebar = ({
             disabled={isProcessing}
             onClick={() => setMode("identity")}
             title="Manage friends and identity links"
-            className={`flex flex-col items-center gap-2 p-4 rounded-m3-xl transition-all border-2 ${mode === "identity" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
+            className={`flex items-center gap-3 p-3 rounded-m3-xl transition-all border-2 ${mode === "identity" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
           >
-            <Users className="w-5 h-5" />
+            <Users className="w-4 h-4" />
             <span className="text-[9px] font-black uppercase tracking-tighter">
               Identity
             </span>
           </button>
           <button
             disabled={isProcessing}
+            onClick={() => setMode("export")}
+            title="Export attachments and chat history"
+            className={`flex items-center gap-3 p-3 rounded-m3-xl transition-all border-2 ${mode === "export" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
+          >
+            <Download className="w-4 h-4" />
+            <span className="text-[9px] font-black uppercase tracking-tighter">
+              Extract
+            </span>
+          </button>
+          <button
+            disabled={isProcessing}
             onClick={() => setMode("security")}
             title="Security audit and token management"
-            className={`flex flex-col items-center gap-2 p-4 rounded-m3-xl transition-all border-2 ${mode === "security" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
+            className={`flex items-center gap-3 p-3 rounded-m3-xl transition-all border-2 ${mode === "security" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
           >
-            <Shield className="w-5 h-5" />
+            <Shield className="w-4 h-4" />
             <span className="text-[9px] font-black uppercase tracking-tighter">
               Security
             </span>
@@ -107,9 +119,9 @@ export const Sidebar = ({
             disabled={isProcessing}
             onClick={() => setMode("privacy")}
             title="Privacy hardening and GDPR tools"
-            className={`flex flex-col items-center gap-2 p-4 rounded-m3-xl transition-all border-2 ${mode === "privacy" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
+            className={`flex items-center gap-3 p-3 rounded-m3-xl transition-all border-2 ${mode === "privacy" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
           >
-            <Fingerprint className="w-5 h-5" />
+            <Fingerprint className="w-4 h-4" />
             <span className="text-[9px] font-black uppercase tracking-tighter">
               Privacy
             </span>
@@ -118,9 +130,9 @@ export const Sidebar = ({
             disabled={isProcessing}
             onClick={() => setMode("account")}
             title="Billing and financial footprint audit"
-            className={`flex flex-col items-center gap-2 p-4 rounded-m3-xl transition-all border-2 ${mode === "account" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
+            className={`flex items-center gap-3 p-3 rounded-m3-xl transition-all border-2 ${mode === "account" ? "bg-m3-primaryContainer text-m3-onPrimaryContainer border-m3-primary shadow-lg scale-105" : "bg-black/20 text-m3-onSurfaceVariant border-transparent hover:bg-m3-surfaceVariant/40 hover:border-m3-outlineVariant/30"} ${isProcessing ? "opacity-50 cursor-not-allowed" : "active:scale-95"}`}
           >
-            <CreditCard className="w-5 h-5" />
+            <CreditCard className="w-4 h-4" />
             <span className="text-[9px] font-black uppercase tracking-tighter">
               Billing
             </span>
