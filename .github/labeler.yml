@@ -1,33 +1,24 @@
-# .github/labeler.yml
 # Configuration for actions/labeler
 
-documentation:
+# Frontend changes
+frontend:
   - changed-files:
-      - any-glob-to-any-file: "docs/**"
-      - any-glob-to-any-file: "*.md"
-      - any-glob-to-any-file: "**.md"
+      - any-glob-to-any-file: 'src/**'
+      - any-glob-to-any-file: 'package.json'
+      - any-glob-to-any-file: 'vite.config.ts'
 
-javascript:
+# Backend (Rust/Tauri) changes
+backend:
   - changed-files:
-      - any-glob-to-any-file: "src/**/*.js"
-      - any-glob-to-any-file: "src/**/*.ts"
-      - any-glob-to-any-file: "src/**/*.tsx"
-      - any-glob-to-any-file: "package.json"
-      - any-glob-to-any-file: "package-lock.json"
-      - any-glob-to-any-file: "tsconfig.json"
-      - any-glob-to-any-file: "vite.config.ts"
+      - any-glob-to-any-file: 'src-tauri/**'
 
-rust:
+# Documentation
+docs:
   - changed-files:
-      - any-glob-to-any-file: "src-tauri/**/*.rs"
-      - any-glob-to-any-file: "src-tauri/Cargo.toml"
-      - any-glob-to-any-file: "src-tauri/Cargo.lock"
+      - any-glob-to-any-file: '**/*.md'
+      - any-glob-to-any-file: 'wiki_content/**'
 
-github_actions:
+# CI/CD
+ci:
   - changed-files:
-      - any-glob-to-any-file: ".github/workflows/**"
-
-tests:
-  - changed-files:
-      - any-glob-to-any-file: "**/*.test.ts"
-      - any-glob-to-any-file: "src-tauri/tests/**"
+      - any-glob-to-any-file: '.github/**'

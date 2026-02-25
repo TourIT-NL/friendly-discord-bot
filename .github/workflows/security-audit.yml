@@ -1,0 +1,47 @@
+name: "Advanced Security Audit"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0' # Weekly
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  license-check:
+    name: License & Ban Check (cargo-deny)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check
+          arguments: --workspace
+          manifest-path: src-tauri/Cargo.toml
+          # Note: This will use default checks if deny.toml is missing,
+          # or fail if it strictly requires one. It's a good baseline.
+
+  sbom-generation:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: discord-purge-sbom.spdx.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: discord-purge-sbom.spdx.json
+          retention-days: 14
