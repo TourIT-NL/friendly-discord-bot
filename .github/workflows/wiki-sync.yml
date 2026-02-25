@@ -15,5 +15,5 @@ jobs:
       - name: Sync Wiki
         uses: spenserblack/actions-wiki-sync@v0.1.0
         with:
-          wiki_folder: discord-privacy-util/wiki_content
+          wiki_folder: wiki_content
           token: ${{ secrets.GITHUB_TOKEN }}
