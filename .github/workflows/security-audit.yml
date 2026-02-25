@@ -18,14 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      - uses: EmbarkStudios/cargo-deny-action@v1
+      - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check
           arguments: --workspace
           manifest-path: src-tauri/Cargo.toml
-          rust-version: stable
+          config: src-tauri/deny.toml
           # Note: This will use default checks if deny.toml is missing,
           # or fail if it strictly requires one. It's a good baseline.
 

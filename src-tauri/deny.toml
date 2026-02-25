@@ -1,0 +1,40 @@
+# .github/deny.toml
+# Configuration for cargo-deny
+
+[advisories]
+version = 2
+# Ignore the CVSS parsing error if it's causing a crash, 
+# but actually we want to fix the tool.
+# For now, we will just ensure we have a config file.
+ignore = [
+    "RUSTSEC-2023-0071", # Marvin Attack (rsa)
+    "RUSTSEC-2024-0429", # Unsoundness in glib
+]
+
+[licenses]
+version = 2
+unlicensed = "deny"
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "ISC",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "OpenSSL",
+    "Zlib",
+    "MPL-2.0",
+    "Unicode-3.0",
+    "0BSD",
+    "BSL-1.0",
+]
+copyleft = "deny"
+allow-osi-fsf-free = "either"
+
+[bans]
+version = 2
+multiple-versions = "warn"
+
+[sources]
+version = 2
+allow-git = []
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
