@@ -18,6 +18,30 @@ template: |
 
 change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
 
+# Automatically label PRs based on their title
+autolabeler:
+  - label: "feature"
+    title:
+      - "/^feat/"
+      - "/^feature/"
+  - label: "fix"
+    title:
+      - "/^fix/"
+      - "/^bug/"
+  - label: "chore"
+    title:
+      - "/^chore/"
+      - "/^ci/"
+      - "/^test/"
+  - label: "refactor"
+    title:
+      - "/^refactor/"
+      - "/^perf/"
+  - label: "documentation"
+    title:
+      - "/^docs/"
+      - "/^doc/"
+
 categories:
   - title: "💥 Breaking Changes"
     labels:
@@ -47,5 +71,4 @@ exclude-labels:
   - "invalid"
   - "wontfix"
 
-# When a pull request with one of these labels is merged, release-drafter will not propose a new draft release
 filter-by-commit-ish: true

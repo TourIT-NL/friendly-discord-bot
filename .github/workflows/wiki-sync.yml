@@ -1,0 +1,19 @@
+name: Wiki Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wiki_content/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync Wiki
+        uses: spenserblack/actions-wiki-sync@v0.1.0
+        with:
+          wiki_folder: discord-privacy-util/wiki_content
+          token: ${{ secrets.GITHUB_TOKEN }}
