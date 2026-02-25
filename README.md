@@ -357,7 +357,7 @@ We are passionately committed to continuously enhancing **Friendly Discord Bot**
 - **Comprehensive Data Archiving & Export**: Developing enhanced and flexible data export options, allowing users to securely archive their entire Discord data history in various user-friendly formats (e.g., JSON, CSV, HTML) _before_ initiating any deletion. This provides a robust personal backup solution for your valuable **Discord history**.
 - **Advanced Audit Trails & Visualizations**: Further enhancing our auditing capabilities with even more detailed reports, graphical representations of cleanup activities, and interactive dashboards to provide deeper insights into your **Discord data removal** actions.
 
-Your ideas and invaluable feedback are the lifeblood of our innovation! Stay tuned for frequent updates and contribute your valuable thoughts and suggestions in our [GitHub Discussions](https://TourIT-NL/friendly-discord-bot/discussions)!
+Your ideas and invaluable feedback are the lifeblood of our innovation! Stay tuned for frequent updates and contribute your valuable thoughts and suggestions in our [GitHub Discussions](https://github.com/TourIT-NL/friendly-discord-bot/discussions)!
 
 ---
 
