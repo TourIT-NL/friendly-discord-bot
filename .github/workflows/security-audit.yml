@@ -24,8 +24,6 @@ jobs:
           arguments: --workspace --config deny.toml
           manifest-path: src-tauri/Cargo.toml
           rust-version: stable
-          # Note: This will use default checks if deny.toml is missing,
-          # or fail if it strictly requires one. It's a good baseline.
 
   sbom-generation:
     name: Generate SBOM

@@ -26,5 +26,5 @@ jobs:
         uses: lycheeverse/lychee-action@v2.0.2
         with:
           # Check Markdown and HTML files
-          args: --verbose --no-progress --exclude "https://www.contributorcovenant.org/.*" --exclude "https://www.conventionalcommits.org/.*" '**/*.md' '**/*.html'
+          args: --verbose --no-progress --exclude "https://www.contributorcovenant.org/.*" --exclude "https://www.conventionalcommits.org/.*" --exclude "https://tauri.app/.*" '**/*.md' '**/*.html'
           fail: true
