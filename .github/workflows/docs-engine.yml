@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Link Checker
-        uses: lycheeverse/lychee-action@v1.9.0
+        uses: lycheeverse/lychee-action@v2.0.2
         with:
           # Check Markdown and HTML files
           args: --verbose --no-progress '**/*.md' '**/*.html'
