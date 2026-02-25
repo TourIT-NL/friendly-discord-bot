@@ -4,7 +4,10 @@ Welcome to the official Wiki for **Discord Purge**, the definitive **desktop app
 
 ## 1. Vision & Core Tenets: Shaping the Discord Purge Experience
 
-The overarching vision for **Discord Purge** is to deliver a powerful, aesthetically pleasing, and high-performance **desktop application** that grants Discord users unparalleled control over their digital footprint. Every design and development decision is rigorously measured against three fundamental core tenets:
+The overarching vision for **Discord Purge** is to deliver a powerful, aesthetically pleasing, and high-performance **desktop application** that grants Discord users unparalleled control over their digital footprint.
+
+_Last updated: February 2026_
+Every design and development decision is rigorously measured against three fundamental core tenets:
 
 1.  **Unyielding Security**: The security of the user's data and Discord account integrity are our highest priorities. This encompasses both technical implementation (e.g., secure **OAuth2 authentication**, OS-level secure storage for tokens) and user experience design (e.g., clear warnings for destructive actions like **bulk message deletion**).
 2.  **Peak Performance**: The **Discord Purge application** must feel exceptionally fast and responsive, regardless of the scale of the task (e.g., deleting thousands of messages). This necessitates the use of asynchronous operations and a compiled backend (Rust) as fundamental requirements for an efficient **Discord cleanup tool**.
