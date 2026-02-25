@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "wiki_content/**"
 
 permissions:
   contents: write
@@ -14,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Sync Wiki
-        uses: spenserblack/actions-wiki-sync@v0.1.0
+        uses: Andrew-Chen-Wang/github-wiki-action@v4
         with:
-          wiki_folder: wiki_content
-          token: ${{ secrets.GITHUB_TOKEN }}
+          path: wiki_content/
+          strategy: clone
