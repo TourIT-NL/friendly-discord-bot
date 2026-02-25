@@ -7,8 +7,8 @@ license = "MIT"
 [dependencies]
 base64 = "0.22.1"
 keyring = "3.6.3"
-oauth2 = { version = "4.4.2", features = ["reqwest"] }
-rand = "0.8.5"
+oauth2 = { version = "5.0.0", features = ["reqwest"] }
+rand = "0.9.2"
 reqwest = { version = "0.11.27", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
@@ -28,7 +28,7 @@ ring = "0.17.14"
 aes-gcm = "0.10.1"
 rand_core = { version = "0.6.3", features = ["getrandom"] }
 hex = "0.4.3" # NEW
-rustls = { version = "0.23.36", features = ["ring"] }
+rustls = { version = "0.23.37", features = ["ring"] }
 prost = "0.14.3"
 prost-types = "0.14.3"
 uuid = { version = "1.21.0", features = ["v4"] }
