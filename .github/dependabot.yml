@@ -4,28 +4,30 @@ updates:
     directory: "/src-tauri/"
     schedule:
       interval: "weekly"
+    # Group all Rust updates into a single PR
+    groups:
+      rust-dependencies:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "rust"
     commit-message:
       prefix: "fix"
       include: "scope"
-    target-branch: "main"
-    # Allow Dependabot to create pull requests for these dependencies.
-    # The `GITHUB_TOKEN` secret is automatically available.
-    open-pull-requests-limit: 10
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
+    # Group all NPM updates into a single PR
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "javascript"
     commit-message:
       prefix: "fix"
       include: "scope"
-    target-branch: "main"
-    # Allow Dependabot to create pull requests for these dependencies.
-    # The `GITHUB_TOKEN` secret is automatically available.
-    open-pull-requests-limit: 10

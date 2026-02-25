@@ -59,6 +59,11 @@
     "vitest": "^4.0.18"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": "prettier --write",
+    "src-tauri/**/*.rs": "cd src-tauri && cargo fmt"
   }
 }

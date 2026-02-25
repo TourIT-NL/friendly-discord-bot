@@ -1,32 +1,35 @@
-name: "First Interaction Welcome"
+name: First Interaction
 
 on:
-  pull_request:
-    types: [opened]
   issues:
     types: [opened]
-
-permissions:
-  issues: write
-  pull-requests: write
+  pull_request:
+    types: [opened]
 
 jobs:
   welcome:
     runs-on: ubuntu-latest
     steps:
-      - name: Greet new contributors
-        uses: actions/first-interaction@v1
+      - uses: actions/first-interaction@v1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-message: >
-            👋 Hi @${{ github.actor }}! Thank you for opening your first issue in this repository.
-            We appreciate your contribution! Please make sure you've provided all necessary details
-            as per our [issue template](.github/ISSUE_TEMPLATE/bug_report.yml).
-          pr-message: >
-            🎉 Awesome, @${{ github.actor }}! This is your first Pull Request in this repository.
-            Welcome aboard! Please review our [contributing guidelines](CONTRIBUTING.md) and
-            ensure your PR description is clear.
-          # Uncomment the following to manage an `exempt-issue-labels` or `exempt-pr-labels`
-          # for issues/PRs that should not trigger this welcome
-          # exempt-issue-labels: 'internal, bot'
-          # exempt-pr-labels: 'internal, bot'
+          issue-message: |
+            ## Welcome to Friendly Discord Bot! 🚀
+
+            Thank you for opening your first issue! We are excited to have you here. 
+            
+            Please make sure you've checked the [Wiki](https://github.com/TourIT-NL/friendly-discord-bot/wiki) and existing issues to ensure this isn't a duplicate.
+            
+            Our maintainers will review this shortly. In the meantime, feel free to join our [Discord Community](https://discord.gg/kRFhXPTm).
+
+          pr-message: |
+            ## Welcome, Contributor! 🎉
+
+            Thank you for submitting your first Pull Request! 
+            
+            Please ensure you have:
+            - [ ] Added a description of your changes.
+            - [ ] Verified that the build passes (`npm run build` / `cargo build`).
+            - [ ] Added tests if applicable.
+
+            We will review your code as soon as possible.
