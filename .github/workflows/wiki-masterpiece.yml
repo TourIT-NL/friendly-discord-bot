@@ -1,4 +1,4 @@
-name: Wiki Sync
+name: Wiki Auto-Sync Masterpiece
 
 on:
   push:
@@ -6,15 +6,19 @@ on:
       - main
     paths:
       - "wiki_content/**"
+  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
 
 permissions:
   contents: write
 
 jobs:
   sync:
+    name: Sync wiki_content to GitHub Wiki
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Sync Wiki
         uses: Andrew-Chen-Wang/github-wiki-action@v4
         with:
