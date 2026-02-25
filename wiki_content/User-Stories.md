@@ -4,6 +4,15 @@ This document translates user needs into actionable technical requirements. Ever
 
 ---
 
+## 👥 User Personas: Who are we building for?
+
+1.  **Privacy-Conscious Pat**: A long-time Discord user who is uncomfortable with having years of personal conversations stored on a platform they no longer use as much. They want a "total wipe" before deleting their account.
+2.  **Professional Penny**: A user who uses Discord for work or community management and needs to clear old logs or sensitive messages from specific channels periodically.
+3.  **Security-Minded Sam**: A tech-savvy user who refuses to give their Discord token to random web-based "cleaners" and wants a local tool they can audit.
+4.  **Social Steve**: A user who joined too many servers and has a cluttered sidebar. He needs to leave 50+ servers at once but wants to keep his "Home" servers untouched.
+
+---
+
 ## 🔐 2.1. Authentication (US-001)
 
 **"Secure Access Without Compromise"**
@@ -12,10 +21,13 @@ This document translates user needs into actionable technical requirements. Ever
 - **Acceptance Criteria**:
   1.  The app presents a prominent "Login with Discord" button on launch.
   2.  Clicking opens the system browser to the official Discord authorization page.
-  3.  Scopes are clearly listed (Identity, Guilds, etc.).
+  3.  Scopes are clearly listed (Identity, Guilds, messages.read, etc.).
   4.  Redirect is handled by a temporary local server, ensuring code-to-token exchange happens securely.
   5.  Success transitions the UI instantly to the Dashboard.
   6.  Session is persisted via OS Keychain for automatic login on next start.
+- **Edge Cases**:
+  - _Port Conflict_: If the default redirect port is blocked, the app should find an alternative.
+  - _User Cancellation_: If the user closes the browser without authorizing, the app should return to the login screen gracefully.
 
 ---
 
@@ -31,6 +43,10 @@ This document translates user needs into actionable technical requirements. Ever
   4.  A **Confirmation Modal** must appear before execution, detailing the count of targets.
   5.  Users must type `DELETE` to proceed, preventing accidental data loss.
   6.  Real-time progress bars show exactly what is being deleted and how many remain.
+- **Technical Implementation Details**:
+  - Uses the **Rate Limiting Actor** to prevent account flags.
+  - Handles "Message is too old to delete" errors gracefully.
+  - Fetches message IDs in chunks of 100 to maximize efficiency.
 
 ---
 
@@ -45,6 +61,8 @@ This document translates user needs into actionable technical requirements. Ever
   3.  A final confirmation requiring the word `LEAVE` to proceed.
   4.  The application provides live feedback as it processes each departure.
   5.  Optional: Delete all user messages _before_ leaving the guild.
+- **Edge Cases**:
+  - _Owned Guilds_: If the user is the owner, the app informs them they must transfer ownership or delete the guild manually first.
 
 ---
 
@@ -57,5 +75,13 @@ This document translates user needs into actionable technical requirements. Ever
   1.  View categorized lists of Friends, Blocked, and Pending users.
   2.  Select multiple relationships for removal.
   3.  Immediate execution with rate-limit protection.
+
+---
+
+## 🔮 Future User Stories (Phase 2 & 3)
+
+- **US-005: Keyword Filter**: "As a user, I want to delete only messages containing my phone number or email address across all channels."
+- **US-006: Attachment Wipe**: "As a user, I want to delete only images and files I have uploaded, leaving the text messages intact."
+- **US-007: Scheduled Purge**: "As a user, I want the app to automatically delete messages older than 30 days every time I launch it."
 
 _Last updated: February 25, 2026_

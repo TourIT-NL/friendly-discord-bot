@@ -1,53 +1,73 @@
 # 📜 Logging Strategy: Transparency Without Exposure
 
-Effective logging is the difference between a tool that "just works" and a professional application. This document details our structured logging implementation.
+Effective logging is the difference between a tool that "just works" and a professional application. This document details our structured logging implementation, designed for developer insight while strictly maintaining user privacy.
 
 ---
 
-## 🛠️ The Tech Stack
+## 🛠️ The Tech Stack: Tracing 🦀
 
-We use the **`tracing`** ecosystem in Rust, which is the gold standard for high-performance, structured instrumentation.
+We use the **`tracing`** ecosystem in Rust, which is the industry standard for high-performance, structured instrumentation. Unlike old-school `log` crates, `tracing` allows us to record events with structured metadata.
 
-### Libraries:
+### Core Components:
 
-- `tracing`: Core API for event logging.
-- `tracing-subscriber`: For filtering and formatting logs.
-- `tracing-appender`: For high-speed file writing and rotation.
-
----
-
-## 🏗️ Structured Logs
-
-Unlike standard text logs, our logs are structured as **JSON** objects. This allows for:
-
-- **Contextual Data**: Attaching `channel_id` or `guild_id` to an event without string concatenation.
-- **Filtering**: Easily showing only `ERROR` events while ignoring `DEBUG` messages.
+- **`tracing`**: The primary API for recording spans and events.
+- **`tracing-subscriber`**: For filtering events (e.g., show only ERRORS in production) and formatting the output.
+- **`tracing-appender`**: For high-speed, non-blocking file writing and automatic rotation.
 
 ---
 
-## 📁 File Management (Rotation)
+## 🏗️ JSON Structured Logs
 
-To protect the user's disk space, we use a **Rotating File Appender**:
+To make debugging across platforms easier, our logs are structured as **JSON** objects. This allows a developer to parse them with tools like `jq`.
 
-- **Path**: `User/AppData/Local/DiscordPurge/logs/`.
-- **Max Files**: 3 log files.
-- **Max Size**: 5MB per file.
-- **Logic**: When the current log exceeds 5MB, the oldest is deleted, and a new one starts.
+**Example Entry:**
 
----
-
-## 🚨 Log Levels
-
-1.  **TRACE**: High-frequency network events (Headers, heartbeats).
-2.  **DEBUG**: Developer-focused info (Logic flow, variable states).
-3.  **INFO**: Major events (Login success, Cleanup started, App boot).
-4.  **WARN**: Recoverable errors (Rate limit hit, Retrying API call).
-5.  **ERROR**: Critical failures (Missing credentials, IO failure).
+```json
+{
+  "timestamp": "2026-02-25T10:00:00Z",
+  "level": "INFO",
+  "message": "Purge cycle initiated",
+  "channel_id": "123456789",
+  "target_count": 500
+}
+```
 
 ---
 
-## 🛡️ Privacy Policy
+## 📁 Secure File Management (Rotation)
 
-**No message content is ever logged.** We only log event metadata (counts, success/fail status, and identifiers) to ensure that the user's private conversations remain private, even in the log files.
+To protect the user's disk space and ensure we don't leak logs indefinitely, we use a **Rotating File Appender**:
+
+- **Location**:
+  - **Windows**: `%APPDATA%/FriendlyDiscordBot/logs/`
+  - **macOS**: `~/Library/Logs/FriendlyDiscordBot/`
+  - **Linux**: `~/.config/FriendlyDiscordBot/logs/`
+- **Capacity**:
+  - **Retention**: Maximum 3 log files.
+  - **Size Threshold**: 5MB per file.
+  - **Logic**: When the active log exceeds 5MB, the oldest file is purged, a secondary log is rotated, and a new file is initialized.
+
+---
+
+## 🚨 Log Levels & Usage
+
+1.  **TRACE**: High-frequency network events. Only enabled in "Developer Mode".
+2.  **DEBUG**: Logic flow and state changes. Used for identifying edge cases during testing.
+3.  **INFO**: Major user-initiated events (Login success, Cleanup completed).
+4.  **WARN**: Recoverable anomalies (Rate limit hit, API retry, Network flicker).
+5.  **ERROR**: Critical failures that halt an operation (Invalid token, OS Vault access denied).
+
+---
+
+## 🛡️ Privacy First: Our "No Message" Policy
+
+**No message content is ever recorded in the logs.**
+
+We strictly log **metadata only**:
+
+- **YES**: Channel IDs, Guild IDs, message counts, error codes, and performance metrics.
+- **NO**: Actual text content of DMs, usernames of other people, or attached file content.
+
+This ensures that even if you share your log file with a developer for troubleshooting, your private conversations remain 100% private.
 
 _Last updated: February 25, 2026_

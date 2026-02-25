@@ -1,23 +1,23 @@
 # 🩺 Architecture: Error Handling & Resilience
 
-Stability is a prerequisite for trust. This document details our robust, cross-platform error handling protocol.
+Stability is a prerequisite for user trust. This document details our robust, cross-platform error handling protocol, designed to ensure **Discord Purge** never crashes silently and always provides actionable feedback.
 
 ---
 
-## 🛠️ The Standardized Error Object
+## 🛠️ The Unified Error Model
 
-We use a unified `AppError` structure to bridge the gap between Rust's strong types and TypeScript's flexibility.
+We bridge the gap between Rust's strict types and TypeScript's flexibility using a standardized `AppError` object.
 
 ```rust
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 pub struct AppError {
-    /// Friendly message for the user interface.
+    /// A human-readable message for the UI (translated/localized in the future).
     pub user_message: String,
 
-    /// Unique internal code (e.g., 'discord_api_429').
+    /// A machine-readable code for logic branching (e.g., 'auth_failed_token_invalid').
     pub error_code: String,
 
-    /// (Optional) Raw technical details for developer logs.
+    /// (Optional) Internal technical details, excluded from production logs for privacy.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub technical_details: Option<String>,
 }
@@ -27,32 +27,40 @@ pub struct AppError {
 
 ## 🔄 The Handoff Logic
 
-### 1. In Rust
+Our communication follows a predictable "Catch-Wrap-Emit" pattern.
 
-Every Tauri command returns a `Result<T, AppError>`. If a low-level error occurs (like a network timeout), we catch it and wrap it in an `AppError` before it reaches the frontend.
+### 1. In Rust (The Producer)
 
-### 2. In TypeScript
+Every Tauri command returns a `Result<T, AppError>`.
 
-We use a centralized `handleApiError` hook. This ensures that every error:
+- **Internal Errors**: We use the `?` operator to bubble up errors.
+- **Conversion**: We implement `From<InternalError> for AppError` to ensure seamless conversion.
+- **Security**: We sanitize errors to ensure sensitive system paths or API keys aren't leaked in the message.
 
-- Is logged to the Developer Console with full context.
-- Triggers an appropriate UI notification (Error Overlay).
-- Corrects the loading state of the application.
+### 2. In TypeScript (The Consumer)
+
+We use a centralized `handleApiError` utility hook.
+
+- **Consolidation**: It updates the `authStore` with the latest error state.
+- **Notification**: It triggers the **Global Error Overlay**.
+- **Persistence**: Critical errors are saved to the **Local Log File** for later review.
 
 ---
 
-## 🚨 Critical Error Categories
+## 🚨 Error Categories & Responses
 
-- **Vault Errors**: Occur when the OS Keychain access fails.
-- **Discord API Errors**: Handled via our Rate Limiter Actor.
-- **Authentication Errors**: Triggers a redirect to the Login screen.
-- **Permission Errors**: Informs the user they need to grant specific scopes.
+| Category       | Typical Cause                        | App Response                                                        |
+| :------------- | :----------------------------------- | :------------------------------------------------------------------ |
+| **Vault**      | OS Keychain locked or access denied. | Redirect to "Setup" view to re-initialize credentials.              |
+| **Rate Limit** | Too many concurrent deletions.       | Backend Actor pauses automatically; UI shows "Waiting".             |
+| **Session**    | Access token expired.                | Automatic attempt to refresh; if failed, redirect to Login.         |
+| **Network**    | Offline or Discord API outage.       | Retry with exponential backoff; notify user of "Connection Issues". |
 
 ---
 
 ## 🛡️ Stability Safeguards
 
-- **Boundary Catching**: Any panic in the Rust backend is captured to prevent the entire desktop window from crashing.
-- **Graceful Degradation**: If one server channel fails to load, the rest of the application remains functional.
+- **Boundary Protection**: Any panic in the backend is captured by Tauri's wrapper, preventing the entire OS process from exiting.
+- **Graceful Degradation**: If one server's data fails to load, we isolate that failure and allow the user to continue cleaning up other servers.
 
 _Last updated: February 25, 2026_

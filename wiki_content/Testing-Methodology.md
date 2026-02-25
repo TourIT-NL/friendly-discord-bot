@@ -1,63 +1,70 @@
 # 🧪 Testing Methodology: Our Quality Standard
 
-Reliability is non-negotiable. This document outlines the rigorous testing strategy that ensures **Discord Purge** performs safely and correctly.
+Reliability is non-negotiable for a privacy tool. This document outlines the rigorous, multi-layered testing strategy that ensures **Discord Purge** performs safely, correctly, and predictably across all platforms.
 
 ---
 
-## 🦀 1. Rust Backend Testing (Native)
+## 🦀 1. Rust Backend Testing (Native Layer)
 
-### Unit Tests
+We use the standard `cargo test` harness, enhanced with specialized libraries.
 
-We test the "brains" of the app in isolation.
+### Unit Testing
 
-- **Rate Limiter logic**: Ensuring jitter and backoff calculations are correct.
-- **Data Parsers**: Verifying Discord API responses are mapped correctly to our types.
-- **Encryption wrappers**: Testing the interface with the OS Keychain.
+- **Target**: Pure functions and logic components.
+- **Examples**: Rate-limit jitter calculations, timestamp formatting, and permission check logic.
+- **Mocking**: We use `mockall` to simulate OS filesystem or network traits without touching the actual machine.
 
-### Integration Tests
+### Integration Testing
 
-We test the interaction with external services.
-
-- **Mock API**: We use `wiremock` to simulate Discord servers, ensuring our app handles `429`, `403`, and `500` status codes gracefully.
+- **Target**: The interaction between the Rust core and external APIs.
+- **Tools**: **`wiremock`** is used to stand up a local HTTP server that acts like the Discord API. This allows us to test our app's response to `429`, `403`, and `500` status codes without needing a real Discord account.
 
 ---
 
-## 🚀 2. Frontend Testing (Web)
+## 🚀 2. Frontend Testing (Web Layer)
 
-### Component Tests (`Vitest`)
+### Component Testing (`Vitest`)
 
-We test our React UI components using **React Testing Library**.
+- **Environment**: `jsdom` (simulates a browser environment).
+- **Tools**: **React Testing Library**.
+- **Focus**: User-centric testing. We don't test implementation details; we test that "When I click Delete, the Confirmation Modal appears."
 
-- **Rendering**: Do buttons and inputs appear correctly?
-- **Logic**: Does clicking "Delete" trigger the confirmation modal?
-- **Accessibility**: Ensuring the app is usable by everyone (Aria labels, focus management).
+### State Testing
+
+- **Target**: **Zustand** stores.
+- **Focus**: Verifying that events from Rust (e.g., `progress_update`) correctly update the global state and trigger UI re-renders.
 
 ---
 
 ## 🤖 3. End-to-End (E2E) Testing
 
-Using **Webdriver** support in Tauri, we automate a "real user" session:
+Using **Webdriver** support integrated into Tauri, we automate full user journeys.
 
-1.  Launch the app.
-2.  Navigate the login screens.
-3.  Simulate a dry run of a message deletion.
-4.  Verify that the progress bar updates.
+**Standard E2E Scenario:**
+
+1.  **Launch**: App opens to the Login screen.
+2.  **Auth**: Simulate a successful OAuth2 handshake.
+3.  **Discovery**: App scans for DMs and Servers.
+4.  **Dry Run**: Select a channel and run a "Simulation".
+5.  **Validation**: Verify that no actual API requests were sent during simulation mode.
 
 ---
 
-## 🛡️ 4. Security Audits
+## 🛡️ 4. The Security Audit Pipeline
 
-- **`cargo audit`**: Scans the backend for vulnerable crates.
+Quality includes security. Every Pull Request triggers:
+
+- **`cargo audit`**: Checks for vulnerable crates in the dependency tree.
+- **`cargo deny`**: Enforces license compliance (no GPL!) and bans unvetted crates.
 - **`npm audit`**: Scans the frontend for compromised packages.
-- **`cargo deny`**: Checks our entire dependency tree for license violations and banned sources.
-- **Static Analysis**: We use `clippy` (Rust) and `eslint` (TS) to catch bugs before they are even compiled.
+- **CodeQL**: Semantic analysis to detect memory leaks or potential buffer overflows in the Rust layer.
 
 ---
 
 ## 📊 Quality Targets
 
-- **Coverage**: We aim for 80% code coverage on core logic modules.
-- **Performance**: Any UI action must respond in under 100ms.
-- **Zero Criticals**: No release is allowed if any security audit fails.
+- **Logic Coverage**: 80%+ code coverage for the `api` and `auth` modules.
+- **Zero Criticals**: Release builds are blocked if a "High" or "Critical" vulnerability is detected.
+- **Cross-Platform Parity**: All tests must pass on Windows, macOS, and Linux runners in GitHub Actions.
 
 _Last updated: February 25, 2026_
