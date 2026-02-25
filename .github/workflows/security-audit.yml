@@ -23,7 +23,8 @@ jobs:
           command: check
           arguments: --workspace
           manifest-path: src-tauri/Cargo.toml
-          config: src-tauri/deny.toml
+          config: deny.toml
+          rust-version: stable
           # Note: This will use default checks if deny.toml is missing,
           # or fail if it strictly requires one. It's a good baseline.
 

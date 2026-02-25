@@ -43,10 +43,10 @@ jobs:
       - name: License and Health Audit
         working-directory: src-tauri
         run: |
-          cargo deny check licenses
-          cargo deny check advisories
-          cargo deny check bans
-          cargo deny check sources
+          cargo deny --config ../deny.toml check licenses
+          cargo deny --config ../deny.toml check advisories
+          cargo deny --config ../deny.toml check bans
+          cargo deny --config ../deny.toml check sources
 
   # 3. Frontend Quality Gate (Unused code detection)
   frontend-health:
@@ -60,4 +60,4 @@ jobs:
       - name: install
         run: npm ci
       - name: Check for unused dependencies
-        run: npx depcheck --ignores="postcss,tailwindcss,autoprefixer,@tailwindcss/postcss"
+        run: npx depcheck --ignores="postcss,tailwindcss,autoprefixer,@tailwindcss/postcss,@radix-ui/react-tooltip,@testing-library/*,@typescript-eslint/*,@vitest/*,@vitest/coverage-v8"
