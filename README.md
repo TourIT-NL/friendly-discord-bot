@@ -1,6 +1,6 @@
 # ✨ Friendly Discord Bot - Your Ultimate Discord Privacy & Data Cleanup Utility ✨
 
-[![Release](https://img.shields.io/badge/release-v1.0.3-blue)](https://github.com/TourIT-NL/friendly-discord-bot/releases)
+[![Release](https://img.shields.io/badge/release-v1.0.4-blue)](https://github.com/TourIT-NL/friendly-discord-bot/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/TourIT-NL/friendly-discord-bot)
 [![Discord Server](https://img.shields.io/discord/1475853240573890674?label=Discord&logo=discord&color=7289DA)](https://discord.gg/kRFhXPTm) <!-- Placeholder: Replace with actual Discord invite -->

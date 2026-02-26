@@ -67,12 +67,11 @@ impl RateLimiterActor {
                 h
             });
 
-        if let Ok(proxy) = Vault::get_credential(app, "proxy_url") {
-            if !proxy.is_empty() {
-                if let Ok(p) = reqwest::Proxy::all(&proxy) {
-                    builder = builder.proxy(p);
-                }
-            }
+        if let Ok(proxy) = Vault::get_credential(app, "proxy_url")
+            && !proxy.is_empty()
+            && let Ok(p) = reqwest::Proxy::all(&proxy)
+        {
+            builder = builder.proxy(p);
         }
 
         builder.build().unwrap()
@@ -120,7 +119,7 @@ impl RateLimiterActor {
                     let route = get_discord_route(&url).to_string();
                     let active_profile = profile.unwrap_or_else(|| self.profile.clone());
                     let active_locale =
-                        locale.unwrap_or_else(|| FingerprintManager::get_system_locale());
+                        locale.unwrap_or_else(FingerprintManager::get_system_locale);
                     let active_tz = timezone.unwrap_or_else(|| "UTC".to_string());
                     let global_429_count = self.global_429_count.clone();
 

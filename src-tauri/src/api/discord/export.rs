@@ -148,14 +148,14 @@ pub async fn start_chat_html_export(
                 let content = msg["content"].as_str().unwrap_or("");
                 html.push_str(&format!("<p><b>{}</b>: {}</p>", author, content));
 
-                if options.include_attachments {
-                    if let Some(atts) = msg["attachments"].as_array() {
-                        for att in atts {
-                            html.push_str(&format!(
-                                "<p><i>Attachment: {}</i></p>",
-                                att["filename"].as_str().unwrap_or("file")
-                            ));
-                        }
+                if options.include_attachments
+                    && let Some(atts) = msg["attachments"].as_array()
+                {
+                    for att in atts {
+                        html.push_str(&format!(
+                            "<p><i>Attachment: {}</i></p>",
+                            att["filename"].as_str().unwrap_or("file")
+                        ));
                     }
                 }
             }

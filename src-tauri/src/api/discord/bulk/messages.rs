@@ -169,19 +169,19 @@ pub async fn bulk_delete_messages(
                     .map(|dt| dt.timestamp_millis() as u64)
                     .unwrap_or(0);
 
-                if let Some(start) = options.start_time {
-                    if ts < start {
-                        if last_id.is_some() {
-                            break 'message_loop;
-                        } else {
-                            continue;
-                        }
-                    }
-                }
-                if let Some(end) = options.end_time {
-                    if ts > end {
+                if let Some(start) = options.start_time
+                    && ts < start
+                {
+                    if last_id.is_some() {
+                        break 'message_loop;
+                    } else {
                         continue;
                     }
+                }
+                if let Some(end) = options.end_time
+                    && ts > end
+                {
+                    continue;
                 }
 
                 let has_att = msg["attachments"]
@@ -199,36 +199,36 @@ pub async fn bulk_delete_messages(
                     .unwrap_or(true);
 
                 if !options.simulation && matches {
-                    if options.purge_reactions {
-                        if let Some(reactions) = msg["reactions"].as_array() {
-                            for r in reactions {
-                                if r["me"].as_bool().unwrap_or(false) {
-                                    let emoji = r["emoji"]["name"].as_str().unwrap_or("");
-                                    let eid = r["emoji"]["id"].as_str().unwrap_or("");
-                                    let param = if eid.is_empty() {
-                                        emoji.to_string()
-                                    } else {
-                                        format!("{}:{}", emoji, eid)
-                                    };
-                                    let url = format!(
-                                        "https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me",
-                                        channel_id, msg_id, param
-                                    );
-                                    let _ = api_handle
-                                        .send_request(
-                                            reqwest::Method::DELETE,
-                                            &url,
-                                            None,
-                                            &token,
-                                            is_bearer,
-                                            false,
-                                            None,
-                                            None,
-                                            None,
-                                            None,
-                                        )
-                                        .await;
-                                }
+                    if options.purge_reactions
+                        && let Some(reactions) = msg["reactions"].as_array()
+                    {
+                        for r in reactions {
+                            if r["me"].as_bool().unwrap_or(false) {
+                                let emoji = r["emoji"]["name"].as_str().unwrap_or("");
+                                let eid = r["emoji"]["id"].as_str().unwrap_or("");
+                                let param = if eid.is_empty() {
+                                    emoji.to_string()
+                                } else {
+                                    format!("{}:{}", emoji, eid)
+                                };
+                                let url = format!(
+                                    "https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me",
+                                    channel_id, msg_id, param
+                                );
+                                let _ = api_handle
+                                    .send_request(
+                                        reqwest::Method::DELETE,
+                                        &url,
+                                        None,
+                                        &token,
+                                        is_bearer,
+                                        false,
+                                        None,
+                                        None,
+                                        None,
+                                        None,
+                                    )
+                                    .await;
                             }
                         }
                     }

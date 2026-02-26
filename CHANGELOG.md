@@ -5,6 +5,27 @@ All notable changes to the Discord Privacy and Cleanup Utility will be documente
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-02-26
+
+### Added
+
+- **Intelligent Backoff Engine**: Implemented bucket-specific exponential backoff in the Rate Limiter Actor.
+- **Engine Circuit Breaker**: Integrated a global 429 counter that locks the request engine for 60 seconds if limits are repeatedly breached.
+- **Per-Request Fingerprinting Overrides**: Enabled the `ApiHandle` to pass unique `BrowserProfile` data for each request, enhancing behavioral authenticity.
+- **Real-Time Progress Precision**: Refined bulk operations to emit granular progress metrics (index, total, deleted count) to the frontend.
+- **Automatic DM Cleanup**: Implemented logic to close DM/Group nodes automatically if they remain empty after a purge operation.
+
+### Changed
+
+- **Header Elaborator**: Upgraded the request loop to dynamically inject `User-Agent`, `sec-ch-ua`, and `x-super-properties` based on the active profile.
+- **Engine Jitter**: Added randomized sub-second jitter to prevent "thundering herd" request patterns.
+- **Export Granularity**: Fully implemented filtering for "sent" and "received" messages in the HTML export engine.
+
+### Fixed
+
+- **Compiler Warnings**: Resolved 28+ compiler warnings by elaborating "unused" components into functional, architectural logic.
+- **Header Parity**: Corrected `x-ratelimit-global` detection logic to use `contains_key`.
+
 ## [1.0.3] - 2026-02-26
 
 ### Added
