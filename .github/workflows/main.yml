@@ -117,7 +117,8 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check
-          arguments: --workspace --config deny.toml
+          manifest-path: src-tauri/Cargo.toml
+          arguments: --config ../deny.toml
           rust-version: stable
       - name: npm audit
         run: npm audit --audit-level=high
