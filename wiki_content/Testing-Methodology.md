@@ -64,7 +64,7 @@ Quality includes security. Every Pull Request triggers:
 ## 📊 Quality Targets
 
 - **Logic Coverage**: 80%+ code coverage for the `api` and `auth` modules.
-- **Zero Criticals**: Release builds are blocked if a "High" or "Critical" vulnerability is detected.
+- **Zero Critical**: Release builds are blocked if a "High" or "Critical" vulnerability is detected.
 - **Cross-Platform Parity**: All tests must pass on Windows, macOS, and Linux runners in GitHub Actions.
 
 _Last updated: February 25, 2026_

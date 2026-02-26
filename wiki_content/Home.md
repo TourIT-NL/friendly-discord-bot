@@ -10,25 +10,25 @@ Built with the blazing speed of **Rust** 🦀 and the modern security of **Tauri
 
 ### 🚀 Getting Started
 
-- **[User Stories](./User-Stories)**: Understand the core features and how they solve real-world privacy problems.
-- **[Project Management](./Project-Management)**: Review our scope, current MVP status, and development phasing.
-- **[CI/CD Pipeline](./CI-CD-Pipeline)**: Explore how we automate builds, tests, and releases to maintain elite quality.
-- **[FAQ & Glossary](./FAQ-Glossary)**: Clear answers to common questions and technical terms.
+- **[User Stories](./User-Stories.md)**: Understand the core features and how they solve real-world privacy problems.
+- **[Project Management](./Project-Management.md)**: Review our scope, current MVP status, and development phasing.
+- **[CI/CD Pipeline](./CI-CD-Pipeline.md)**: Explore how we automate builds, tests, and releases to maintain elite quality.
+- **[FAQ & Glossary](./FAQ-Glossary.md)**: Clear answers to common questions and technical terms.
 
 ### 🏗️ Architecture & Security
 
-- **[OAuth2 Flow](./Architecture-OAuth2-Flow)**: Deep dive into our secure, token-free authentication protocol.
-- **[Rate Limiting](./Architecture-Rate-Limiting)**: Learn how our intelligent actor system prevents account flags.
-- **[Account & GDPR](./Architecture-Account-GDPR)**: See how we handle sensitive profile data and official Discord data requests.
-- **[Security Deep Dive](./Security-Privacy-Deep-Dive)**: The technical measures that protect your digital sovereignty.
-- **[Error Handling](./Architecture-Error-Handling)**: Understand our robust protocol for cross-platform stability.
+- **[OAuth2 Flow](./Architecture-OAuth2-Flow.md)**: Deep dive into our secure, token-free authentication protocol.
+- **[Rate Limiting](./Architecture-Rate-Limiting.md)**: Learn how our intelligent actor system prevents account flags.
+- **[Account & GDPR](./Architecture-Account-GDPR.md)**: See how we handle sensitive profile data and official Discord data requests.
+- **[Security Deep Dive](./Security-Privacy-Deep-Dive.md)**: The technical measures that protect your digital sovereignty.
+- **[Error Handling](./Architecture-Error-Handling.md)**: Understand our robust protocol for cross-platform stability.
 
 ### 🛠️ Technical Insights
 
-- **[Logging Strategy](./Logging-Strategy)**: How we maintain transparency with zero data leakage.
-- **[Project Structure](./Project-Structure)**: A map of the codebase for developers and contributors.
-- **[Testing Methodology](./Testing-Methodology)**: Our rigorous standards for unit, integration, and E2E testing.
-- **[Contributor Onboarding](./Contributor-Onboarding)**: Guide for setting up the dev environment and our quality standards.
+- **[Logging Strategy](./Logging-Strategy.md)**: How we maintain transparency with zero data leakage.
+- **[Project Structure](./Project-Structure.md)**: A map of the codebase for developers and contributors.
+- **[Testing Methodology](./Testing-Methodology.md)**: Our rigorous standards for unit, integration, and E2E testing.
+- **[Contributor Onboarding](./Contributor-Onboarding.md)**: Guide for setting up the dev environment and our quality standards.
 
 ---
 
