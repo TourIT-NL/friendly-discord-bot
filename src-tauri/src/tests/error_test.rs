@@ -19,6 +19,17 @@ mod tests {
         let result: Result<serde_json::Value, serde_json::Error> = serde_json::from_str(json_str);
         let json_err = result.unwrap_err();
         let app_err: AppError = json_err.into();
-        assert_eq!(app_err.error_code, "json_error");
+        assert_eq!(app_err.error_code, "parse_error");
+    }
+
+    #[test]
+    fn test_discord_json_error_mapping() {
+        let json = serde_json::json!({
+            "code": 50001,
+            "message": "Missing Access"
+        });
+        let app_err = AppError::from_discord_json(&json);
+        assert!(app_err.user_message.contains("Insufficient Permissions"));
+        assert_eq!(app_err.error_code, "discord_api_50001");
     }
 }
