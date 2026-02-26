@@ -43,16 +43,15 @@ pub async fn login_with_rpc(
     let (mut write, mut read) = ws_stream.split();
 
     // Wait for DISPATCH READY
-    if let Ok(Some(Ok(Message::Text(text)))) = timeout(Duration::from_secs(2), read.next()).await {
-        if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
-            if p["evt"].as_str() == Some("READY") {
-                Logger::debug(
-                    &app_handle,
-                    "[RPC] Link established with desktop client",
-                    None,
-                );
-            }
-        }
+    if let Ok(Some(Ok(Message::Text(text)))) = timeout(Duration::from_secs(2), read.next()).await
+        && let Ok(p) = serde_json::from_str::<serde_json::Value>(&text)
+        && p["evt"].as_str() == Some("READY")
+    {
+        Logger::debug(
+            &app_handle,
+            "[RPC] Link established with desktop client",
+            None,
+        );
     }
 
     let nonce = Uuid::new_v4().to_string();
@@ -68,15 +67,14 @@ pub async fn login_with_rpc(
 
     let code_res = match timeout(Duration::from_secs(30), async {
         while let Some(msg) = read.next().await {
-            if let Ok(Message::Text(text)) = msg {
-                if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
-                    if p["nonce"].as_str() == Some(&nonce) {
-                        if let Some(err) = p["data"]["message"].as_str() {
-                            return Some(Err(err.to_string()));
-                        }
-                        return p["data"]["code"].as_str().map(|s| Ok(s.to_string()));
-                    }
+            if let Ok(Message::Text(text)) = msg
+                && let Ok(p) = serde_json::from_str::<serde_json::Value>(&text)
+                && p["nonce"].as_str() == Some(&nonce)
+            {
+                if let Some(err) = p["data"]["message"].as_str() {
+                    return Some(Err(err.to_string()));
                 }
+                return p["data"]["code"].as_str().map(|s| Ok(s.to_string()));
             }
         }
         None

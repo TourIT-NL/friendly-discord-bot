@@ -198,20 +198,20 @@ pub async fn bulk_delete_messages(
                 .map(|dt| dt.timestamp_millis() as u64)
                 .unwrap_or(0);
 
-                if let Some(start) = options.start_time {
-                    if timestamp < start {
-                        if last_message_id.is_some() {
-                            break 'message_loop;
-                        } else {
-                            continue;
-                        }
+                if let Some(start) = options.start_time
+                    && timestamp < start
+                {
+                    if last_message_id.is_some() {
+                        break 'message_loop;
+                    } else {
+                        continue;
                     }
                 }
 
-                if let Some(end) = options.end_time {
-                    if timestamp > end {
-                        continue;
-                    }
+                if let Some(end) = options.end_time
+                    && timestamp > end
+                {
+                    continue;
                 }
 
                 let has_attachments = msg["attachments"]
@@ -230,32 +230,32 @@ pub async fn bulk_delete_messages(
 
                 if !options.simulation && matches_query {
                     // Purge reactions if requested
-                    if options.purge_reactions {
-                        if let Some(reactions) = msg["reactions"].as_array() {
-                            for r in reactions {
-                                if r["me"].as_bool().unwrap_or(false) {
-                                    let emoji = r["emoji"]["name"].as_str().unwrap_or("");
-                                    let emoji_id = r["emoji"]["id"].as_str().unwrap_or("");
-                                    let emoji_param = if emoji_id.is_empty() {
-                                        emoji.to_string()
-                                    } else {
-                                        format!("{}:{}", emoji, emoji_id)
-                                    };
-                                    let react_url = format!(
-                                        "https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me",
-                                        channel_id, msg_id, emoji_param
-                                    );
-                                    let _ = api_handle
-                                        .send_request(
-                                            reqwest::Method::DELETE,
-                                            &react_url,
-                                            None,
-                                            &token,
-                                            is_bearer,
-                                            false,
-                                        )
-                                        .await;
-                                }
+                    if options.purge_reactions
+                        && let Some(reactions) = msg["reactions"].as_array()
+                    {
+                        for r in reactions {
+                            if r["me"].as_bool().unwrap_or(false) {
+                                let emoji = r["emoji"]["name"].as_str().unwrap_or("");
+                                let emoji_id = r["emoji"]["id"].as_str().unwrap_or("");
+                                let emoji_param = if emoji_id.is_empty() {
+                                    emoji.to_string()
+                                } else {
+                                    format!("{}:{}", emoji, emoji_id)
+                                };
+                                let react_url = format!(
+                                    "https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me",
+                                    channel_id, msg_id, emoji_param
+                                );
+                                let _ = api_handle
+                                    .send_request(
+                                        reqwest::Method::DELETE,
+                                        &react_url,
+                                        None,
+                                        &token,
+                                        is_bearer,
+                                        false,
+                                    )
+                                    .await;
                             }
                         }
                     }
