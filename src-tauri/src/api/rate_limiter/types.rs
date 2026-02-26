@@ -1,5 +1,6 @@
 // src-tauri/src/api/rate_limiter/types.rs
 
+use crate::api::rate_limiter::fingerprint::BrowserProfile;
 use crate::core::error::AppError;
 use bytes::Bytes;
 use reqwest::Method;
@@ -17,16 +18,11 @@ impl ApiResponseContent {
     pub fn json(self) -> Result<serde_json::Value, AppError> {
         match self {
             ApiResponseContent::Json(v) => Ok(v),
-            ApiResponseContent::Bytes(_) => Err(AppError {
-                user_message: "Expected JSON, got bytes".to_string(),
-                error_code: "api_type_mismatch".to_string(),
-                ..Default::default()
-            }),
+            _ => Err(AppError::new("Expected JSON response", "api_type_mismatch")),
         }
     }
 }
 
-/// Represents a pending API request or control signal
 pub enum ApiRequest {
     Standard {
         method: Method,
@@ -36,11 +32,14 @@ pub enum ApiRequest {
         is_bearer: bool,
         return_raw_bytes: bool,
         response_tx: oneshot::Sender<Result<ApiResponseContent, AppError>>,
+        referer: Option<String>,
+        locale: Option<String>,
+        timezone: Option<String>,
+        profile: Option<BrowserProfile>,
     },
     RebuildClient,
 }
 
-/// Information about a rate limit bucket
 #[derive(Clone, Debug)]
 pub struct BucketInfo {
     pub remaining: u32,

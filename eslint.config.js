@@ -8,7 +8,7 @@ import globals from "globals";
 
 export default tseslint.config(
   {
-    ignores: ["dist", "node_modules", "*.cjs", "*.js"],
+    ignores: ["dist", "node_modules", "*.cjs"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -22,12 +22,20 @@ export default tseslint.config(
       },
     },
   },
+  {
+    files: ["tools/**/*.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
   eslintPluginPrettierRecommended,
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "off",
-      "react/react-in-jsx-scope": "off", // @eslint-react might not set this automatically or uses different rule names
+      "react/react-in-jsx-scope": "off",
     },
   },
 );

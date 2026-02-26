@@ -48,6 +48,18 @@ pub async fn validate_token(
     token: &str,
     is_bearer: bool,
 ) -> Result<DiscordUser, AppError> {
+    // 1. Strict Format Validation
+    let token_regex = regex::Regex::new(
+        r"^(mfa\.[a-zA-Z0-9_-]{84}|[a-zA-Z0-9_-]{24,28}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38})$",
+    )
+    .unwrap();
+    if !token_regex.is_match(token) {
+        return Err(AppError::new(
+            "Invalid token format. local fingerprint mismatch.",
+            "invalid_format",
+        ));
+    }
+
     let api_handle = app_handle.state::<ApiHandle>();
     let response_content = api_handle
         .send_request(
@@ -57,12 +69,16 @@ pub async fn validate_token(
             token,
             is_bearer,
             false,
+            Some("https://discord.com/login".to_string()),
+            None,
+            None,
+            None,
         )
         .await?;
 
     match response_content {
         ApiResponseContent::Json(json) => serde_json::from_value(json).map_err(AppError::from),
-        ApiResponseContent::Bytes(_) => Err(AppError::new(
+        _ => Err(AppError::new(
             "Expected JSON, received raw bytes",
             "unexpected_response_type",
         )),

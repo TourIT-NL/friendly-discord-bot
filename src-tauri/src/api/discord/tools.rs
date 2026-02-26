@@ -24,40 +24,24 @@ pub async fn bury_audit_log(
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
     if is_bearer {
-        return Err(AppError {
-            user_message: "Audit Log Burial restricted in Official Gate.".into(),
-            ..Default::default()
-        });
+        return Err(AppError::new(
+            "Audit Log Burial restricted",
+            "auth_mismatch",
+        ));
     }
 
-    Logger::info(
-        &app_handle,
-        &format!("[AUDIT] Starting burial sequence in guild {}", guild_id),
-        None,
-    );
-
-    let original_channel_res_content = api_handle
-        .send_request(
+    let original_channel_json = api_handle
+        .send_request_json(
             reqwest::Method::GET,
             &format!("https://discord.com/api/v9/channels/{}", channel_id),
             None,
             &token,
             is_bearer,
-            false,
+            None,
         )
         .await?;
 
-    let original_channel_value = match original_channel_res_content {
-        ApiResponseContent::Json(json) => json,
-        ApiResponseContent::Bytes(_) => {
-            return Err(AppError::new(
-                "Expected JSON, received raw bytes",
-                "unexpected_response_type",
-            ));
-        }
-    };
-
-    let original_channel_name = original_channel_value["name"]
+    let original_channel_name = original_channel_json["name"]
         .as_str()
         .unwrap_or("general")
         .to_string();
@@ -69,53 +53,35 @@ pub async fn bury_audit_log(
         }
 
         let new_name = format!("{}-temp-{}", original_channel_name, i);
-        Logger::debug(
-            &app_handle,
-            &format!("[AUDIT] Phase {}: cyclic node rename", i),
-            None,
-        );
-        let res_content = api_handle
-            .send_request(
+        let _ = api_handle
+            .send_request_json(
                 reqwest::Method::PATCH,
                 &format!("https://discord.com/api/v9/channels/{}", channel_id),
                 Some(serde_json::json!({ "name": new_name })),
                 &token,
                 is_bearer,
-                false,
+                None,
             )
             .await?;
-        if let ApiResponseContent::Bytes(_) = res_content {
-            return Err(AppError::new(
-                "Expected JSON, received raw bytes",
-                "unexpected_response_type",
-            ));
-        }
 
-        let _ = window.emit("audit_log_progress", serde_json::json!({ "current": i + 1, "total": 20, "status": format!("Burying node data phase {}", i) }));
+        let _ = window.emit("audit_log_progress", serde_json::json!({ "current": i + 1, "total": 20, "status": format!("Burying phase {}", i) }));
         tokio::time::sleep(Duration::from_millis(500)).await;
 
-        let res_content = api_handle
-            .send_request(
+        let _ = api_handle
+            .send_request_json(
                 reqwest::Method::PATCH,
                 &format!("https://discord.com/api/v9/channels/{}", channel_id),
-                Some(serde_json::json!({ "name": original_channel_name })),
+                Some(serde_json::json!({ "name": &original_channel_name })),
                 &token,
                 is_bearer,
-                false,
+                None,
             )
             .await?;
-        if let ApiResponseContent::Bytes(_) = res_content {
-            return Err(AppError::new(
-                "Expected JSON, received raw bytes",
-                "unexpected_response_type",
-            ));
-        }
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
     op_manager.state.reset();
     let _ = window.emit("audit_log_complete", ());
-    Logger::info(&app_handle, "[AUDIT] Burial protocol finalized.", None);
     Ok(())
 }
 
@@ -132,42 +98,25 @@ pub async fn webhook_ghosting(
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
     if is_bearer {
-        op_manager.state.reset();
-        return Err(AppError {
-            user_message: "Webhook Ghosting restricted in Official Gate.".into(),
-            ..Default::default()
-        });
+        return Err(AppError::new(
+            "Webhook Ghosting restricted",
+            "auth_mismatch",
+        ));
     }
 
-    Logger::info(
-        &app_handle,
-        &format!("[WEBHOOK] Ghosting identity hooks in node {}", guild_id),
-        None,
-    );
-
-    let webhooks_res_content = api_handle
-        .send_request(
+    let webhooks_json = api_handle
+        .send_request_json(
             reqwest::Method::GET,
             &format!("https://discord.com/api/v9/guilds/{}/webhooks", guild_id),
             None,
             &token,
             is_bearer,
-            false,
+            None,
         )
         .await?;
 
-    let webhooks_value = match webhooks_res_content {
-        ApiResponseContent::Json(json) => json,
-        ApiResponseContent::Bytes(_) => {
-            return Err(AppError::new(
-                "Expected JSON, received raw bytes",
-                "unexpected_response_type",
-            ));
-        }
-    };
-
     let webhooks: Vec<serde_json::Value> =
-        serde_json::from_value(webhooks_value).map_err(AppError::from)?;
+        serde_json::from_value(webhooks_json).map_err(AppError::from)?;
 
     let mut deleted_webhooks = 0;
     for webhook in &webhooks {
@@ -181,42 +130,26 @@ pub async fn webhook_ghosting(
         let user_id_from_token = token.split('.').next().unwrap_or_default();
 
         if webhook_creator_id == user_id_from_token {
-            Logger::debug(
-                &app_handle,
-                &format!("[WEBHOOK] Nullifying hook {}", webhook_id),
-                None,
-            );
-            let res_content = api_handle
-                .send_request(
+            let _ = api_handle
+                .send_request_json(
                     reqwest::Method::DELETE,
                     &format!("https://discord.com/api/v9/webhooks/{}", webhook_id),
                     None,
                     &token,
                     is_bearer,
-                    false,
+                    None,
                 )
                 .await?;
-            if let ApiResponseContent::Bytes(_) = res_content {
-                return Err(AppError::new(
-                    "Expected JSON, received raw bytes",
-                    "unexpected_response_type",
-                ));
-            }
             deleted_webhooks += 1;
         }
-        let _ = window.emit("webhook_progress", serde_json::json!({ "current": deleted_webhooks, "total": webhooks.len(), "status": "Ghosting active" }));
+        let _ = window.emit(
+            "webhook_progress",
+            serde_json::json!({ "current": deleted_webhooks, "total": webhooks.len() }),
+        );
     }
 
     op_manager.state.reset();
     let _ = window.emit("webhook_complete", ());
-    Logger::info(
-        &app_handle,
-        &format!(
-            "[WEBHOOK] Ghosting complete. Nullified {} identity hooks",
-            deleted_webhooks
-        ),
-        None,
-    );
     Ok(())
 }
 
@@ -232,23 +165,13 @@ pub async fn open_discord_url_for_action(
             "https://support.discord.com/hc/en-us/articles/360004027692-Requesting-a-Copy-of-your-Data"
         }
         "support_portal" => "https://support.discord.com/hc/en-us/requests/new",
-        _ => {
-            return Err(AppError {
-                user_message: "Unknown action type.".into(),
-                error_code: "invalid_action".into(),
-                ..Default::default()
-            });
-        }
+        _ => return Err(AppError::new("Unknown action", "invalid_action")),
     };
 
     app_handle
         .opener()
         .open_url(url, None::<String>)
-        .map_err(|e| AppError {
-            user_message: "Failed to open Discord gateway.".into(),
-            error_code: "external_link_error".into(),
-            technical_details: Some(format!("Error opening URL: {}", e)),
-        })
+        .map_err(|e| AppError::new(&e.to_string(), "external_link_error"))
 }
 
 #[tauri::command]
@@ -256,9 +179,5 @@ pub async fn open_external_link(app_handle: AppHandle, url: String) -> Result<()
     app_handle
         .opener()
         .open_url(url, None::<String>)
-        .map_err(|e| AppError {
-            user_message: "Failed to open external link.".into(),
-            error_code: "external_link_error".into(),
-            technical_details: Some(format!("Error opening URL: {}", e)),
-        })
+        .map_err(|e| AppError::new(&e.to_string(), "external_link_error"))
 }

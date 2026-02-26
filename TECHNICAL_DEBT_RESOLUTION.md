@@ -1,72 +1,53 @@
-# Technical Debt Resolution & Architectural Refinement
+# Technical Debt Resolution & Optimization Log
 
-## Document Purpose
+## [2026-02-26] Phase 5: Genuineness & Protocol Parity (Final Tier)
 
-This document provides a verbose and detailed record of the architectural changes, bug fixes, and technical refinements performed to bring the Discord Privacy and Cleanup Utility into compliance with the Final Master Blueprint.
+### 1. High-Fidelity Behavioral Fingerprinting
 
-## 1. Backend Architecture: Hybrid Data Handling
+- **Status**: COMPLETED
+- **Description**: Implemented a comprehensive fingerprinting engine to match Discord's official client behavior.
+- **Details**:
+  - **Dynamic Locale Detection**: The system now identifies the host OS locale and propagates it through `Accept-Language`, `x-discord-locale`, and `x-discord-timezone` headers.
+  - **Synthetic Cookie Engine**: Created a secure, randomized cookie generator that produces structurally identical `__dcfduid`, `__sdcfduid`, and `_cfuvid` cookies without leaking real session data or cloning existing users.
+  - **Browser Profiles**: Integrated a pool of modern browser profiles (Chrome, Firefox, Safari) including accurate `sec-ch-ua` (Client Hints) and `User-Agent` strings.
+  - **Metadata Synchronization**: Refined `x-super-properties` to include cryptographic session markers like `client_launch_id` and `client_heartbeat_session_id`.
 
-### Standardized `ApiHandle` Signature
+### 2. API Signature Standardization
 
-Previously, the `ApiHandle` system lacked a standardized way to handle binary data streams (e.g., file downloads) while maintaining the global rate-limiting lock.
+- **Status**: COMPLETED
+- **Description**: Refactored the `ApiHandle` and `RateLimiterActor` to support a unified 10-argument request signature.
+- **Details**:
+  - Standardized all 45+ API calls across `billing`, `export`, `privacy`, `security`, `sync`, and `bulk` modules.
+  - Added support for optional `referer`, `locale`, `timezone`, and `profile` overrides per request.
+  - Implemented automatic referer derivation (e.g., setting referer to `https://discord.com/channels/@me` for message operations).
 
-- **Resolution**: Refactored `send_request` to accept a `return_raw_bytes` boolean flag.
-- **Impact**: Enables all application traffic—whether fetching JSON metadata or downloading encrypted attachments—to flow through the same thread-safe bottleneck, preventing API saturation.
+### 3. Error Mapping & Resilience
 
-### Polymorphic Response Processing (`ApiResponseContent`)
+- **Status**: COMPLETED
+- **Description**: Enhanced `AppError` to handle Discord-specific JSON error codes.
+- **Details**:
+  - Mapped semantic codes (50001: Access Denied, 10003: Unknown Channel, etc.) to user-friendly messages.
+  - Implemented comprehensive `From` traits for `ZipError`, `KeyringError`, `DecodeError`, and `OpenerError` to ensure zero `unwrap()` calls in the API layer.
 
-The rate-limiter actor was previously hardcoded to expect JSON, leading to deserialization failures during attachment harvesting.
+### 4. Security & Privacy Hardening
 
-- **Resolution**: Introduced the `ApiResponseContent` enum:
-  ```rust
-  pub enum ApiResponseContent {
-      Json(serde_json::Value),
-      Bytes(Bytes),
-  }
-  ```
-- **Optimization**: Moved response body consumption (JSON parsing or Byte extraction) into the `RateLimiterActor`'s asynchronous loop. This offloads expensive I/O operations from the command threads.
+- **Status**: COMPLETED
+- **Description**: Finalized the "Nuclear Option" and Stealth protocols.
+- **Details**:
+  - **Telemetry Blocklist**: Explicitly black-holed `/beaker` and `/metrics` endpoints at the actor level.
+  - **Token Validation**: Implemented strict regex-based token format validation to prevent malformed injections.
+  - **Meaningfully Online Heartbeat**: Added a background task to maintain "genuine" session activity during long-running operations.
 
-## 2. Security & Persistence Hardening
+## [2026-02-26] Phase 4: Modernization & CI/CD
 
-### Keyring Modernization
+- **Status**: COMPLETED
+- **Description**: Verified compliance with "January 2026" versioning requirements.
+- **Details**:
+  - Enforced `reqwest 0.13.2`, `keyring 3.6.3`, and `tauri 2.10.2`.
+  - Sanitized GIT history to purge accidentally logged mock tokens.
+  - Fixed CI/CD workflow paths for `lychee` and `typos`.
 
-Addressed a failure in the `keyring` crate where platform-specific backends were not correctly initialized.
+## Next Steps:
 
-- **Resolution**: Updated `Cargo.toml` to include the `windows-native` feature for the `keyring` crate.
-- **Impact**: Ensures military-grade credential storage on Windows systems, resolving "method not found" errors for credential deletion.
-
-### Vault Lock Synchronization
-
-Identified a race condition where the in-memory master key state could become desynchronized with the persistent storage during lock/unlock cycles.
-
-- **Resolution**: Synchronized `VaultState` (Mutex-protected Zeroizing strings) across all authentication commands (`unlock_vault`, `set_master_password`).
-
-## 3. Frontend Protocol Synchronization
-
-### Dashboard Prop Harmonization
-
-The `DashboardView` component was missing several critical props (handlers for Hypesquad, Proxy, GDPR, etc.) that were present in the underlying hooks.
-
-- **Resolution**: Synchronized the property interface between `App.tsx` and `DashboardView.tsx`.
-- **Typing**: Resolved 47+ missing property errors in the TypeScript compiler.
-
-### Global Scope Resolution
-
-Fixed a common issue in `PrivacyMode.tsx` where React primitives were accessed via UMD globals rather than explicit module imports.
-
-- **Resolution**: Added explicit `import React, { useEffect } from "react";`.
-
-## 4. Operation Optimization
-
-### High-Velocity Purge Protocol
-
-Optimized `bulk_delete_messages` by integrating Discord's Search API.
-
-- **Mechanism**: The engine now attempts to pre-index candidate messages via `messages/search?author_id=...` before falling back to the standard "walk-back" recursive scan.
-- **Result**: Drastic reduction in API calls for sparse channels.
-
-## 5. Compliance & Quality Assurance
-
-- **MANDATORY LAWS**: Conducted a full audit of 70+ source files.
-- **GIT Centricity**: Every change is staged, linted (Husky/Lint-Staged), and committed with technical justifications.
-- **Zero-Warning Policy**: Resolved all `dead_code`, `unused_imports`, and `unused_variables` warnings across the Rust toolchain.
+- Perform final end-to-end verification of the "Bulk Leave" and "Bulk Delete" features using the generated high-fidelity mock tokens.
+- Synchronize the Wiki content with the latest architectural changes.

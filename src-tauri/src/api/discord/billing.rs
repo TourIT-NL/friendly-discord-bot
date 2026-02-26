@@ -18,24 +18,16 @@ pub async fn fetch_payment_sources(app_handle: AppHandle) -> Result<serde_json::
         None,
     );
 
-    let response_content = api_handle
-        .send_request(
+    api_handle
+        .send_request_json(
             Method::GET,
             "https://discord.com/api/v9/users/@me/billing/payment-sources",
             None,
             &token,
             is_bearer,
-            false,
+            None,
         )
-        .await?;
-
-    match response_content {
-        ApiResponseContent::Json(json) => Ok(json),
-        ApiResponseContent::Bytes(_) => Err(AppError::new(
-            "Expected JSON, received raw bytes",
-            "unexpected_response_type",
-        )),
-    }
+        .await
 }
 
 #[tauri::command]
@@ -47,24 +39,16 @@ pub async fn fetch_billing_subscriptions(
 
     Logger::info(&app_handle, "[ACCOUNT] Auditing active subscriptions", None);
 
-    let response_content = api_handle
-        .send_request(
+    api_handle
+        .send_request_json(
             Method::GET,
             "https://discord.com/api/v9/users/@me/billing/subscriptions",
             None,
             &token,
             is_bearer,
-            false,
+            None,
         )
-        .await?;
-
-    match response_content {
-        ApiResponseContent::Json(json) => Ok(json),
-        ApiResponseContent::Bytes(_) => Err(AppError::new(
-            "Expected JSON, received raw bytes",
-            "unexpected_response_type",
-        )),
-    }
+        .await
 }
 
 #[tauri::command]
@@ -74,22 +58,14 @@ pub async fn fetch_entitlements(app_handle: AppHandle) -> Result<serde_json::Val
 
     Logger::info(&app_handle, "[ACCOUNT] Fetching entitlements", None);
 
-    let response_content = api_handle
-        .send_request(
+    api_handle
+        .send_request_json(
             Method::GET,
             "https://discord.com/api/v9/users/@me/entitlements",
             None,
             &token,
             is_bearer,
-            false,
+            None,
         )
-        .await?;
-
-    match response_content {
-        ApiResponseContent::Json(json) => Ok(json),
-        ApiResponseContent::Bytes(_) => Err(AppError::new(
-            "Expected JSON, received raw bytes",
-            "unexpected_response_type",
-        )),
-    }
+        .await
 }

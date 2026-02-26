@@ -41,6 +41,10 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
                 &token,
                 is_bearer,
                 false,
+                None,
+                None,
+                None,
+                None,
             )
             .await?;
     }
@@ -57,6 +61,10 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
                 &token,
                 is_bearer,
                 false,
+                None,
+                None,
+                None,
+                None,
             )
             .await?;
     }
@@ -77,6 +85,10 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
                 &token,
                 is_bearer,
                 false,
+                None,
+                None,
+                None,
+                None,
             )
             .await?;
     }
@@ -123,6 +135,10 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
                 &token,
                 is_bearer,
                 false,
+                None,
+                None,
+                None,
+                None,
             )
             .await?;
     }
@@ -139,6 +155,10 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
                 &token,
                 is_bearer,
                 false,
+                None,
+                None,
+                None,
+                None,
             )
             .await?;
     }
@@ -155,6 +175,10 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
                 &token,
                 is_bearer,
                 false,
+                None,
+                None,
+                None,
+                None,
             )
             .await?;
     }
@@ -181,6 +205,7 @@ pub async fn trigger_data_harvest(app_handle: AppHandle) -> Result<serde_json::V
             &token,
             is_bearer,
             false,
+            None, None, None, None,
         )
         .await?;
 
@@ -206,6 +231,10 @@ pub async fn get_harvest_status(app_handle: AppHandle) -> Result<serde_json::Val
             &token,
             is_bearer,
             false,
+            None,
+            None,
+            None,
+            None,
         )
         .await?;
 
@@ -240,6 +269,10 @@ pub async fn set_max_privacy_settings(app_handle: AppHandle) -> Result<(), AppEr
             &token,
             is_bearer,
             false,
+            None,
+            None,
+            None,
+            None,
         )
         .await?;
 
@@ -261,6 +294,10 @@ pub async fn set_hypesquad(app_handle: AppHandle, house_id: u8) -> Result<(), Ap
                 &token,
                 is_bearer,
                 false,
+                None,
+                None,
+                None,
+                None,
             )
             .await?;
     } else {
@@ -277,6 +314,10 @@ pub async fn set_hypesquad(app_handle: AppHandle, house_id: u8) -> Result<(), Ap
                 &token,
                 is_bearer,
                 false,
+                None,
+                None,
+                None,
+                None,
             )
             .await?;
     }
@@ -303,6 +344,10 @@ pub async fn ghost_profile(app_handle: AppHandle) -> Result<(), AppError> {
             &token,
             is_bearer,
             false,
+            None,
+            None,
+            None,
+            None,
         )
         .await?;
 
@@ -318,6 +363,10 @@ pub async fn ghost_profile(app_handle: AppHandle) -> Result<(), AppError> {
             &token,
             is_bearer,
             false,
+            None,
+            None,
+            None,
+            None,
         )
         .await?;
 

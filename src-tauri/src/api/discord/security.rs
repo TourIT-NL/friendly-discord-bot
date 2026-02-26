@@ -1,6 +1,6 @@
 // src-tauri/src/api/discord/security.rs
 
-use crate::api::rate_limiter::ApiHandle;
+use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::vault::Vault;
@@ -25,6 +25,7 @@ pub async fn fetch_oauth_tokens(app_handle: AppHandle) -> Result<serde_json::Val
             None,
             &token,
             is_bearer,
+            None,
         )
         .await
 }
@@ -40,13 +41,14 @@ pub async fn revoke_oauth_token(app_handle: AppHandle, token_id: String) -> Resu
         None,
     );
 
-    let _ = api_handle
+    api_handle
         .send_request_json(
             Method::DELETE,
             &format!("https://discord.com/api/v9/oauth2/tokens/{}", token_id),
             None,
             &token,
             is_bearer,
+            None,
         )
         .await?;
 
@@ -73,6 +75,7 @@ pub async fn fetch_application_identities(
             None,
             &token,
             is_bearer,
+            None,
         )
         .await
 }
