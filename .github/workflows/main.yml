@@ -82,7 +82,7 @@ jobs:
       - name: Setup Env
         uses: ./.github/actions/setup-rust-env
         with:
-          platform: 'ubuntu-22.04'
+          platform: "ubuntu-22.04"
       - name: fmt & clippy
         working-directory: src-tauri
         run: |

@@ -23,6 +23,24 @@ In **Discord Purge**, all API requests are routed through a single, centralized 
 
 ---
 
+## 🎭 Fingerprinting & Stealth
+
+To blend into regular Discord traffic and prevent automated detection, the Rate Limiter Actor employs several advanced techniques:
+
+### Dynamic User-Agent Pool
+
+The Actor does not use a single User-Agent. It rotates between a pool of modern browser strings (Chrome, Firefox, Safari on Windows/macOS/Linux) to avoid fingerprinting.
+
+### X-Super-Properties Generation
+
+Internal Discord headers (`x-super-properties`) are dynamically generated to match the selected User-Agent and platform, ensuring consistency that passes automated integrity checks.
+
+### Secure Proxy Tunneling
+
+Users can configure a global SOCKS5 or Tor proxy. When active, the Actor's HTTP client is rebuilt to route all traffic through the proxy, masking the user's real IP address from Discord's telemetry endpoints.
+
+---
+
 ## 🎲 Jitter & Backoff Safeguards
 
 To distinguish our traffic from "dumb" bots and to handle unexpected network conditions, we implement:

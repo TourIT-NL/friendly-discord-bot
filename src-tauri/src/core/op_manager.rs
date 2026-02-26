@@ -7,10 +7,13 @@ use tokio::sync::Notify;
 /// Manages the runtime state of bulk operations (purges, departures, etc.).
 /// It provides thread-safe primitives for pausing, resuming, and aborting
 /// long-running asynchronous tasks across the Tauri command boundaries.
+#[allow(dead_code)]
 pub struct OperationManager {
     pub state: Arc<OperationState>,
 }
 
+/// Thread-safe control flags for a running background operation.
+#[allow(dead_code)]
 pub struct OperationState {
     /// True if an operation is actively executing its loop.
     pub is_running: AtomicBool,
@@ -37,7 +40,7 @@ impl OperationManager {
 
 impl OperationState {
     /// Blocks the current task if the `is_paused` flag is true.
-    /// Used inside the bulk loops in `api/discord.rs`.
+    /// Resumes immediately upon notification.
     pub async fn wait_if_paused(&self) {
         while self.is_paused.load(Ordering::SeqCst) {
             self.pause_notifier.notified().await;
@@ -55,6 +58,5 @@ impl OperationState {
     pub fn prepare(&self) {
         self.is_paused.store(false, Ordering::SeqCst);
         self.should_abort.store(false, Ordering::SeqCst);
-        // We do not set is_running to true here; the caller does that to allow for setup time.
     }
 }

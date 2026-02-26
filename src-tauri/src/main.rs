@@ -4,6 +4,9 @@ mod api;
 mod auth;
 mod core;
 
+#[cfg(test)]
+mod tests;
+
 use crate::api::rate_limiter::{ApiHandle, RateLimiterActor};
 use crate::core::cleanup::clear_all_app_data;
 use crate::core::op_manager::OperationManager;
@@ -105,6 +108,9 @@ fn main() {
             let auth_state = auth::AuthState::default();
             app.manage(auth_state);
 
+            let vault_state = core::vault::VaultState::default();
+            app.manage(vault_state);
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -120,17 +126,23 @@ fn main() {
             auth::list_identities,
             auth::switch_identity,
             auth::remove_identity,
+            core::vault::commands::is_vault_locked,
+            core::vault::commands::has_master_password,
+            core::vault::commands::set_master_password,
+            core::vault::commands::unlock_vault,
             api::discord::fetch_guilds,
             api::discord::fetch_channels,
             api::discord::fetch_relationships,
             api::discord::fetch_preview_messages,
             api::discord::bulk_delete_messages,
             api::discord::bulk_leave_guilds,
-            api::discord::bulk_remove_relationships,
+            api::discord::bulk_cleanup_relationships,
             api::discord::stealth_privacy_wipe,
             api::discord::bury_audit_log,
             api::discord::webhook_ghosting,
             api::discord::nitro_stealth_wipe,
+            api::discord::ghost_profile,
+            api::discord::nuclear_wipe,
             api::discord::pause_operation,
             api::discord::resume_operation,
             api::discord::abort_operation,
@@ -139,6 +151,7 @@ fn main() {
             api::discord::tools::open_discord_url_for_action,
             api::discord::trigger_data_harvest,
             api::discord::get_harvest_status,
+            api::discord::process_gdpr_data,
             api::discord::fetch_oauth_tokens,
             api::discord::revoke_oauth_token,
             api::discord::fetch_application_identities,
@@ -146,9 +159,11 @@ fn main() {
             api::discord::fetch_billing_subscriptions,
             api::discord::fetch_entitlements,
             api::discord::set_max_privacy_settings,
+            api::discord::set_hypesquad,
             api::discord::start_attachment_harvest,
             api::discord::start_chat_html_export,
             api::discord::start_guild_user_archive,
+            api::rate_limiter::set_proxy,
             clear_all_app_data
         ])
         .run(tauri::generate_context!())

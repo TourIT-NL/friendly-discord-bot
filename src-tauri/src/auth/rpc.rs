@@ -1,6 +1,10 @@
 // src-tauri/src/auth/rpc.rs
 
+use crate::core::error::AppError;
+use crate::core::logger::Logger;
+use crate::core::vault::Vault;
 use futures_util::{SinkExt, StreamExt};
+use serde_json;
 use tauri::{AppHandle, Window};
 use tokio::time::{Duration, timeout};
 use tokio_tungstenite::connect_async;
@@ -10,9 +14,6 @@ use uuid::Uuid;
 
 use super::identity::login_with_token_internal;
 use super::types::DiscordUser;
-use crate::core::error::AppError;
-use crate::core::logger::Logger;
-use crate::core::vault::Vault;
 
 #[tauri::command]
 pub async fn login_with_rpc(
@@ -21,30 +22,8 @@ pub async fn login_with_rpc(
 ) -> Result<DiscordUser, AppError> {
     Logger::info(&app_handle, "[RPC] Handshake sequence started.", None);
     let client_id = match Vault::get_credential(&app_handle, "client_id") {
-        Ok(id) => {
-            Logger::debug(
-                &app_handle,
-                "[RPC] Client ID retrieved successfully from Vault.",
-                None,
-            );
-            id
-        }
-        Err(e) if e.error_code == "vault_credentials_missing" => {
-            Logger::warn(
-                &app_handle,
-                "[RPC] Client ID not found in Vault, returning missing credentials error.",
-                None,
-            );
-            return Err(e);
-        }
-        Err(e) => {
-            Logger::error(
-                &app_handle,
-                &format!("[RPC] Failed to retrieve client ID from Vault: {:?}", e),
-                None,
-            );
-            return Err(e);
-        }
+        Ok(id) => id,
+        Err(e) => return Err(e),
     };
 
     let port =
@@ -60,30 +39,20 @@ pub async fn login_with_rpc(
         .headers_mut()
         .insert("Origin", "https://discord.com".parse().unwrap());
 
-    Logger::debug(
-        &app_handle,
-        &format!("[RPC] Connecting to port {}", port),
-        None,
-    );
     let (ws_stream, _) = timeout(Duration::from_secs(5), connect_async(request)).await??;
     let (mut write, mut read) = ws_stream.split();
 
     // Wait for DISPATCH READY
-    if let Ok(Some(Ok(Message::Text(text)))) = timeout(Duration::from_secs(2), read.next()).await
-        && let Ok(p) = serde_json::from_str::<serde_json::Value>(&text)
-        && p["evt"].as_str() == Some("READY")
-    {
-        Logger::debug(
-            &app_handle,
-            "[RPC] Link established with desktop client",
-            None,
-        );
-    } else {
-        Logger::warn(
-            &app_handle,
-            "[RPC] READY event not received, attempting to proceed...",
-            None,
-        );
+    if let Ok(Some(Ok(Message::Text(text)))) = timeout(Duration::from_secs(2), read.next()).await {
+        if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
+            if p["evt"].as_str() == Some("READY") {
+                Logger::debug(
+                    &app_handle,
+                    "[RPC] Link established with desktop client",
+                    None,
+                );
+            }
+        }
     }
 
     let nonce = Uuid::new_v4().to_string();
@@ -93,25 +62,21 @@ pub async fn login_with_rpc(
         "nonce": nonce
     });
 
-    Logger::trace(
-        &app_handle,
-        "[RPC] Sending AUTHORIZE payload",
-        Some(auth_payload.clone()),
-    );
     let _ = write
         .send(Message::Text(auth_payload.to_string().into()))
         .await;
 
-    let code = match timeout(Duration::from_secs(30), async {
+    let code_res = match timeout(Duration::from_secs(30), async {
         while let Some(msg) = read.next().await {
-            if let Ok(Message::Text(text)) = msg
-                && let Ok(p) = serde_json::from_str::<serde_json::Value>(&text)
-                && p["nonce"].as_str() == Some(&nonce)
-            {
-                if let Some(err) = p["data"]["message"].as_str() {
-                    return Some(Err(err.to_string()));
+            if let Ok(Message::Text(text)) = msg {
+                if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
+                    if p["nonce"].as_str() == Some(&nonce) {
+                        if let Some(err) = p["data"]["message"].as_str() {
+                            return Some(Err(err.to_string()));
+                        }
+                        return p["data"]["code"].as_str().map(|s| Ok(s.to_string()));
+                    }
                 }
-                return p["data"]["code"].as_str().map(|s| Ok(s.to_string()));
             }
         }
         None
@@ -120,7 +85,6 @@ pub async fn login_with_rpc(
     {
         Ok(Some(res)) => res,
         _ => {
-            Logger::error(&app_handle, "[RPC] Handshake timed out after 30s", None);
             return Err(AppError {
                 user_message: "RPC authorization timed out.".into(),
                 ..Default::default()
@@ -132,72 +96,30 @@ pub async fn login_with_rpc(
         let _ = timeout(Duration::from_secs(1), ws_stream.close(None)).await;
     }
 
-    let code = code.map_err(|e| {
-        Logger::error(
-            &app_handle,
-            &format!("[RPC] Authorization denied: {}", e),
-            None,
-        );
-        AppError {
-            user_message: format!("RPC denied: {}", e),
-            ..Default::default()
-        }
+    let code = code_res.map_err(|e| AppError {
+        user_message: format!("RPC denied: {}", e),
+        ..Default::default()
     })?;
 
-    Logger::debug(
-        &app_handle,
-        "[RPC] Code received. Exchanging for token...",
-        None,
-    );
-    let client_secret = match Vault::get_credential(&app_handle, "client_secret") {
-        Ok(secret) => {
-            Logger::debug(
-                &app_handle,
-                "[RPC] Client Secret retrieved successfully from Vault.",
-                None,
-            );
-            secret
-        }
-        Err(e) if e.error_code == "vault_credentials_missing" => {
-            Logger::warn(
-                &app_handle,
-                "[RPC] Client Secret not found in Vault, returning missing credentials error.",
-                None,
-            );
-            return Err(e);
-        }
-        Err(e) => {
-            Logger::error(
-                &app_handle,
-                &format!("[RPC] Failed to retrieve client Secret from Vault: {:?}", e),
-                None,
-            );
-            return Err(e);
-        }
-    };
+    let client_secret = Vault::get_credential(&app_handle, "client_secret")?;
 
     let http_client = reqwest::Client::new();
-    let res = http_client
+    let response = http_client
         .post("https://discord.com/api/oauth2/token")
         .form(&[
-            ("client_id", &client_id),
-            ("client_secret", &client_secret),
-            ("grant_type", &"authorization_code".to_string()),
-            ("code", &code),
-            ("redirect_uri", &"http://127.0.0.1".to_string()),
+            ("client_id", client_id.as_str()),
+            ("client_secret", client_secret.as_str()),
+            ("grant_type", "authorization_code"),
+            ("code", code.as_str()),
+            ("redirect_uri", "http://127.0.0.1"),
         ])
         .send()
         .await?;
 
-    let status = res.status();
-    let res_json = res.json::<serde_json::Value>().await?;
+    let status = response.status();
+    let res_json: serde_json::Value = response.json().await?;
 
     if !status.is_success() {
-        Logger::error(
-            &app_handle,
-            "[RPC] Token exchange failed",
-            Some(res_json.clone()),
-        );
         return Err(AppError {
             user_message: "Token exchange failed.".into(),
             technical_details: Some(res_json.to_string()),

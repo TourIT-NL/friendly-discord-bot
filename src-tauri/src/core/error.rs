@@ -17,6 +17,16 @@ impl std::fmt::Display for AppError {
     }
 }
 
+impl AppError {
+    pub fn new(user_message: &str, error_code: &str) -> Self {
+        Self {
+            user_message: user_message.to_string(),
+            error_code: error_code.to_string(),
+            technical_details: None,
+        }
+    }
+}
+
 impl std::error::Error for AppError {}
 
 impl Default for AppError {
@@ -181,6 +191,36 @@ impl From<std::string::FromUtf8Error> for AppError {
         Self {
             user_message: "Invalid UTF-8 sequence.".into(),
             error_code: "utf8_error".into(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}
+
+impl From<argon2::Error> for AppError {
+    fn from(e: argon2::Error) -> Self {
+        Self {
+            user_message: "Encryption engine failure.".into(),
+            error_code: "argon2_error".into(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}
+
+impl From<argon2::password_hash::Error> for AppError {
+    fn from(e: argon2::password_hash::Error) -> Self {
+        Self {
+            user_message: "Password security protocol failure.".into(),
+            error_code: "password_hash_error".into(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}
+
+impl From<zip::result::ZipError> for AppError {
+    fn from(e: zip::result::ZipError) -> Self {
+        Self {
+            user_message: "Archive processing failure.".into(),
+            error_code: "zip_error".into(),
             technical_details: Some(e.to_string()),
         }
     }

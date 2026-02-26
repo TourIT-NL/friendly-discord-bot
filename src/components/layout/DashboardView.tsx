@@ -87,6 +87,11 @@ interface DashboardViewProps {
   setIncludeAttachmentsInHtml: (inc: boolean) => void;
   handleStartExport: (format: "html" | "raw") => void;
   handleStartGuildArchive: () => void;
+  handleSetHypesquad: (id: number) => void;
+  handleGhostProfile: () => void;
+  handleProcessGdprData: () => void;
+  handleSetProxy: (url: string | null) => void;
+  handleNuclearWipe: () => void;
 }
 
 export const DashboardView = ({
@@ -142,6 +147,17 @@ export const DashboardView = ({
   relationships,
   selectedRelationships,
   setSelectedRelationships,
+  exportDirection,
+  setExportDirection,
+  includeAttachmentsInHtml,
+  setIncludeAttachmentsInHtml,
+  handleStartExport,
+  handleStartGuildArchive,
+  handleSetHypesquad,
+  handleGhostProfile,
+  handleProcessGdprData,
+  handleSetProxy,
+  handleNuclearWipe,
 }: DashboardViewProps) => (
   <div className="w-full h-full flex gap-10 p-4">
     <Sidebar
@@ -157,6 +173,7 @@ export const DashboardView = ({
       onToggleGuildSelection={handleToggleGuildSelection}
       onStealthWipe={handleStealthWipe}
       onNitroWipe={handleNitroWipe}
+      onNuclearWipe={handleNuclearWipe}
       onLogout={handleLogout}
       onOpenDonateLink={handleOpenDonateLink}
     />
@@ -371,6 +388,8 @@ export const DashboardView = ({
               onTriggerHarvest={handleTriggerHarvest}
               onSanitize={handleMaxPrivacySanitize}
               onOpenDiscordUrl={handleOpenDiscordUrl}
+              onProcessGdprData={handleProcessGdprData}
+              onSetProxy={handleSetProxy}
             />
           )}
           {mode === "account" && (
@@ -378,6 +397,8 @@ export const DashboardView = ({
               info={billingInfo}
               fetchAudit={fetchAccountAudit}
               onOpenDiscordUrl={handleOpenDiscordUrl}
+              onSetHypesquad={handleSetHypesquad}
+              onGhostProfile={handleGhostProfile}
             />
           )}
           {mode === "export" && (

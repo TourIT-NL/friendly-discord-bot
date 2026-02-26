@@ -1,6 +1,6 @@
 // src-tauri/src/api/discord/privacy.rs
 
-use crate::api::rate_limiter::ApiHandle;
+use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::op_manager::OperationManager;
@@ -40,8 +40,9 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
                 Some(serde_json::json!({ "custom_status": null })),
                 &token,
                 is_bearer,
+                false,
             )
-            .await;
+            .await?;
     }
 
     // 2. Global DM Disable
@@ -55,8 +56,9 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
                 Some(serde_json::json!({ "default_guilds_restricted": true })),
                 &token,
                 is_bearer,
+                false,
             )
-            .await;
+            .await?;
     }
 
     // 3. Presence Privacy
@@ -74,8 +76,9 @@ pub async fn stealth_privacy_wipe(app_handle: AppHandle) -> Result<(), AppError>
                 Some(serde_json::json!({ "show_current_game": false, "restricted_guilds": [] })),
                 &token,
                 is_bearer,
+                false,
             )
-            .await;
+            .await?;
     }
 
     op_manager.state.reset();
@@ -119,8 +122,9 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
                 Some(serde_json::json!({ "bio": "" })),
                 &token,
                 is_bearer,
+                false,
             )
-            .await;
+            .await?;
     }
 
     // 2. Clear Pronouns
@@ -134,8 +138,9 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
                 Some(serde_json::json!({ "pronouns": "" })),
                 &token,
                 is_bearer,
+                false,
             )
-            .await;
+            .await?;
     }
 
     // 3. Reset Banner
@@ -149,8 +154,9 @@ pub async fn nitro_stealth_wipe(app_handle: AppHandle) -> Result<(), AppError> {
                 Some(serde_json::json!({ "banner": null })),
                 &token,
                 is_bearer,
+                false,
             )
-            .await;
+            .await?;
     }
 
     op_manager.state.reset();
@@ -165,7 +171,7 @@ pub async fn trigger_data_harvest(app_handle: AppHandle) -> Result<serde_json::V
 
     Logger::info(&app_handle, "[GDPR] Initiating data harvest request", None);
 
-    api_handle
+    let res_content = api_handle
         .send_request(
             reqwest::Method::POST,
             "https://discord.com/api/v9/users/@me/harvest",
@@ -174,8 +180,17 @@ pub async fn trigger_data_harvest(app_handle: AppHandle) -> Result<serde_json::V
             })),
             &token,
             is_bearer,
+            false,
         )
-        .await
+        .await?;
+
+    match res_content {
+        ApiResponseContent::Json(json) => Ok(json),
+        _ => Err(AppError::new(
+            "Expected JSON, received raw bytes",
+            "unexpected_response_type",
+        )),
+    }
 }
 
 #[tauri::command]
@@ -183,15 +198,24 @@ pub async fn get_harvest_status(app_handle: AppHandle) -> Result<serde_json::Val
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
     let api_handle = app_handle.state::<ApiHandle>();
 
-    api_handle
+    let res_content = api_handle
         .send_request(
             reqwest::Method::GET,
             "https://discord.com/api/v9/users/@me/harvest",
             None,
             &token,
             is_bearer,
+            false,
         )
-        .await
+        .await?;
+
+    match res_content {
+        ApiResponseContent::Json(json) => Ok(json),
+        _ => Err(AppError::new(
+            "Expected JSON, received raw bytes",
+            "unexpected_response_type",
+        )),
+    }
 }
 
 #[tauri::command]
@@ -215,6 +239,85 @@ pub async fn set_max_privacy_settings(app_handle: AppHandle) -> Result<(), AppEr
             Some(serde_json::json!({ "settings": proto_b64 })),
             &token,
             is_bearer,
+            false,
+        )
+        .await?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn set_hypesquad(app_handle: AppHandle, house_id: u8) -> Result<(), AppError> {
+    let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
+    let api_handle = app_handle.state::<ApiHandle>();
+
+    if house_id == 0 {
+        Logger::info(&app_handle, "[PRIVACY] Leaving Hypesquad", None);
+        let _ = api_handle
+            .send_request(
+                reqwest::Method::DELETE,
+                "https://discord.com/api/v9/hypesquad/online",
+                None,
+                &token,
+                is_bearer,
+                false,
+            )
+            .await?;
+    } else {
+        Logger::info(
+            &app_handle,
+            &format!("[PRIVACY] Joining Hypesquad House {}", house_id),
+            None,
+        );
+        let _ = api_handle
+            .send_request(
+                reqwest::Method::POST,
+                "https://discord.com/api/v9/hypesquad/online",
+                Some(serde_json::json!({ "house_id": house_id })),
+                &token,
+                is_bearer,
+                false,
+            )
+            .await?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn ghost_profile(app_handle: AppHandle) -> Result<(), AppError> {
+    let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
+    let api_handle = app_handle.state::<ApiHandle>();
+
+    Logger::info(&app_handle, "[STEALTH] Ghosting profile metadata...", None);
+
+    // Clear Avatar, Banner, Bio
+    let _ = api_handle
+        .send_request(
+            reqwest::Method::PATCH,
+            "https://discord.com/api/v9/users/@me",
+            Some(serde_json::json!({
+                "avatar": null,
+                "banner": null,
+                "bio": ""
+            })),
+            &token,
+            is_bearer,
+            false,
+        )
+        .await?;
+
+    // Clear Settings-based metadata
+    let _ = api_handle
+        .send_request(
+            reqwest::Method::PATCH,
+            "https://discord.com/api/v9/users/@me/settings",
+            Some(serde_json::json!({
+                "custom_status": null,
+                "pronouns": ""
+            })),
+            &token,
+            is_bearer,
+            false,
         )
         .await?;
 

@@ -7,9 +7,11 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
+/// Manages the encrypted disk-based fallback storage for when the OS keyring is unavailable.
 pub struct FallbackManager;
 
 impl FallbackManager {
+    /// Resolves the absolute path for a fallback storage file.
     pub fn get_fallback_path(app: &AppHandle, key: &str) -> Option<PathBuf> {
         match app.path().app_local_data_dir() {
             Ok(p) => {
@@ -27,6 +29,7 @@ impl FallbackManager {
         }
     }
 
+    /// Encrypts and writes a value to the fallback disk storage.
     pub fn write_fallback(app: &AppHandle, key: &str, value: &str) -> Result<(), AppError> {
         if let Some(path) = Self::get_fallback_path(app, key) {
             let enc_key = super::encryption::EncryptionManager::get_or_create_encryption_key(app)?;
@@ -54,6 +57,7 @@ impl FallbackManager {
         }
     }
 
+    /// Reads and decrypts a value from the fallback disk storage.
     pub fn read_fallback(app: &AppHandle, key: &str) -> Result<String, AppError> {
         if let Some(path) = Self::get_fallback_path(app, key) {
             if path.exists() {
@@ -85,6 +89,7 @@ impl FallbackManager {
         })
     }
 
+    /// Deletes a fallback storage file.
     pub fn delete_fallback(app: &AppHandle, key: &str) -> Result<(), AppError> {
         if let Some(path) = Self::get_fallback_path(app, key)
             && path.exists()

@@ -6,6 +6,8 @@ import {
   Package,
   Trash2,
   ArrowUpRight,
+  UserX,
+  Zap,
 } from "lucide-react";
 import { SectionLabel } from "../../common/M3Components";
 
@@ -13,12 +15,16 @@ interface AccountModeProps {
   info: any;
   fetchAudit: () => void;
   onOpenDiscordUrl: (type: string) => void;
+  onSetHypesquad: (id: number) => void;
+  onGhostProfile: () => void;
 }
 
 export const AccountMode = ({
   info,
   fetchAudit,
   onOpenDiscordUrl,
+  onSetHypesquad,
+  onGhostProfile,
 }: AccountModeProps) => {
   useEffect(() => {
     fetchAudit();
@@ -32,21 +38,52 @@ export const AccountMode = ({
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <h3 className="text-2xl font-black italic uppercase text-white tracking-tighter">
-            Financial Footprint Audit
+            Account Integrity & Footprint
           </h3>
           <p className="text-[10px] text-m3-onSurfaceVariant font-bold uppercase tracking-widest opacity-60">
-            Identify stored payment methods and active entitlements
+            Manage profile metadata and financial data
           </p>
         </div>
-        <button
-          onClick={() => onOpenDiscordUrl("account_deletion")}
-          className="m3-button-primary !bg-m3-error/10 !text-m3-error border border-m3-error/20 hover:!bg-m3-error/20 !px-6"
-        >
-          <Trash2 className="w-4 h-4" /> Purge Account
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={onGhostProfile}
+            className="m3-button-primary !bg-m3-error/10 !text-m3-error border border-m3-error/20 hover:!bg-m3-error/20 !px-6"
+          >
+            <UserX className="w-4 h-4" /> Ghost Profile
+          </button>
+          <button
+            onClick={() => onOpenDiscordUrl("account_deletion")}
+            className="m3-button-primary !bg-m3-error/10 !text-m3-error border border-m3-error/20 hover:!bg-m3-error/20 !px-6"
+          >
+            <Trash2 className="w-4 h-4" /> Purge Account
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-8">
+        <div className="space-y-4">
+          <SectionLabel>Hypesquad Affiliation</SectionLabel>
+          <div className="flex gap-4">
+            {[
+              { id: 1, name: "Bravery", color: "text-purple-400" },
+              { id: 2, name: "Brilliance", color: "text-red-400" },
+              { id: 3, name: "Balance", color: "text-teal-400" },
+              { id: 0, name: "Leave", color: "text-gray-400" },
+            ].map((house) => (
+              <button
+                key={house.id}
+                onClick={() => onSetHypesquad(house.id)}
+                className={`flex-1 p-4 rounded-m3-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors flex flex-col items-center gap-2 ${house.color}`}
+              >
+                <Zap className="w-5 h-5" />
+                <span className="text-[10px] font-bold uppercase tracking-tighter text-white">
+                  {house.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="space-y-4">
           <SectionLabel>Active Subscriptions</SectionLabel>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

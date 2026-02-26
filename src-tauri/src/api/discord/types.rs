@@ -7,6 +7,7 @@ pub struct Guild {
     pub id: String,
     pub name: String,
     pub icon: Option<String>,
+    pub owner: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

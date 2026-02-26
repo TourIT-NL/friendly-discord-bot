@@ -5,11 +5,14 @@ use crate::core::logger::Logger;
 use keyring::Entry;
 use tauri::AppHandle;
 
+/// Manages generic application credentials (client IDs, secrets, proxy URLs).
+/// Encapsulates the logic for multi-backend storage (Keyring + Disk Fallback).
 pub struct CredentialManager;
 
 impl CredentialManager {
     const SERVICE_NAME: &'static str = "com.discordprivacy.util";
 
+    /// Persistently saves a credential.
     pub fn set_credential(app: &AppHandle, key: &str, value: &str) -> Result<(), AppError> {
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key) {
             if let Err(e) = entry.set_password(value) {
@@ -29,6 +32,7 @@ impl CredentialManager {
         Ok(())
     }
 
+    /// Retrieves a credential, attempting the OS keyring first before falling back to disk.
     pub fn get_credential(app: &AppHandle, key: &str) -> Result<String, AppError> {
         let result = match Entry::new(Self::SERVICE_NAME, key) {
             Ok(entry) => match entry.get_password() {
@@ -71,6 +75,7 @@ impl CredentialManager {
         })
     }
 
+    /// Removes a credential from all storage backends.
     pub fn remove_credential(app: &AppHandle, key: &str) -> Result<(), AppError> {
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key) {
             let _ = entry.delete_credential();

@@ -4,11 +4,29 @@ import { LoginSelection } from "../auth/LoginSelection";
 import { SetupView } from "../auth/SetupView";
 import { QRView } from "../auth/QRView";
 import { TokenView } from "../auth/TokenView";
+import { UnlockView } from "../auth/UnlockView";
+import { SetMasterPasswordView } from "../auth/SetMasterPasswordView";
 
 interface AuthViewProps {
-  view: "manual" | "auth" | "setup" | "qr" | "token" | "dashboard";
+  view:
+    | "manual"
+    | "auth"
+    | "setup"
+    | "qr"
+    | "token"
+    | "dashboard"
+    | "unlock"
+    | "set-master";
   setView: (
-    view: "manual" | "auth" | "setup" | "qr" | "token" | "dashboard",
+    view:
+      | "manual"
+      | "auth"
+      | "setup"
+      | "qr"
+      | "token"
+      | "dashboard"
+      | "unlock"
+      | "set-master",
   ) => void;
   isAuthenticated: boolean;
   discordStatus: any;
@@ -21,12 +39,20 @@ interface AuthViewProps {
   setClientSecret: (secret: string) => void;
   manualToken: string;
   setManualToken: (token: string) => void;
+  unlockPassword: string;
+  setUnlockPassword: (val: string) => void;
+  newMasterPassword: string;
+  setNewMasterPassword: (val: string) => void;
+  confirmMasterPassword: string;
+  setConfirmMasterPassword: (val: string) => void;
   handleLoginRPC: () => void;
   handleLoginQR: () => void;
   handleLoginOAuth: () => void;
   handleCancelQR: () => void;
   handleLoginToken: (e?: React.FormEvent) => Promise<void>;
   handleSaveConfig: (e?: React.FormEvent) => Promise<void>;
+  handleUnlock: (e: React.FormEvent) => Promise<void>;
+  handleSetMasterPassword: (e: React.FormEvent) => Promise<void>;
 }
 
 export const AuthView = ({
@@ -43,12 +69,20 @@ export const AuthView = ({
   setClientSecret,
   manualToken,
   setManualToken,
+  unlockPassword,
+  setUnlockPassword,
+  newMasterPassword,
+  setNewMasterPassword,
+  confirmMasterPassword,
+  setConfirmMasterPassword,
   handleLoginRPC,
   handleLoginQR,
   handleLoginOAuth,
   handleCancelQR,
   handleLoginToken,
   handleSaveConfig,
+  handleUnlock,
+  handleSetMasterPassword,
 }: AuthViewProps) => (
   <div
     key="auth-wrapper"
@@ -92,6 +126,7 @@ export const AuthView = ({
             onLoginOAuth={handleLoginOAuth}
             onSwitchToSetup={() => setView("setup")}
             onSwitchToToken={() => setView("token")}
+            onSwitchToMaster={() => setView("set-master")}
           />
         )}
         {view === "setup" && (
@@ -122,6 +157,27 @@ export const AuthView = ({
             isLoading={isLoading}
             onBack={() => setView("auth")}
             onSubmit={handleLoginToken}
+          />
+        )}
+        {view === "unlock" && (
+          <UnlockView
+            key="unlock"
+            password={unlockPassword}
+            setPassword={setUnlockPassword}
+            onUnlock={handleUnlock}
+            isLoading={isLoading}
+          />
+        )}
+        {view === "set-master" && (
+          <SetMasterPasswordView
+            key="set-master"
+            newPassword={newMasterPassword}
+            setNewPassword={setNewMasterPassword}
+            confirmPassword={confirmMasterPassword}
+            setConfirmPassword={setConfirmMasterPassword}
+            onSave={handleSetMasterPassword}
+            onBack={() => setView("auth")}
+            isLoading={isLoading}
           />
         )}
       </AnimatePresence>

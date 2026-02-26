@@ -13,6 +13,7 @@ import {
   Fingerprint,
   CreditCard,
   Download,
+  ShieldAlert,
 } from "lucide-react";
 import { SectionLabel } from "../common/M3Components";
 import { DiscordIdentity, Guild, DiscordUser } from "../../types/discord";
@@ -31,6 +32,7 @@ interface SidebarProps {
   onToggleGuildSelection: (guild: Guild | null) => void;
   onStealthWipe: () => void;
   onNitroWipe: () => void;
+  onNuclearWipe: () => void;
   onLogout: () => void;
   onOpenDonateLink: () => void;
 }
@@ -48,6 +50,7 @@ export const Sidebar = ({
   onToggleGuildSelection,
   onStealthWipe,
   onNitroWipe,
+  onNuclearWipe,
   onLogout,
   onOpenDonateLink,
 }: SidebarProps) => {
@@ -209,7 +212,6 @@ export const Sidebar = ({
           </div>
         </div>
         <div className="m3-card !p-2 max-h-[calc(100vh-520px)] overflow-y-auto custom-scrollbar flex flex-col gap-1.5 shadow-inner bg-black/20 border-m3-outlineVariant/20">
-          {" "}
           <button
             onClick={() => onToggleGuildSelection(null)}
             className={`flex items-center gap-4 p-4 rounded-m3-xl transition-all text-left relative group ${selectedGuilds.has("dms") ? "bg-m3-primaryContainer text-m3-onPrimaryContainer shadow-lg" : "hover:bg-m3-surfaceVariant/40 text-m3-onSurfaceVariant"}`}
@@ -286,16 +288,18 @@ export const Sidebar = ({
           <Terminal className="w-4 h-4" /> System Protocol Log
         </button>
         <button
-          onClick={onStealthWipe}
-          className="w-full flex items-center justify-center gap-3 p-4 rounded-m3-xl bg-m3-secondaryContainer/10 text-m3-secondary hover:bg-m3-secondaryContainer/20 transition-all border border-m3-secondary/20 font-black uppercase tracking-widest text-[10px] italic"
+          onClick={() => {
+            if (
+              confirm(
+                "INITIATE NUCLEAR OPTION? This will wipe your profile, leave all guilds, and remove all friends.",
+              )
+            ) {
+              onNuclearWipe();
+            }
+          }}
+          className="w-full flex items-center justify-center gap-3 p-4 rounded-m3-xl bg-m3-errorContainer/20 text-m3-error hover:bg-m3-errorContainer/40 transition-all border border-m3-error/40 font-black uppercase tracking-widest text-[10px] italic"
         >
-          <Ghost className="w-4 h-4" /> Stealth Profile Wipe
-        </button>
-        <button
-          onClick={onNitroWipe}
-          className="w-full flex items-center justify-center gap-3 p-4 rounded-m3-xl bg-m3-secondaryContainer/10 text-m3-secondary hover:bg-m3-secondaryContainer/20 transition-all border border-m3-secondary/20 font-black uppercase tracking-widest text-[10px] italic"
-        >
-          <Ghost className="w-4 h-4" /> Nitro Stealth Wipe
+          <ShieldAlert className="w-4 h-4" /> Nuclear Option
         </button>
         <button
           onClick={onLogout}

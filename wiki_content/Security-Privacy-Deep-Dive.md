@@ -4,19 +4,29 @@ Privacy isn't just a promise; it's a technical architecture. This document provi
 
 ---
 
-## 🔑 Credential Isolation
+## 🔐 Multi-Layer Vault Security
 
-We never store your Discord password. Even with **OAuth2**, your tokens are highly sensitive.
+We never store your Discord password. Even with **OAuth2**, your tokens are highly sensitive. We employ a multi-layered "Vault" strategy to protect them.
 
-### OS Keychain Integration
+### 🛡️ Master Password (Optional but Recommended)
 
-We utilize the **Keyring** crate to access the native secure storage of your platform:
+Users can set a Master Password that adds a secondary layer of encryption to the Vault.
+
+- **KDF**: We use **Argon2id** (the winner of the Password Hashing Competition) to derive a 256-bit encryption key from your password.
+- **AES-256-GCM**: The underlying Vault key is encrypted with the derived key before being stored. Even if an attacker gains physical access to your OS account, your tokens remain encrypted.
+
+### 🔑 OS Keychain Integration
+
+The application utilizes the **Keyring** crate to access native secure storage:
 
 - **Windows**: Windows Credential Manager.
 - **macOS**: Keychain Access.
-- **Linux**: Secret Service API (via `libsecret` or `KSecretService`).
+- **Linux**: Secret Service API.
 
-By using these, we ensure that your tokens are encrypted by the operating system itself, and are only accessible while your user account is logged in.
+### 🧹 Memory Hardening
+
+- **Zeroize**: We implement the `Zeroize` trait for all sensitive variables (tokens, keys, passwords). When these variables go out of scope, the memory they occupied is explicitly overwritten with zeros to prevent leakage in memory dumps.
+- **Volatile Storage**: All scanned data (DMs, Servers) is held exclusively in volatile RAM and is never committed to disk.
 
 ---
 

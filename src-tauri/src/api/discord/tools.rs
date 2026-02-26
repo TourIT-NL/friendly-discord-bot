@@ -1,6 +1,6 @@
 // src-tauri/src/api/discord/tools.rs
 
-use crate::api::rate_limiter::ApiHandle;
+use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::op_manager::OperationManager;
@@ -36,15 +36,26 @@ pub async fn bury_audit_log(
         None,
     );
 
-    let original_channel_value = api_handle
+    let original_channel_res_content = api_handle
         .send_request(
             reqwest::Method::GET,
             &format!("https://discord.com/api/v9/channels/{}", channel_id),
             None,
             &token,
             is_bearer,
+            false,
         )
-        .await?; // Will return serde_json::Value if successful
+        .await?;
+
+    let original_channel_value = match original_channel_res_content {
+        ApiResponseContent::Json(json) => json,
+        ApiResponseContent::Bytes(_) => {
+            return Err(AppError::new(
+                "Expected JSON, received raw bytes",
+                "unexpected_response_type",
+            ));
+        }
+    };
 
     let original_channel_name = original_channel_value["name"]
         .as_str()
@@ -63,28 +74,42 @@ pub async fn bury_audit_log(
             &format!("[AUDIT] Phase {}: cyclic node rename", i),
             None,
         );
-        let _ = api_handle
+        let res_content = api_handle
             .send_request(
                 reqwest::Method::PATCH,
                 &format!("https://discord.com/api/v9/channels/{}", channel_id),
                 Some(serde_json::json!({ "name": new_name })),
                 &token,
                 is_bearer,
+                false,
             )
-            .await;
+            .await?;
+        if let ApiResponseContent::Bytes(_) = res_content {
+            return Err(AppError::new(
+                "Expected JSON, received raw bytes",
+                "unexpected_response_type",
+            ));
+        }
 
         let _ = window.emit("audit_log_progress", serde_json::json!({ "current": i + 1, "total": 20, "status": format!("Burying node data phase {}", i) }));
         tokio::time::sleep(Duration::from_millis(500)).await;
 
-        let _ = api_handle
+        let res_content = api_handle
             .send_request(
                 reqwest::Method::PATCH,
                 &format!("https://discord.com/api/v9/channels/{}", channel_id),
                 Some(serde_json::json!({ "name": original_channel_name })),
                 &token,
                 is_bearer,
+                false,
             )
-            .await;
+            .await?;
+        if let ApiResponseContent::Bytes(_) = res_content {
+            return Err(AppError::new(
+                "Expected JSON, received raw bytes",
+                "unexpected_response_type",
+            ));
+        }
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 
@@ -120,15 +145,26 @@ pub async fn webhook_ghosting(
         None,
     );
 
-    let webhooks_value = api_handle
+    let webhooks_res_content = api_handle
         .send_request(
             reqwest::Method::GET,
             &format!("https://discord.com/api/v9/guilds/{}/webhooks", guild_id),
             None,
             &token,
             is_bearer,
+            false,
         )
-        .await?; // Will return serde_json::Value if successful
+        .await?;
+
+    let webhooks_value = match webhooks_res_content {
+        ApiResponseContent::Json(json) => json,
+        ApiResponseContent::Bytes(_) => {
+            return Err(AppError::new(
+                "Expected JSON, received raw bytes",
+                "unexpected_response_type",
+            ));
+        }
+    };
 
     let webhooks: Vec<serde_json::Value> =
         serde_json::from_value(webhooks_value).map_err(AppError::from)?;
@@ -150,15 +186,22 @@ pub async fn webhook_ghosting(
                 &format!("[WEBHOOK] Nullifying hook {}", webhook_id),
                 None,
             );
-            let _ = api_handle
+            let res_content = api_handle
                 .send_request(
                     reqwest::Method::DELETE,
                     &format!("https://discord.com/api/v9/webhooks/{}", webhook_id),
                     None,
                     &token,
                     is_bearer,
+                    false,
                 )
-                .await;
+                .await?;
+            if let ApiResponseContent::Bytes(_) = res_content {
+                return Err(AppError::new(
+                    "Expected JSON, received raw bytes",
+                    "unexpected_response_type",
+                ));
+            }
             deleted_webhooks += 1;
         }
         let _ = window.emit("webhook_progress", serde_json::json!({ "current": deleted_webhooks, "total": webhooks.len(), "status": "Ghosting active" }));

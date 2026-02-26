@@ -78,7 +78,68 @@ This document translates user needs into actionable technical requirements. Ever
 
 ---
 
-## 🔮 Future User Stories (Phase 2 & 3)
+## 🔐 2.5. Master Password Protection (US-008)
+
+**"Encryption Beyond the OS"**
+
+- **User Story**: As a security-conscious user, I want to protect my Discord tokens with a master password so that my data is safe even if someone gains access to my computer.
+- **Acceptance Criteria**:
+  1.  Option to set a Master Password during setup or from settings.
+  2.  Uses Argon2id for key derivation and AES-256-GCM for vault encryption.
+  3.  The vault remains locked until the password is provided at startup.
+  4.  Tokens are zeroized in memory immediately after use.
+
+---
+
+## 🎭 2.6. Network Stealth & Proxy (US-009)
+
+**"Masking the Trace"**
+
+- **User Story**: As a user avoiding platform-level tracking, I want to route my cleanup operations through a proxy and use dynamic fingerprints.
+- **Acceptance Criteria**:
+  1.  Configure SOCKS5 or Tor proxies directly in the app.
+  2.  The app rotates User-Agents from a pool of modern browsers.
+  3.  Internal Discord headers (x-super-properties) are dynamically generated.
+
+---
+
+## 👻 2.7. Profile Ghosting (US-010)
+
+**"Instant Anonymity"**
+
+- **User Story**: As a user wanting to vanish instantly, I want to clear all my profile metadata (bio, avatar, banner, status) in one click.
+- **Acceptance Criteria**:
+  1.  A "Ghost Profile" button that triggers a bulk reset of all identity metadata.
+  2.  Immediate execution across both User and Settings endpoints.
+
+---
+
+## 📂 2.8. GDPR Data Discovery (US-011)
+
+**"Forensic Deep Cleaning"**
+
+- **User Story**: As a user who wants to find every trace of my activity, I want to upload my Discord data package to find hidden or forgotten channels.
+- **Acceptance Criteria**:
+  1.  Upload a standard Discord `data.zip` package.
+  2.  The app parses the package to extract channel and server IDs not currently visible in the active UI.
+  3.  Discovered nodes can be targeted for mass deletion.
+
+---
+
+## 🔥 2.9. Nuclear Option (US-012)
+
+**"Complete Trace Erasure"**
+
+- **User Story**: As a user performing a total exit from the platform, I want a single command to trigger all sanitization protocols simultaneously so that I can vanish with minimal effort.
+- **Acceptance Criteria**:
+  1.  A "Nuclear Option" button in the sidebar.
+  2.  A strong confirmation prompt with a warning about its irreversibility.
+  3.  Sequentially executes: Ghost Profile, Max Privacy, Relationship Wipe, and Guild Departure.
+  4.  Updates progress in real-time for each sub-protocol.
+
+---
+
+## 🔮 Future User Stories (Phase 3 & 4)
 
 - **US-005: Keyword Filter**: "As a user, I want to delete only messages containing my phone number or email address across all channels."
 - **US-006: Attachment Wipe**: "As a user, I want to delete only images and files I have uploaded, leaving the text messages intact."

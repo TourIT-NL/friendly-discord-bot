@@ -1,18 +1,43 @@
 // src-tauri/src/api/rate_limiter/types.rs
 
 use crate::core::error::AppError;
+use bytes::Bytes;
 use reqwest::Method;
+use serde_json;
 use std::time::Instant;
 use tokio::sync::oneshot;
 
-/// Represents a pending API request
-pub struct ApiRequest {
-    pub method: Method,
-    pub url: String,
-    pub body: Option<serde_json::Value>,
-    pub auth_token: String,
-    pub is_bearer: bool,
-    pub response_tx: oneshot::Sender<Result<serde_json::Value, AppError>>,
+#[derive(Debug)]
+pub enum ApiResponseContent {
+    Json(serde_json::Value),
+    Bytes(Bytes),
+}
+
+impl ApiResponseContent {
+    pub fn json(self) -> Result<serde_json::Value, AppError> {
+        match self {
+            ApiResponseContent::Json(v) => Ok(v),
+            ApiResponseContent::Bytes(_) => Err(AppError {
+                user_message: "Expected JSON, got bytes".to_string(),
+                error_code: "api_type_mismatch".to_string(),
+                ..Default::default()
+            }),
+        }
+    }
+}
+
+/// Represents a pending API request or control signal
+pub enum ApiRequest {
+    Standard {
+        method: Method,
+        url: String,
+        body: Option<serde_json::Value>,
+        auth_token: String,
+        is_bearer: bool,
+        return_raw_bytes: bool,
+        response_tx: oneshot::Sender<Result<ApiResponseContent, AppError>>,
+    },
+    RebuildClient,
 }
 
 /// Information about a rate limit bucket

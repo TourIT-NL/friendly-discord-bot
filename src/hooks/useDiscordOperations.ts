@@ -430,6 +430,87 @@ export const useDiscordOperations = (
     }
   };
 
+  const handleSetHypesquad = async (houseId: number) => {
+    setLoading(true);
+    try {
+      await invoke("set_hypesquad", { houseId });
+      setError(`Hypesquad affiliation updated to House ${houseId}.`);
+    } catch (err: any) {
+      handleApiError(err, "Failed to update Hypesquad.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGhostProfile = async () => {
+    setLoading(true);
+    try {
+      await invoke("ghost_profile");
+      setError("Profile Ghosting protocol complete.");
+    } catch (err: any) {
+      handleApiError(err, "Profile ghosting failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProcessGdprData = async () => {
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: "Discord Data Package", extensions: ["zip"] }],
+    });
+    if (!selected) return;
+
+    setLoading(true);
+    try {
+      const discovery: any = await invoke("process_gdpr_data", {
+        zipPath: selected,
+      });
+      setError(
+        `GDPR Discovery complete: Found ${discovery.channel_ids.length} channels and ${discovery.guild_ids.length} guilds.`,
+      );
+      // We could use this discovery to populate state
+    } catch (err: any) {
+      handleApiError(err, "Failed to process GDPR data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetProxy = async (proxyUrl: string | null) => {
+    setLoading(true);
+    try {
+      await invoke("set_proxy", { proxyUrl });
+      setError(proxyUrl ? "Traffic routed through proxy." : "Proxy disabled.");
+    } catch (err: any) {
+      handleApiError(err, "Failed to set proxy.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Triggers the "Nuclear Option": A complete digital footprint wipe.
+   * Resets profile, privacy settings, leaves all guilds, and removes all friends.
+   */
+  const handleNuclearWipe = async () => {
+    setIsProcessing(true);
+    setIsComplete(false);
+    try {
+      await invoke("nuclear_wipe");
+      setIsComplete(true);
+      setError("Nuclear protocol complete. Your account is sanitized.");
+    } catch (err: any) {
+      handleApiError(err, "Nuclear wipe failed.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  /**
+   * Triggers the primary cleanup action based on the current mode.
+   * Handles message purging, server departures, and relationship removals.
+   */
   const startAction = async () => {
     const required =
       mode === "messages" ? "DELETE" : mode === "servers" ? "LEAVE" : "REMOVE";
@@ -463,8 +544,9 @@ export const useDiscordOperations = (
           guildIds: Array.from(selectedGuildsToLeave),
         });
       } else if (mode === "identity") {
-        await invoke("bulk_remove_relationships", {
+        await invoke("bulk_cleanup_relationships", {
           userIds: Array.from(selectedRelationships),
+          action: "remove", // Default to remove, could be parameterized
         });
       }
     } catch (err: any) {
@@ -542,6 +624,11 @@ export const useDiscordOperations = (
     setIncludeAttachmentsInHtml,
     handleStartExport,
     handleStartGuildArchive,
+    handleSetHypesquad,
+    handleGhostProfile,
+    handleProcessGdprData,
+    handleSetProxy,
+    handleNuclearWipe,
     startAction,
   };
 };

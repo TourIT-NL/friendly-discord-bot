@@ -9,73 +9,83 @@ use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Emitter, Manager, Window};
 
 #[tauri::command]
-pub async fn bulk_remove_relationships(
+pub async fn bulk_cleanup_relationships(
     app_handle: AppHandle,
     window: Window,
     user_ids: Vec<String>,
+    action: String, // "remove", "block", "ignore", "cancel"
 ) -> Result<(), AppError> {
     let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
-    let api_handle = app_handle.state::<ApiHandle>();
-    let op_manager = app_handle.state::<OperationManager>();
-    op_manager.state.prepare(); // Ensure clean state
-    op_manager.state.is_running.store(true, Ordering::SeqCst);
+    let api_handle = app_handle.state::<ApiHandle>().inner().clone();
+    let op_manager_state = app_handle.state::<OperationManager>().state.clone();
+    op_manager_state.prepare();
+    op_manager_state.is_running.store(true, Ordering::SeqCst);
 
     Logger::info(
         &app_handle,
         &format!(
-            "[OP] Bulk relationship removal initialized for {} users",
+            "[OP] Bulk relationship {} initialized for {} users (CONCURRENT)",
+            action,
             user_ids.len()
         ),
         None,
     );
 
-    for (i, user_id) in user_ids.iter().enumerate() {
-        op_manager.state.wait_if_paused().await;
-        if op_manager.state.should_abort.load(Ordering::SeqCst) {
-            Logger::info(&app_handle, "[OP] Bulk relationship removal aborted", None);
-            break;
-        }
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(user_ids.len());
 
-        let url = format!(
-            "https://discord.com/api/v9/users/@me/relationships/{}",
-            user_id
-        );
-        match api_handle
-            .send_request(reqwest::Method::DELETE, &url, None, &token, is_bearer)
-            .await
-        {
-            Ok(_) => {
-                if op_manager.state.should_abort.load(Ordering::SeqCst) {
-                    break;
-                }
-                let _ = window.emit(
+    for (i, user_id) in user_ids.iter().cloned().enumerate() {
+        let window_clone = window.clone();
+        let token_clone = token.clone();
+        let api_handle_clone = api_handle.clone();
+        let op_manager_state_clone = op_manager_state.clone();
+        let action_clone = action.clone();
+        let total = user_ids.len();
+        let tx_clone = tx.clone();
+
+        tauri::async_runtime::spawn(async move {
+            op_manager_state_clone.wait_if_paused().await;
+            if op_manager_state_clone.should_abort.load(Ordering::SeqCst) {
+                return;
+            }
+
+            let url = format!(
+                "https://discord.com/api/v9/users/@me/relationships/{}",
+                user_id
+            );
+            let method = if action_clone == "block" {
+                reqwest::Method::PUT
+            } else {
+                reqwest::Method::DELETE
+            };
+            let body = if action_clone == "block" {
+                Some(serde_json::json!({ "type": 2 }))
+            } else {
+                None
+            };
+
+            if api_handle_clone
+                .send_request_json(method, &url, body, &token_clone, is_bearer)
+                .await
+                .is_ok()
+            {
+                let _ = window_clone.emit(
                     "relationship_progress",
                     serde_json::json!({
                         "current": i + 1,
-                        "total": user_ids.len(),
+                        "total": total,
                         "id": user_id,
-                        "status": "removed"
+                        "status": format!("{}d", action_clone)
                     }),
                 );
+                let _ = tx_clone.send(()).await;
             }
-            Err(e) => {
-                Logger::warn(
-                    &app_handle,
-                    &format!(
-                        "[OP] Failed to remove relationship {}: {}",
-                        user_id, e.user_message
-                    ),
-                    None,
-                );
-            }
-        }
+        });
     }
-    op_manager.state.reset();
+
+    drop(tx);
+    while rx.recv().await.is_some() {}
+
+    op_manager_state.reset();
     let _ = window.emit("relationship_complete", ());
-    Logger::info(
-        &app_handle,
-        "[OP] Bulk relationship removal completed",
-        None,
-    );
     Ok(())
 }

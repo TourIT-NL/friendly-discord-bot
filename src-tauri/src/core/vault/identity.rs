@@ -6,19 +6,28 @@ use keyring::Entry;
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
+/// Represents a validated Discord user identity stored in the Vault.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DiscordIdentity {
+    /// Discord User ID (Snowflake).
     pub id: String,
+    /// Discord username.
     pub username: String,
+    /// Encrypted Discord API token (User Token or OAuth2 Access Token).
     pub token: String,
+    /// Whether the token was obtained via OAuth2.
     pub is_oauth: bool,
 }
 
+/// Orchestrates the storage and retrieval of Discord identities.
+/// Uses a combination of system keyring and encrypted disk fallback.
 pub struct IdentityManager;
 
 impl IdentityManager {
     const SERVICE_NAME: &'static str = "com.discordprivacy.util";
 
+    /// Persistently saves an identity. Encrypts the payload before storage.
+    /// Updates the global identity index to allow listing multiple accounts.
     pub fn save_identity(app: &AppHandle, identity: DiscordIdentity) -> Result<(), AppError> {
         let key = format!("account_{}", identity.id);
         let secret = serde_json::to_string(&identity)?;
@@ -83,6 +92,7 @@ impl IdentityManager {
         Ok(())
     }
 
+    /// Returns the identity of the currently logged-in user.
     pub fn get_active_identity(app: &AppHandle) -> Result<DiscordIdentity, AppError> {
         let id = match Entry::new(Self::SERVICE_NAME, "active_account")
             .and_then(|e| e.get_password())
@@ -110,11 +120,13 @@ impl IdentityManager {
         Self::get_identity(app, &id)
     }
 
+    /// Convenience method to retrieve the token and OAuth status of the active user.
     pub fn get_active_token(app: &AppHandle) -> Result<(String, bool), AppError> {
         let identity = Self::get_active_identity(app)?;
         Ok((identity.token, identity.is_oauth))
     }
 
+    /// Retrieves a specific identity by Discord ID.
     pub fn get_identity(app: &AppHandle, id: &str) -> Result<DiscordIdentity, AppError> {
         let key = format!("account_{}", id);
         let secret = match Entry::new(Self::SERVICE_NAME, &key).and_then(|e| e.get_password()) {
@@ -124,6 +136,7 @@ impl IdentityManager {
         Ok(serde_json::from_str(&secret)?)
     }
 
+    /// Enumerates all stored identities.
     pub fn list_identities(app: &AppHandle) -> Vec<DiscordIdentity> {
         let index_key = "identity_index";
         let index_str =
@@ -140,9 +153,10 @@ impl IdentityManager {
             .collect()
     }
 
+    /// Completely removes an identity from both keyring and disk fallback.
     pub fn remove_identity(app: &AppHandle, id: &str) -> Result<(), AppError> {
         let key = format!("account_{}", id);
-        Self::clear_keyring_entry(&key)?;
+        let _ = Self::clear_keyring_entry(&key);
         let _ = super::fallback::FallbackManager::delete_fallback(app, &key);
 
         let index_key = "identity_index";
@@ -157,13 +171,14 @@ impl IdentityManager {
             index.retain(|x| x != id);
             let new_index_json = serde_json::to_string(&index)?;
 
-            Self::set_keyring_entry(index_key, &new_index_json)?;
-            super::fallback::FallbackManager::write_fallback(app, index_key, &new_index_json)?;
+            let _ = Self::set_keyring_entry(index_key, &new_index_json);
+            let _ =
+                super::fallback::FallbackManager::write_fallback(app, index_key, &new_index_json);
         }
         Ok(())
     }
 
-    // Helper to clear a keyring entry directly
+    /// Directly clears a credential from the OS keyring.
     pub fn clear_keyring_entry(key: &str) -> Result<(), AppError> {
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key) {
             let _ = entry.delete_credential();
@@ -171,7 +186,7 @@ impl IdentityManager {
         Ok(())
     }
 
-    // Helper to set a keyring entry directly
+    /// Directly sets a credential in the OS keyring.
     pub fn set_keyring_entry(key: &str, value: &str) -> Result<(), AppError> {
         if let Ok(entry) = Entry::new(Self::SERVICE_NAME, key) {
             let _ = entry.set_password(value);

@@ -47,44 +47,52 @@ pub async fn start_oauth_flow(
     );
 
     let (pkce_ch, pkce_ver) = PkceCodeChallenge::new_random_sha256();
-    let port = 58123; // Fixed port
-    let client =
-        client.set_redirect_uri(RedirectUrl::new(format!("http://127.0.0.1:{}", port)).unwrap());
+
+    // Dynamic port range fallback
+    let port_range = 58123..58130;
+    let mut listener_opt = None;
+    let mut actual_port = 0;
+
+    for port in port_range {
+        let addr = format!("127.0.0.1:{}", port).parse::<SocketAddr>().unwrap();
+        let s = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
+        s.set_reuse_address(true)?;
+        #[cfg(not(windows))]
+        s.set_reuse_port(true)?;
+
+        if s.bind(&addr.into()).is_ok() {
+            s.listen(128)?;
+            listener_opt = Some(s);
+            actual_port = port;
+            break;
+        }
+    }
+
+    let listener = listener_opt.ok_or_else(|| AppError {
+        user_message: "Failed to bind to any authorization port in range 58123-58129.".into(),
+        ..Default::default()
+    })?;
+
+    let client = client
+        .set_redirect_uri(RedirectUrl::new(format!("http://127.0.0.1:{}", actual_port)).unwrap());
+
+    Logger::info(
+        &app_handle,
+        &format!("[OAuth] Using dynamic port: {}", actual_port),
+        None,
+    );
+
     let (auth_url, csrf) = client
         .authorize_url(CsrfToken::new_random)
         .add_scope(oauth2::Scope::new("identify".into()))
         .add_scope(oauth2::Scope::new("guilds".into()))
-        .add_scope(oauth2::Scope::new("messages.read".into())) // Added for message fetching
-        .add_scope(oauth2::Scope::new("guilds.members.read".into())) // Added for member info, if needed
+        .add_scope(oauth2::Scope::new("messages.read".into()))
+        .add_scope(oauth2::Scope::new("guilds.members.read".into()))
         .set_pkce_challenge(pkce_ch)
         .url();
 
     let (tx, rx) = oneshot::channel::<String>();
     let csrf_secret = csrf.secret().clone();
-
-    let addr = format!("127.0.0.1:{}", port)
-        .parse::<SocketAddr>()
-        .map_err(|e| AppError {
-            user_message: "Invalid bind address.".into(),
-            technical_details: Some(e.to_string()),
-            ..Default::default()
-        })?;
-
-    let listener = {
-        let s = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP))?;
-        s.set_reuse_address(true)?;
-        #[cfg(not(windows))]
-        s.set_reuse_port(true)?;
-        if s.bind(&addr.into()).is_ok() {
-            s.listen(128)?;
-            s
-        } else {
-            return Err(AppError {
-                user_message: "Authorization port (58123) is already in use.".into(),
-                ..Default::default()
-            });
-        }
-    };
 
     let listener: std::net::TcpListener = listener.into();
     let app_clone = app_handle.clone(); // Revert app_clone position

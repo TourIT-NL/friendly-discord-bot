@@ -1,13 +1,13 @@
-name: 'Setup Rust Environment'
-description: 'Standardizes Rust installation, system dependencies, and caching'
+name: "Setup Rust Environment"
+description: "Standardizes Rust installation, system dependencies, and caching"
 
 inputs:
   platform:
-    description: 'The OS platform'
+    description: "The OS platform"
     required: true
   cache-key:
-    description: 'Additional cache key'
-    default: 'v1'
+    description: "Additional cache key"
+    default: "v1"
 
 runs:
   using: "composite"

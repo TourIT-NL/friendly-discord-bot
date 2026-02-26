@@ -20,6 +20,7 @@
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tauri-apps/api": "^2.10.1",
+    "@tauri-apps/plugin-dialog": "^2.6.0",
     "autoprefixer": "^10.4.24",
     "framer-motion": "^12.34.0",
     "lucide-react": "^0.575.0",
@@ -64,6 +65,6 @@
       "prettier --write"
     ],
     "*.{json,css,md}": "prettier --write",
-    "src-tauri/**/*.rs": "cargo fmt --manifest-path src-tauri/Cargo.toml"
+    "src-tauri/**/*.rs": "rustfmt"
   }
 }

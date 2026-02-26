@@ -43,6 +43,12 @@ function App() {
     setClientSecret,
     manualToken,
     setManualToken,
+    unlockPassword,
+    setUnlockPassword,
+    newMasterPassword,
+    setNewMasterPassword,
+    confirmMasterPassword,
+    setConfirmMasterPassword,
     checkStatus,
     fetchIdentities,
     handleLogout,
@@ -52,6 +58,8 @@ function App() {
     handleLoginRPC,
     handleLoginToken,
     handleSaveConfig,
+    handleUnlock,
+    handleSetMasterPassword,
     handleSwitchIdentity,
     handleApiError,
   } = useDiscordAuth();
@@ -117,6 +125,17 @@ function App() {
     authorizedApps,
     gdprStatus,
     billingInfo,
+    exportDirection,
+    setExportDirection,
+    includeAttachmentsInHtml,
+    setIncludeAttachmentsInHtml,
+    handleStartExport,
+    handleStartGuildArchive,
+    handleSetHypesquad,
+    handleGhostProfile,
+    handleProcessGdprData,
+    handleSetProxy,
+    handleNuclearWipe,
     startAction,
   } = useDiscordOperations(handleApiError);
 
@@ -296,12 +315,20 @@ function App() {
             setClientSecret={setClientSecret}
             manualToken={manualToken}
             setManualToken={setManualToken}
+            unlockPassword={unlockPassword}
+            setUnlockPassword={setUnlockPassword}
+            newMasterPassword={newMasterPassword}
+            setNewMasterPassword={setNewMasterPassword}
+            confirmMasterPassword={confirmMasterPassword}
+            setConfirmMasterPassword={setConfirmMasterPassword}
             handleLoginRPC={handleLoginRPC}
             handleLoginQR={handleLoginQR}
             handleLoginOAuth={handleLoginOAuth}
             handleCancelQR={handleCancelQR}
             handleLoginToken={handleLoginToken}
             handleSaveConfig={handleSaveConfig}
+            handleUnlock={handleUnlock}
+            handleSetMasterPassword={handleSetMasterPassword}
           />
         ) : (
           <DashboardView
@@ -357,6 +384,17 @@ function App() {
             relationships={relationships}
             selectedRelationships={selectedRelationships}
             setSelectedRelationships={setSelectedRelationships}
+            exportDirection={exportDirection}
+            setExportDirection={setExportDirection}
+            includeAttachmentsInHtml={includeAttachmentsInHtml}
+            setIncludeAttachmentsInHtml={setIncludeAttachmentsInHtml}
+            handleStartExport={handleStartExport}
+            handleStartGuildArchive={handleStartGuildArchive}
+            handleSetHypesquad={handleSetHypesquad}
+            handleGhostProfile={handleGhostProfile}
+            handleProcessGdprData={handleProcessGdprData}
+            handleSetProxy={handleSetProxy}
+            handleNuclearWipe={handleNuclearWipe}
           />
         )}
       </AnimatePresence>

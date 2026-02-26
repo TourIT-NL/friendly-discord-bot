@@ -23,7 +23,17 @@ interface AuthState {
   retryCount: number;
   logs: LogEntry[];
   showDevLog: boolean;
-  view: "manual" | "auth" | "setup" | "qr" | "token" | "dashboard";
+  isLocked: boolean;
+  hasMasterPassword: boolean;
+  view:
+    | "manual"
+    | "auth"
+    | "setup"
+    | "qr"
+    | "token"
+    | "dashboard"
+    | "unlock"
+    | "set-master";
   setAuthenticated: (user: AuthState["user"]) => void;
   setUnauthenticated: () => void;
   setLoading: (loading: boolean) => void;
@@ -36,6 +46,8 @@ interface AuthState {
   setGuilds: (guilds: any[]) => void;
   setNeedsCredentials: (needs: boolean) => void;
   setView: (view: AuthState["view"]) => void;
+  setLocked: (locked: boolean) => void;
+  setHasMasterPassword: (has: boolean) => void;
   reset: () => void;
 }
 
@@ -50,6 +62,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   retryCount: 0,
   logs: [],
   showDevLog: false,
+  isLocked: false,
+  hasMasterPassword: false,
   view: "manual",
   setAuthenticated: (user) =>
     set({
@@ -92,6 +106,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   setNeedsCredentials: (needs) =>
     set({ needsCredentials: needs, isLoading: false }),
   setView: (view) => set({ view }),
+  setLocked: (locked) => set({ isLocked: locked }),
+  setHasMasterPassword: (has) => set({ hasMasterPassword: has }),
   reset: () =>
     set({
       isAuthenticated: false,
@@ -104,6 +120,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       retryCount: 0,
       logs: [],
       showDevLog: false,
+      isLocked: false,
+      hasMasterPassword: false,
       view: "manual",
     }),
 }));

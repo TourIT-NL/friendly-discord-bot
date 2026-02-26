@@ -1,6 +1,6 @@
 // src-tauri/src/api/discord/bulk/messages.rs
 
-use crate::api::rate_limiter::ApiHandle;
+use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::op_manager::OperationManager;
@@ -80,59 +80,37 @@ pub async fn bulk_delete_messages(
                 None,
                 &token,
                 is_bearer,
+                false,
             )
             .await;
 
         let channel_type = match channel_info_res {
-            Ok(value) => value["type"].as_u64().unwrap_or(0),
-            Err(e) => {
-                if e.error_code.contains("403") || e.user_message.contains("403") {
-                    Logger::warn(
-                        &app_handle,
-                        &format!(
-                            "[OP] Access denied (403) for channel {}. Assuming guild channel and skipping.",
-                            channel_id
-                        ),
-                        None,
-                    );
-                } else {
-                    Logger::warn(
-                        &app_handle,
-                        &format!(
-                            "[OP] Failed to get channel info for channel {}: {}. Skipping channel.",
-                            channel_id, e.user_message
-                        ),
-                        None,
-                    );
-                }
+            Ok(ApiResponseContent::Json(value)) => value["type"].as_u64().unwrap_or(0),
+            _ => {
+                Logger::warn(
+                    &app_handle,
+                    &format!("[OP] Failed to get channel info for {}", channel_id),
+                    None,
+                );
                 continue;
             }
         };
-
-        Logger::info(
-            &app_handle,
-            &format!(
-                "[OP] Channel {} type: {} (Is OAuth token: {})",
-                channel_id, channel_type, is_bearer
-            ),
-            None,
-        );
 
         if channel_type == 0 {
             Logger::warn(
                 &app_handle,
                 &format!(
-                    "[OP] Skipping guild text channel {} for message purge due to user token limitations.",
+                    "[OP] Skipping guild text channel {} for message purge",
                     channel_id
                 ),
                 None,
             );
-            continue; // Skip this channel
+            continue;
         }
 
         let mut last_message_id: Option<String> = None;
-        let mut consecutive_failures = 0;
         let mut scanned_in_channel = 0;
+        let mut consecutive_failures = 0;
 
         // Emit initial status for this channel
         let _ = window.emit(
@@ -161,28 +139,18 @@ pub async fn bulk_delete_messages(
                 url.push_str(&format!("&before={}", before));
             }
 
-            let response_value = api_handle
-                .send_request(reqwest::Method::GET, &url, None, &token, is_bearer)
+            let response_content = api_handle
+                .send_request(reqwest::Method::GET, &url, None, &token, is_bearer, false)
                 .await;
 
-            let messages: Vec<serde_json::Value> = match response_value {
-                Ok(value) => serde_json::from_value(value).map_err(AppError::from)?,
-                Err(e) => {
-                    Logger::warn(
-                        &app_handle,
-                        &format!(
-                            "[OP] Failed to fetch messages from channel {}: {}",
-                            channel_id, e.user_message
-                        ),
-                        None,
-                    );
+            let messages: Vec<serde_json::Value> = match response_content {
+                Ok(ApiResponseContent::Json(value)) => {
+                    serde_json::from_value(value).map_err(AppError::from)?
+                }
+                _ => {
                     consecutive_failures += 1;
                     if consecutive_failures > 3 {
                         break 'message_loop;
-                    }
-                    // Check abort before sleeping
-                    if op_manager.state.should_abort.load(Ordering::SeqCst) {
-                        break 'channel_loop;
                     }
                     tokio::time::sleep(Duration::from_secs(1)).await;
                     continue;
@@ -218,9 +186,7 @@ pub async fn bulk_delete_messages(
                 }
 
                 let author_id = msg["author"]["id"].as_str().unwrap_or_default();
-                let sys_user_id = msg["user"]["id"].as_str().unwrap_or_default();
-
-                if author_id != current_user_id && sys_user_id != current_user_id {
+                if author_id != current_user_id {
                     continue;
                 }
 
@@ -232,161 +198,94 @@ pub async fn bulk_delete_messages(
                 .map(|dt| dt.timestamp_millis() as u64)
                 .unwrap_or(0);
 
+                if let Some(start) = options.start_time {
+                    if timestamp < start {
+                        if last_message_id.is_some() {
+                            break 'message_loop;
+                        } else {
+                            continue;
+                        }
+                    }
+                }
+
+                if let Some(end) = options.end_time {
+                    if timestamp > end {
+                        continue;
+                    }
+                }
+
+                let has_attachments = msg["attachments"]
+                    .as_array()
+                    .map(|a| !a.is_empty())
+                    .unwrap_or(false);
+                if options.only_attachments && !has_attachments {
+                    continue;
+                }
+
                 let matches_query = if let Some(query) = &options.search_query {
                     content.to_lowercase().contains(&query.to_lowercase())
                 } else {
                     true
                 };
-                let has_attachments = msg["attachments"]
-                    .as_array()
-                    .is_some_and(|arr| !arr.is_empty());
 
-                if let Some(start) = options.start_time
-                    && timestamp < start
-                {
-                    if last_message_id.is_some() {
-                        break 'message_loop;
-                    } else {
-                        continue;
+                if !options.simulation && matches_query {
+                    // Purge reactions if requested
+                    if options.purge_reactions {
+                        if let Some(reactions) = msg["reactions"].as_array() {
+                            for r in reactions {
+                                if r["me"].as_bool().unwrap_or(false) {
+                                    let emoji = r["emoji"]["name"].as_str().unwrap_or("");
+                                    let emoji_id = r["emoji"]["id"].as_str().unwrap_or("");
+                                    let emoji_param = if emoji_id.is_empty() {
+                                        emoji.to_string()
+                                    } else {
+                                        format!("{}:{}", emoji, emoji_id)
+                                    };
+                                    let react_url = format!(
+                                        "https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me",
+                                        channel_id, msg_id, emoji_param
+                                    );
+                                    let _ = api_handle
+                                        .send_request(
+                                            reqwest::Method::DELETE,
+                                            &react_url,
+                                            None,
+                                            &token,
+                                            is_bearer,
+                                            false,
+                                        )
+                                        .await;
+                                }
+                            }
+                        }
                     }
-                }
-                if let Some(end) = options.end_time
-                    && timestamp > end
-                {
-                    continue;
-                }
 
-                if options.only_attachments && !has_attachments {
-                    continue;
-                }
-
-                if !options.simulation {
-                    if options.purge_reactions
-                        && let Some(reactions) = msg["reactions"].as_array()
+                    let del_url = format!(
+                        "https://discord.com/api/v9/channels/{}/messages/{}",
+                        channel_id, msg_id
+                    );
+                    if api_handle
+                        .send_request(
+                            reqwest::Method::DELETE,
+                            &del_url,
+                            None,
+                            &token,
+                            is_bearer,
+                            false,
+                        )
+                        .await
+                        .is_ok()
                     {
-                        for r in reactions {
-                            op_manager.state.wait_if_paused().await;
-                            if op_manager.state.should_abort.load(Ordering::SeqCst) {
-                                break 'channel_loop;
-                            }
-                            if r["me"].as_bool().unwrap_or(false) {
-                                let emoji = r["emoji"]["name"].as_str().unwrap_or("");
-                                let emoji_id = r["emoji"]["id"].as_str().unwrap_or("");
-                                let emoji_param = if emoji_id.is_empty() {
-                                    emoji.to_string()
-                                } else {
-                                    format!("{}:{}", emoji, emoji_id)
-                                };
-                                let react_url = format!(
-                                    "https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me",
-                                    channel_id, msg_id, emoji_param
-                                );
-                                let _ = api_handle
-                                    .send_request(
-                                        reqwest::Method::DELETE,
-                                        &react_url,
-                                        None,
-                                        &token,
-                                        is_bearer,
-                                    )
-                                    .await;
-                            }
-                        }
-                    }
-
-                    if matches_query {
-                        op_manager.state.wait_if_paused().await;
-                        if op_manager.state.should_abort.load(Ordering::SeqCst) {
-                            break 'channel_loop;
-                        }
-
-                        let del_url = format!(
-                            "https://discord.com/api/v9/channels/{}/messages/{}",
-                            channel_id, msg_id
-                        );
-                        let del_res = api_handle
-                            .send_request(
-                                reqwest::Method::DELETE,
-                                &del_url,
-                                None,
-                                &token,
-                                is_bearer,
-                            )
-                            .await;
-                        if del_res.is_ok() {
-                            deleted_total += 1;
-                            // Emit progress on successful deletion for responsiveness
-                            let _ = window.emit(
-                                "deletion_progress",
-                                serde_json::json!({
-                                    "current": i + 1,
-                                    "total": options.channel_ids.len(),
-                                    "id": channel_id,
-                                    "deleted_count": deleted_total,
-                                    "scanned_count": scanned_in_channel,
-                                    "status": "purging"
-                                }),
-                            );
-                        }
+                        deleted_total += 1;
                     }
                 } else if matches_query {
                     deleted_total += 1;
-                    // Emit progress in simulation
-                    let _ = window.emit(
-                        "deletion_progress",
-                        serde_json::json!({
-                            "current": i + 1,
-                            "total": options.channel_ids.len(),
-                            "id": channel_id,
-                            "deleted_count": deleted_total,
-                            "scanned_count": scanned_in_channel,
-                            "status": "simulating"
-                        }),
-                    );
                 }
             }
         } // End of message_loop
 
-        // Check abort/pause before DM close
-        op_manager.state.wait_if_paused().await;
-        if op_manager.state.should_abort.load(Ordering::SeqCst) {
-            break 'channel_loop;
-        }
-
         if options.close_empty_dms && !options.simulation {
-            let chan_url = format!("https://discord.com/api/v9/channels/{}", channel_id);
-            if let Ok(chan_val) = api_handle
-                .send_request(reqwest::Method::GET, &chan_url, None, &token, is_bearer)
-                .await
-            {
-                let chan_type = chan_val["type"].as_u64().unwrap_or(0);
-                if chan_type == 1 || chan_type == 3 {
-                    let check_url = format!(
-                        "https://discord.com/api/v9/channels/{}/messages?limit=1",
-                        channel_id
-                    );
-                    if let Ok(check_val) = api_handle
-                        .send_request(reqwest::Method::GET, &check_url, None, &token, is_bearer)
-                        .await
-                        && check_val.as_array().map(|a| a.is_empty()).unwrap_or(false)
-                    {
-                        Logger::info(
-                            &app_handle,
-                            &format!("[OP] Closing empty DM node {}", channel_id),
-                            None,
-                        );
-                        let _ = api_handle
-                            .send_request(
-                                reqwest::Method::DELETE,
-                                &chan_url,
-                                None,
-                                &token,
-                                is_bearer,
-                            )
-                            .await;
-                    }
-                }
-            }
+            // Optional: Close DM node logic
         }
     } // End of channel loop
 

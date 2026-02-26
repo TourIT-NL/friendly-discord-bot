@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Settings,
+  Lock,
 } from "lucide-react";
 import { IconButton, M3Card } from "../common/M3Components";
 import { DiscordStatus } from "../../types/discord";
@@ -21,6 +22,7 @@ interface LoginSelectionProps {
   onLoginOAuth: () => void;
   onSwitchToSetup: () => void;
   onSwitchToToken: () => void;
+  onSwitchToMaster: () => void;
 }
 
 export const LoginSelection = ({
@@ -31,6 +33,7 @@ export const LoginSelection = ({
   onLoginOAuth,
   onSwitchToSetup,
   onSwitchToToken,
+  onSwitchToMaster,
 }: LoginSelectionProps) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -109,6 +112,11 @@ export const LoginSelection = ({
           <IconButton
             icon={Settings}
             onClick={onSwitchToSetup}
+            className="!bg-m3-onPrimaryContainer/10 hover:!bg-m3-onPrimaryContainer/20 !p-4 !rounded-2xl"
+          />
+          <IconButton
+            icon={Lock}
+            onClick={onSwitchToMaster}
             className="!bg-m3-onPrimaryContainer/10 hover:!bg-m3-onPrimaryContainer/20 !p-4 !rounded-2xl"
           />
           <button

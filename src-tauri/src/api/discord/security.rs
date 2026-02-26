@@ -19,7 +19,7 @@ pub async fn fetch_oauth_tokens(app_handle: AppHandle) -> Result<serde_json::Val
     );
 
     api_handle
-        .send_request(
+        .send_request_json(
             Method::GET,
             "https://discord.com/api/v9/oauth2/tokens",
             None,
@@ -41,7 +41,7 @@ pub async fn revoke_oauth_token(app_handle: AppHandle, token_id: String) -> Resu
     );
 
     let _ = api_handle
-        .send_request(
+        .send_request_json(
             Method::DELETE,
             &format!("https://discord.com/api/v9/oauth2/tokens/{}", token_id),
             None,
@@ -67,7 +67,7 @@ pub async fn fetch_application_identities(
     );
 
     api_handle
-        .send_request(
+        .send_request_json(
             Method::GET,
             "https://discord.com/api/v9/users/@me/application-identities",
             None,

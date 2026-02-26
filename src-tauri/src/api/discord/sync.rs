@@ -1,7 +1,7 @@
 // src-tauri/src/api/discord/sync.rs
 
 use super::types::{Channel, Guild, Relationship};
-use crate::api::rate_limiter::ApiHandle;
+use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::vault::Vault;
@@ -17,16 +17,28 @@ pub async fn fetch_guilds(app_handle: AppHandle) -> Result<Vec<Guild>, AppError>
         None,
     );
 
-    let response_value = api_handle
+    let res_content = api_handle
         .send_request(
             reqwest::Method::GET,
             "https://discord.com/api/v9/users/@me/guilds",
             None,
             &token,
             is_bearer,
+            false,
         )
-        .await?; // Will return serde_json::Value if successful
-    serde_json::from_value(response_value).map_err(AppError::from)
+        .await?;
+
+    let json = match res_content {
+        ApiResponseContent::Json(j) => j,
+        _ => {
+            return Err(AppError::new(
+                "Expected JSON, got bytes",
+                "api_type_mismatch",
+            ));
+        }
+    };
+
+    serde_json::from_value(json).map_err(AppError::from)
 }
 
 #[tauri::command]
@@ -43,18 +55,28 @@ pub async fn fetch_channels(
             &format!("[SYNC] Mapping nodes for guild {}", gid),
             None,
         );
-        let response_value = api_handle
+        let res_content = api_handle
             .send_request(
                 reqwest::Method::GET,
                 &format!("https://discord.com/api/v9/guilds/{}/channels", gid),
                 None,
                 &token,
                 is_bearer,
+                false,
             )
-            .await?; // Will return serde_json::Value if successful
+            .await?;
 
-        let channels: Vec<Channel> =
-            serde_json::from_value(response_value).map_err(AppError::from)?;
+        let json = match res_content {
+            ApiResponseContent::Json(j) => j,
+            _ => {
+                return Err(AppError::new(
+                    "Expected JSON, got bytes",
+                    "api_type_mismatch",
+                ));
+            }
+        };
+
+        let channels: Vec<Channel> = serde_json::from_value(json).map_err(AppError::from)?;
         Ok(channels
             .into_iter()
             .filter(|c| {
@@ -73,18 +95,29 @@ pub async fn fetch_channels(
                 ..Default::default()
             });
         }
-        let response_value = api_handle
+        let res_content = api_handle
             .send_request(
                 reqwest::Method::GET,
                 "https://discord.com/api/v9/users/@me/channels",
                 None,
                 &token,
                 is_bearer,
+                false,
             )
-            .await?; // Will return serde_json::Value if successful
+            .await?;
+
+        let json = match res_content {
+            ApiResponseContent::Json(j) => j,
+            _ => {
+                return Err(AppError::new(
+                    "Expected JSON, got bytes",
+                    "api_type_mismatch",
+                ));
+            }
+        };
 
         let channels: Vec<serde_json::Value> =
-            serde_json::from_value(response_value).map_err(AppError::from)?;
+            serde_json::from_value(json).map_err(AppError::from)?;
         let mut result = Vec::new();
         for ch in channels {
             let ch_type = ch["type"].as_u64().unwrap_or(0);
@@ -124,17 +157,28 @@ pub async fn fetch_relationships(app_handle: AppHandle) -> Result<Vec<Relationsh
     }
 
     Logger::info(&app_handle, "[SYNC] Fetching identity links...", None);
-    let response_value = api_handle
+    let res_content = api_handle
         .send_request(
             reqwest::Method::GET,
             "https://discord.com/api/v9/users/@me/relationships",
             None,
             &token,
             is_bearer,
+            false,
         )
-        .await?; // Will return serde_json::Value if successful
+        .await?;
 
-    serde_json::from_value(response_value).map_err(AppError::from)
+    let json = match res_content {
+        ApiResponseContent::Json(j) => j,
+        _ => {
+            return Err(AppError::new(
+                "Expected JSON, got bytes",
+                "api_type_mismatch",
+            ));
+        }
+    };
+
+    serde_json::from_value(json).map_err(AppError::from)
 }
 
 #[tauri::command]
@@ -154,11 +198,18 @@ pub async fn fetch_preview_messages(
             None,
             &token,
             is_bearer,
+            false,
         )
         .await;
 
     match result {
-        Ok(response_value) => serde_json::from_value(response_value).map_err(AppError::from),
+        Ok(ApiResponseContent::Json(json)) => {
+            Ok(serde_json::from_value(json).map_err(AppError::from)?)
+        }
+        Ok(ApiResponseContent::Bytes(_)) => Err(AppError::new(
+            "Expected JSON, got bytes",
+            "api_type_mismatch",
+        )),
         Err(e) => {
             Logger::warn(
                 &app_handle,

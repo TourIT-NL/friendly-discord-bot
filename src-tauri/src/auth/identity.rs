@@ -1,7 +1,7 @@
 // src-tauri/src/auth/identity.rs
 
 use super::types::DiscordUser;
-use crate::api::rate_limiter::ApiHandle;
+use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::vault::{DiscordIdentity, Vault};
@@ -49,17 +49,24 @@ pub async fn validate_token(
     is_bearer: bool,
 ) -> Result<DiscordUser, AppError> {
     let api_handle = app_handle.state::<ApiHandle>();
-    let response_value = api_handle
+    let response_content = api_handle
         .send_request(
             reqwest::Method::GET,
             "https://discord.com/api/v9/users/@me",
             None,
             token,
             is_bearer,
+            false,
         )
-        .await?; // Will return serde_json::Value if successful
+        .await?;
 
-    serde_json::from_value(response_value).map_err(AppError::from)
+    match response_content {
+        ApiResponseContent::Json(json) => serde_json::from_value(json).map_err(AppError::from),
+        ApiResponseContent::Bytes(_) => Err(AppError::new(
+            "Expected JSON, received raw bytes",
+            "unexpected_response_type",
+        )),
+    }
 }
 
 #[tauri::command]

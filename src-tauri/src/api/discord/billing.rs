@@ -1,6 +1,6 @@
 // src-tauri/src/api/discord/billing.rs
 
-use crate::api::rate_limiter::ApiHandle;
+use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::vault::Vault;
@@ -18,15 +18,24 @@ pub async fn fetch_payment_sources(app_handle: AppHandle) -> Result<serde_json::
         None,
     );
 
-    api_handle
+    let response_content = api_handle
         .send_request(
             Method::GET,
             "https://discord.com/api/v9/users/@me/billing/payment-sources",
             None,
             &token,
             is_bearer,
+            false,
         )
-        .await
+        .await?;
+
+    match response_content {
+        ApiResponseContent::Json(json) => Ok(json),
+        ApiResponseContent::Bytes(_) => Err(AppError::new(
+            "Expected JSON, received raw bytes",
+            "unexpected_response_type",
+        )),
+    }
 }
 
 #[tauri::command]
@@ -38,15 +47,24 @@ pub async fn fetch_billing_subscriptions(
 
     Logger::info(&app_handle, "[ACCOUNT] Auditing active subscriptions", None);
 
-    api_handle
+    let response_content = api_handle
         .send_request(
             Method::GET,
             "https://discord.com/api/v9/users/@me/billing/subscriptions",
             None,
             &token,
             is_bearer,
+            false,
         )
-        .await
+        .await?;
+
+    match response_content {
+        ApiResponseContent::Json(json) => Ok(json),
+        ApiResponseContent::Bytes(_) => Err(AppError::new(
+            "Expected JSON, received raw bytes",
+            "unexpected_response_type",
+        )),
+    }
 }
 
 #[tauri::command]
@@ -56,13 +74,22 @@ pub async fn fetch_entitlements(app_handle: AppHandle) -> Result<serde_json::Val
 
     Logger::info(&app_handle, "[ACCOUNT] Fetching entitlements", None);
 
-    api_handle
+    let response_content = api_handle
         .send_request(
             Method::GET,
             "https://discord.com/api/v9/users/@me/entitlements",
             None,
             &token,
             is_bearer,
+            false,
         )
-        .await
+        .await?;
+
+    match response_content {
+        ApiResponseContent::Json(json) => Ok(json),
+        ApiResponseContent::Bytes(_) => Err(AppError::new(
+            "Expected JSON, received raw bytes",
+            "unexpected_response_type",
+        )),
+    }
 }

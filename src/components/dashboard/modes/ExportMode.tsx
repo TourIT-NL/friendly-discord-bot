@@ -200,44 +200,46 @@ export const ExportMode = ({
 
         <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {Array.from(channelsByGuild.entries()).map(([guildId, channels]) => (
-              <div key={guildId} className="space-y-4">
-                <div className="sticky top-0 bg-[#1a1a1a]/80 backdrop-blur-md py-2 z-10 flex items-center gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-m3-primary" />
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-m3-onSurfaceVariant">
-                    {guilds?.find((g) => g.id === guildId)?.name ||
-                      "Direct Messages"}
-                  </h4>
-                </div>
-                <div className="grid gap-2">
-                  {channels.map((channel) => (
-                    <button
-                      key={channel.id}
-                      onClick={() => onToggleChannel(channel.id)}
-                      className={`flex items-center justify-between p-4 rounded-m3-lg transition-all border ${
-                        selectedChannels.has(channel.id)
-                          ? "bg-m3-primary/10 border-m3-primary/40"
-                          : "bg-white/5 border-transparent hover:bg-white/10"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-2 rounded-md ${selectedChannels.has(channel.id) ? "bg-m3-primary text-m3-onPrimary" : "bg-white/5 text-m3-onSurfaceVariant"}`}
-                        >
-                          <FileText className="w-3 h-3" />
+            {Array.from(channelsByGuild.entries()).map(
+              ([guildId, channels]) => (
+                <div key={guildId} className="space-y-4">
+                  <div className="sticky top-0 bg-[#1a1a1a]/80 backdrop-blur-md py-2 z-10 flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-m3-primary" />
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-m3-onSurfaceVariant">
+                      {guilds?.find((g) => g.id === guildId)?.name ||
+                        "Direct Messages"}
+                    </h4>
+                  </div>
+                  <div className="grid gap-2">
+                    {channels.map((channel) => (
+                      <button
+                        key={channel.id}
+                        onClick={() => onToggleChannel(channel.id)}
+                        className={`flex items-center justify-between p-4 rounded-m3-lg transition-all border ${
+                          selectedChannels.has(channel.id)
+                            ? "bg-m3-primary/10 border-m3-primary/40"
+                            : "bg-white/5 border-transparent hover:bg-white/10"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`p-2 rounded-md ${selectedChannels.has(channel.id) ? "bg-m3-primary text-m3-onPrimary" : "bg-white/5 text-m3-onSurfaceVariant"}`}
+                          >
+                            <FileText className="w-3 h-3" />
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-white truncate max-w-[150px]">
+                            {channel.name}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-white truncate max-w-[150px]">
-                          {channel.name}
-                        </span>
-                      </div>
-                      {selectedChannels.has(channel.id) && (
-                        <CheckCircle2 className="w-4 h-4 text-m3-primary" />
-                      )}
-                    </button>
-                  ))}
+                        {selectedChannels.has(channel.id) && (
+                          <CheckCircle2 className="w-4 h-4 text-m3-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         </div>
       </div>
