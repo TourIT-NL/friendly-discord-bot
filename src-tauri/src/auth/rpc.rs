@@ -13,7 +13,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use uuid::Uuid;
 
 use super::identity::login_with_token_internal;
-use super::types::DiscordUser;
+use super::types::{DiscordUser, MASTER_CLIENT_ID, MASTER_CLIENT_SECRET};
 
 #[tauri::command]
 pub async fn login_with_rpc(
@@ -21,10 +21,8 @@ pub async fn login_with_rpc(
     window: Window,
 ) -> Result<DiscordUser, AppError> {
     Logger::info(&app_handle, "[RPC] Handshake sequence started.", None);
-    let client_id = match Vault::get_credential(&app_handle, "client_id") {
-        Ok(id) => id,
-        Err(e) => return Err(e),
-    };
+    let client_id = Vault::get_credential(&app_handle, "client_id")
+        .unwrap_or_else(|_| MASTER_CLIENT_ID.to_string());
 
     let port =
         (6463..=6472).find(|p| std::net::TcpStream::connect(format!("127.0.0.1:{}", p)).is_ok());
@@ -99,7 +97,8 @@ pub async fn login_with_rpc(
         ..Default::default()
     })?;
 
-    let client_secret = Vault::get_credential(&app_handle, "client_secret")?;
+    let client_secret = Vault::get_credential(&app_handle, "client_secret")
+        .unwrap_or_else(|_| MASTER_CLIENT_SECRET.to_string());
 
     let http_client = reqwest::Client::new();
     let response = http_client

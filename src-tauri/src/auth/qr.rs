@@ -12,7 +12,7 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_util::sync::CancellationToken;
 
 use super::identity::login_with_token_internal;
-use super::types::AuthState;
+use super::types::{AuthState, MASTER_CLIENT_ID, MASTER_CLIENT_SECRET};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::vault::Vault;
@@ -25,17 +25,11 @@ pub async fn start_qr_login_flow(
 ) -> Result<(), AppError> {
     Logger::info(&app_handle, "[QR] Initializing secure handshake...", None);
 
-    // Check for client credentials first
-    let client_id = match Vault::get_credential(&app_handle, "client_id") {
-        Ok(id) => id,
-        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
-        Err(e) => return Err(e),
-    };
-    let _client_secret = match Vault::get_credential(&app_handle, "client_secret") {
-        Ok(secret) => secret,
-        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
-        Err(e) => return Err(e),
-    };
+    // Use user credentials if available, otherwise fallback to Master Utility defaults
+    let client_id = Vault::get_credential(&app_handle, "client_id")
+        .unwrap_or_else(|_| MASTER_CLIENT_ID.to_string());
+    let _client_secret = Vault::get_credential(&app_handle, "client_secret")
+        .unwrap_or_else(|_| MASTER_CLIENT_SECRET.to_string());
 
     // Generate RSA Keypair
     let priv_key = {
