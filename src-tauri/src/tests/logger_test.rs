@@ -6,7 +6,8 @@ mod tests {
 
     #[test]
     fn test_token_redaction() {
-        let token = "MOCK_TOKEN_FOR_TESTING_PURPOSES_ONLY";
+        // Use a string that matches the Discord token regex pattern but is obviously mock
+        let token = "AAAAAAAAAAAAAAAAAAAAAAAA.BBBBBB.CCCCCCCCCCCCCCCCCCCCCCCCCCC";
         let message = format!("User token is: {}", token);
         let redacted = Logger::redact(&message);
         assert!(!redacted.contains(token));
