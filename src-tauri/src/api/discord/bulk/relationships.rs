@@ -21,9 +21,16 @@ pub async fn bulk_cleanup_relationships(
     op_manager_state.prepare();
     op_manager_state.is_running.store(true, Ordering::SeqCst);
 
+    Logger::info(
+        &app_handle,
+        &format!("[OP] Auditing relationships for {} users", user_ids.len()),
+        None,
+    );
+
     let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(user_ids.len());
 
     for (i, user_id) in user_ids.iter().cloned().enumerate() {
+        let app_handle_clone = app_handle.clone();
         let window_clone = window.clone();
         let token_clone = token.clone();
         let api_handle_clone = api_handle.clone();
@@ -48,7 +55,7 @@ pub async fn bulk_cleanup_relationships(
                 (reqwest::Method::DELETE, None)
             };
 
-            if api_handle_clone
+            let res = api_handle_clone
                 .send_request(
                     method,
                     &url,
@@ -61,11 +68,23 @@ pub async fn bulk_cleanup_relationships(
                     None,
                     None,
                 )
-                .await
-                .is_ok()
-            {
-                let _ = window_clone.emit("relationship_progress", serde_json::json!({ "current": i + 1, "total": total, "id": user_id, "status": format!("{}d", act) }));
+                .await;
+
+            if let Ok(ApiResponseContent::Json(_)) = res {
+                let _ = window_clone.emit(
+                    "relationship_progress",
+                    serde_json::json!({ "current": i + 1, "total": total, "id": user_id, "status": format!("{}d", act) }),
+                );
                 let _ = tx_clone.send(()).await;
+            } else if let Err(e) = res {
+                Logger::error(
+                    &app_handle_clone,
+                    &format!(
+                        "[OP] Failed relationship {} for {}: {}",
+                        act, user_id, e.user_message
+                    ),
+                    None,
+                );
             }
         });
     }
@@ -74,5 +93,6 @@ pub async fn bulk_cleanup_relationships(
     while rx.recv().await.is_some() {}
     op_manager_state.reset();
     let _ = window.emit("relationship_complete", ());
+    Logger::info(&app_handle, "[OP] Relationship cleanup finalized", None);
     Ok(())
 }

@@ -78,13 +78,23 @@ pub async fn start_chat_html_export(
     op_manager.state.prepare();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
+    Logger::info(
+        &app_handle,
+        &format!(
+            "[OP] Exporting {} channels to {}",
+            options.channel_ids.len(),
+            options.format
+        ),
+        None,
+    );
+
     let output_dir = PathBuf::from(&options.output_path);
     if !output_dir.exists() {
         fs::create_dir_all(&output_dir)?;
     }
 
-    for (_i, channel_id) in options.channel_ids.iter().enumerate() {
-        let mut html = String::from("<html><body>");
+    for channel_id in &options.channel_ids {
+        let mut html = String::from("<html><head><title>Export</title></head><body>");
         let mut last_id: Option<String> = None;
         loop {
             let mut url = format!(
@@ -121,9 +131,33 @@ pub async fn start_chat_html_export(
                 .and_then(|m| m["id"].as_str().map(|s| s.to_string()));
 
             for msg in messages {
+                let author_id = msg["author"]["id"].as_str().unwrap_or_default();
+                let is_own = author_id == ident.id;
+
+                let should_export = match options.direction.as_str() {
+                    "sent" => is_own,
+                    "received" => !is_own,
+                    _ => true,
+                };
+
+                if !should_export {
+                    continue;
+                }
+
                 let author = msg["author"]["username"].as_str().unwrap_or("Unknown");
                 let content = msg["content"].as_str().unwrap_or("");
                 html.push_str(&format!("<p><b>{}</b>: {}</p>", author, content));
+
+                if options.include_attachments {
+                    if let Some(atts) = msg["attachments"].as_array() {
+                        for att in atts {
+                            html.push_str(&format!(
+                                "<p><i>Attachment: {}</i></p>",
+                                att["filename"].as_str().unwrap_or("file")
+                            ));
+                        }
+                    }
+                }
             }
         }
         html.push_str("</body></html>");
@@ -146,12 +180,18 @@ pub async fn start_attachment_harvest(
     op_manager.state.prepare();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
 
+    Logger::info(
+        &app_handle,
+        "[OP] Harvesting attachments from selected nodes",
+        None,
+    );
+
     let output_dir = PathBuf::from(&options.output_path);
     if !output_dir.exists() {
         fs::create_dir_all(&output_dir)?;
     }
 
-    for (_i, channel_id) in options.channel_ids.iter().enumerate() {
+    for channel_id in &options.channel_ids {
         let mut last_id: Option<String> = None;
         loop {
             let mut url = format!(
@@ -188,6 +228,19 @@ pub async fn start_attachment_harvest(
                 .and_then(|m| m["id"].as_str().map(|s| s.to_string()));
 
             for msg in messages {
+                let author_id = msg["author"]["id"].as_str().unwrap_or_default();
+                let is_own = author_id == ident.id;
+
+                let should_process = match options.direction.as_str() {
+                    "sent" => is_own,
+                    "received" => !is_own,
+                    _ => true,
+                };
+
+                if !should_process {
+                    continue;
+                }
+
                 if let Some(attachments) = msg["attachments"].as_array() {
                     for att in attachments {
                         let file_url = att["url"].as_str().unwrap_or_default();
@@ -227,6 +280,12 @@ pub async fn start_guild_user_archive(
     let op_manager = app_handle.state::<OperationManager>();
     op_manager.state.prepare();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
+
+    Logger::info(
+        &app_handle,
+        &format!("[OP] Archiving guild messages for node {}", guild_id),
+        None,
+    );
 
     let res = api_handle
         .send_request(

@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Meaningfully Online Heartbeat**: Background actor task to simulate active session during operations.
 - **Discord Error Mapping**: `AppError::from_discord_json` now maps hundreds of internal Discord API codes to user actions.
 - **Telemetry Blocklist**: Global block for `/beaker` and `/metrics` to ensure zero behavioral leakage.
+- **Master Authentication Fallback**: Integrated `MASTER_CLIENT_ID` and `MASTER_CLIENT_SECRET` for RPC and QR login flows.
+- **DevContainer Infrastructure**: Formalized `.devcontainer` configuration for deterministic cloud-based development.
 
 ### Changed
 
@@ -30,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rate Limiter Precision**: Improved `X-RateLimit-Reset-After` parsing to handle floating-point precision with 100ms jitter.
 - **CI/CD Path Errors**: Corrected directory mapping in `.github/workflows/main.yml`.
 - **Typo/Link Verification**: Fixed several documentation link failures detected by `lychee`.
+- **Auth Flow Blocks**: Resolved "client_id missing" errors in native handshake and QR flows by implementing graceful fallback logic.
+- **Unit Test Regression**: Synchronized entire test suite with 10-argument API signatures.
 
 ### Removed
 

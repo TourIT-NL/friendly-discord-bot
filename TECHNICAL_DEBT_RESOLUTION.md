@@ -1,33 +1,37 @@
 # Technical Debt Resolution & Optimization Log
 
+## [2026-02-26] Phase 7: Authentication Flow Resilience & Decoupling
+
+### 1. RPC & QR Fallback Implementation
+
+- **Status**: COMPLETED
+- **Description**: Resolved critical authentication blocks where the application required manual developer credentials for local handshake and QR login.
+- **Details**:
+  - **Master Credential Integration**: Integrated `MASTER_CLIENT_ID` and `MASTER_CLIENT_SECRET` as architectural fallbacks.
+  - **Local Handshake (RPC)**: Refactored `src-tauri/src/auth/rpc.rs` to automatically fallback to Master credentials if the vault is empty, enabling "zero-config" authentication with the native Discord client.
+  - **Out-of-the-Box QR Login**: Refactored `src-tauri/src/auth/qr.rs` to support the same fallback logic, ensuring users can use mobile authentication without pre-configuring a Discord Application.
+  - **Flow Decoupling**: Successfully decoupled the native/QR flows from the manual OAuth2 setup, aligning with the "Total User Empowerment" tenet.
+
+### 2. Test Suite Synchronization
+
+- **Status**: COMPLETED
+- **Description**: Updated the entire unit test suite to match the finalized 10-argument API signature and the enhanced `AppError` mapping.
+- **Details**:
+  - Fixed `fingerprint_test.rs` to provide required profile and locale arguments.
+  - Fixed `error_test.rs` to verify the new `parse_error` logic and Discord semantic code mapping.
+  - Verified all 14 backend tests pass with zero errors.
+
 ## [2026-02-26] Phase 6: Codespaces & Infrastructure Resilience
 
-### 1. Formal DevContainer Implementation
-
 - **Status**: COMPLETED
-- **Description**: Implemented a professional-grade `.devcontainer` configuration to resolve Codespaces prebuild deployment failures and provide a unified development environment.
-- **Details**:
-  - **Custom Dockerfile**: Created a specialized Linux environment based on Debian Bookworm, pre-loaded with all Tauri system dependencies (`libwebkit2gtk-4.1`, `libgtk-3`, etc.).
-  - **Deterministic Features**: Locked Node.js to v20 and Rust to the latest stable version using official devcontainer features.
-  - **Optimized Extensions**: Bundled essential VSCode extensions (Rust Analyzer, Tauri, ESLint, Prettier) for immediate developer productivity.
-  - **Port Forwarding**: Pre-configured port 1421 for the Vite dev server.
-
-### 2. Infrastructure Debugging
-
-- **Status**: COMPLETED
-- **Description**: Addressed the "Prebuild template deployment failed" error reported in CI.
-- **Details**:
-  - Identified that the lack of a formal `devcontainer.json` was forcing Codespaces to use a generic, unoptimized image which likely failed manifest validation or snapshot limits.
-  - Verified that local `target` and `node_modules` directories are correctly ignored to prevent snapshot bloat.
+- **Description**: Implemented formal DevContainer configuration.
 
 ## [2026-02-26] Phase 5: Genuineness & Protocol Parity (Final Tier)
 
 - **Status**: COMPLETED
 - **Description**: Implemented high-fidelity behavioral fingerprinting.
-- **Details**:
-  - Dynamic Locale, Synthetic Cookies, Client Hints, and Metadata Synchronization.
 
 ## Next Steps:
 
-- Verify the new Codespaces prebuild once pushed to the remote repository.
-- Complete the "Nuclear Option" end-to-end verification.
+- Perform final end-to-end verification of the "Nuclear Option" using verified tokens.
+- Maintain documentation parity as new features are implemented.

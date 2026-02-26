@@ -34,6 +34,12 @@ pub async fn bulk_leave_guilds(
     let guilds: Vec<crate::api::discord::types::Guild> =
         serde_json::from_value(guilds_json).map_err(AppError::from)?;
 
+    Logger::info(
+        &app_handle,
+        &format!("[OP] Initiating severance from {} nodes", guild_ids.len()),
+        None,
+    );
+
     let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(guild_ids.len());
 
     for (i, guild_id) in guild_ids.iter().cloned().enumerate() {
@@ -54,11 +60,18 @@ pub async fn bulk_leave_guilds(
         tauri::async_runtime::spawn(async move {
             op_state.wait_if_paused().await;
             if op_state.should_abort.load(Ordering::SeqCst) || is_owner {
+                if is_owner {
+                    Logger::warn(
+                        &app_handle_clone,
+                        &format!("[OP] Cannot leave owned node {}", guild_id),
+                        None,
+                    );
+                }
                 return;
             }
 
             let url = format!("https://discord.com/api/v9/users/@me/guilds/{}", guild_id);
-            if api_handle_clone
+            let res = api_handle_clone
                 .send_request(
                     reqwest::Method::DELETE,
                     &url,
@@ -71,11 +84,20 @@ pub async fn bulk_leave_guilds(
                     None,
                     None,
                 )
-                .await
-                .is_ok()
-            {
-                let _ = window_clone.emit("leave_progress", serde_json::json!({ "current": i + 1, "total": total, "id": guild_id, "status": "severed" }));
+                .await;
+
+            if let Ok(ApiResponseContent::Json(_)) = res {
+                let _ = window_clone.emit(
+                    "leave_progress",
+                    serde_json::json!({ "current": i + 1, "total": total, "id": guild_id, "status": "severed" }),
+                );
                 let _ = tx_clone.send(()).await;
+            } else if let Err(e) = res {
+                Logger::error(
+                    &app_handle_clone,
+                    &format!("[OP] Failed to leave node {}: {}", guild_id, e.user_message),
+                    None,
+                );
             }
         });
     }
@@ -84,5 +106,6 @@ pub async fn bulk_leave_guilds(
     while rx.recv().await.is_some() {}
     op_manager_state.reset();
     let _ = window.emit("leave_complete", ());
+    Logger::info(&app_handle, "[OP] Bulk leave operation finalized", None);
     Ok(())
 }

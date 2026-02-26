@@ -1,7 +1,7 @@
 // src-tauri/src/api/discord/sync.rs
 
 use super::types::{Channel, Guild, Relationship};
-use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
+use crate::api::rate_limiter::ApiHandle;
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::vault::Vault;

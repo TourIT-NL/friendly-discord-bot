@@ -1,7 +1,7 @@
 // src-tauri/src/api/rate_limiter/fingerprint.rs
 
 use base64::{Engine as _, engine::general_purpose};
-use rand::seq::SliceRandom;
+use rand::seq::IteratorRandom;
 use serde_json::json;
 use uuid::Uuid;
 
@@ -41,7 +41,10 @@ impl FingerprintManager {
 
     pub fn random_profile() -> BrowserProfile {
         let mut rng = rand::thread_rng();
-        Self::get_profiles().choose(&mut rng).unwrap().clone()
+        Self::get_profiles()
+            .into_iter()
+            .choose(&mut rng)
+            .unwrap_or_else(|| Self::get_profiles().remove(0))
     }
 
     pub fn get_system_locale() -> String {
@@ -54,7 +57,6 @@ impl FingerprintManager {
     }
 
     pub fn generate_synthetic_cookies(locale: &str) -> String {
-        let mut rng = rand::thread_rng();
         let dcf = format!("{:x}", Uuid::new_v4()).replace("-", "");
         let sdcf = format!("{:x}", Uuid::new_v4()).replace("-", "");
         format!("__dcfduid={}; __sdcfduid={}; locale={};", dcf, sdcf, locale)

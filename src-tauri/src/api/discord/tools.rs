@@ -1,6 +1,6 @@
 // src-tauri/src/api/discord/tools.rs
 
-use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
+use crate::api::rate_limiter::ApiHandle;
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::op_manager::OperationManager;
@@ -29,6 +29,12 @@ pub async fn bury_audit_log(
             "auth_mismatch",
         ));
     }
+
+    Logger::info(
+        &app_handle,
+        &format!("[AUDIT] Starting burial sequence in guild {}", guild_id),
+        None,
+    );
 
     let original_channel_json = api_handle
         .send_request_json(
@@ -103,6 +109,12 @@ pub async fn webhook_ghosting(
             "auth_mismatch",
         ));
     }
+
+    Logger::info(
+        &app_handle,
+        &format!("[WEBHOOK] Auditing hooks in node {}", guild_id),
+        None,
+    );
 
     let webhooks_json = api_handle
         .send_request_json(
