@@ -103,6 +103,7 @@ fn main() {
             app.manage(api_handle);
 
             let op_manager = OperationManager::new();
+            tauri::async_runtime::block_on(api::discord::ops::register_operations(&op_manager));
             app.manage(op_manager);
 
             let auth_state = auth::AuthState::default();
@@ -110,6 +111,32 @@ fn main() {
 
             let vault_state = core::vault::VaultState::default();
             app.manage(vault_state);
+
+            // Start Forensic Janitor Service
+            let app_handle_janitor = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                core::automation::janitor::Janitor::start_service(app_handle_janitor).await;
+            });
+
+            // Start Honey-Traffic Televasion Service
+            let app_handle_honey = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    let delay = {
+                        let mut rng = rand::thread_rng();
+                        rand::Rng::gen_range(&mut rng, 30..90)
+                    };
+                    tokio::time::sleep(tokio::time::Duration::from_secs(delay)).await;
+                    let op_manager = app_handle_honey.state::<OperationManager>();
+                    if op_manager
+                        .state
+                        .is_running
+                        .load(std::sync::atomic::Ordering::SeqCst)
+                    {
+                        core::forensics::honey::HoneyManager::pulse_noise(&app_handle_honey).await;
+                    }
+                }
+            });
 
             Ok(())
         })
@@ -129,11 +156,15 @@ fn main() {
             core::vault::commands::is_vault_locked,
             core::vault::commands::has_master_password,
             core::vault::commands::set_master_password,
+            core::vault::commands::has_biometric_support,
             core::vault::commands::unlock_vault,
             api::discord::fetch_guilds,
             api::discord::fetch_channels,
             api::discord::fetch_relationships,
             api::discord::fetch_preview_messages,
+            api::discord::get_digital_footprint,
+            api::discord::search_local_cache,
+            api::discord::start_deep_scan,
             api::discord::bulk_delete_messages,
             api::discord::bulk_leave_guilds,
             api::discord::bulk_cleanup_relationships,
@@ -143,12 +174,15 @@ fn main() {
             api::discord::nitro_stealth_wipe,
             api::discord::ghost_profile,
             api::discord::nuclear_wipe,
+            api::discord::verification::verify_erasure,
             api::discord::pause_operation,
             api::discord::resume_operation,
             api::discord::abort_operation,
             api::discord::get_operation_status,
             api::discord::tools::open_external_link,
             api::discord::tools::open_discord_url_for_action,
+            api::discord::tools::sanitize_media_metadata,
+            api::discord::tools::start_burner_protocol,
             api::discord::trigger_data_harvest,
             api::discord::get_harvest_status,
             api::discord::process_gdpr_data,

@@ -49,6 +49,17 @@ pub async fn set_master_password(
 }
 
 #[tauri::command]
+pub async fn has_biometric_support() -> Result<bool, AppError> {
+    #[cfg(target_os = "windows")]
+    {
+        // Simple check via windows-sys if possible, or just return false if not implemented
+        Ok(true) // Placeholder for Windows Hello integration
+    }
+    #[cfg(not(target_os = "windows"))]
+    Ok(false)
+}
+
+#[tauri::command]
 pub async fn unlock_vault(
     app_handle: AppHandle,
     state: State<'_, VaultState>,

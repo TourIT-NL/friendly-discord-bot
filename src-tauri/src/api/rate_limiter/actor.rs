@@ -2,10 +2,11 @@
 
 use crate::api::discord_routes::get_discord_route;
 use crate::api::rate_limiter::fingerprint::{BrowserProfile, FingerprintManager};
-use crate::api::rate_limiter::types::{ApiRequest, ApiResponseContent, BucketInfo};
+use crate::api::rate_limiter::types::{
+    ApiRequest, ApiResponseContent, BucketInfo, StandardRequest,
+};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
-use crate::core::op_manager::OperationManager;
 use crate::core::vault::Vault;
 use rand::Rng;
 use reqwest::{Client, Response, header};
@@ -13,7 +14,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{Duration, Instant};
-use tauri::Manager;
 use tokio::sync::{Mutex, mpsc};
 
 pub struct RateLimiterActor {
@@ -99,19 +99,20 @@ impl RateLimiterActor {
                         None,
                     );
                 }
-                ApiRequest::Standard {
-                    method,
-                    url,
-                    body,
-                    auth_token,
-                    is_bearer,
-                    return_raw_bytes,
-                    response_tx,
-                    referer,
-                    locale,
-                    timezone,
-                    profile,
-                } => {
+                ApiRequest::Standard(request) => {
+                    let StandardRequest {
+                        method,
+                        url,
+                        body,
+                        auth_token,
+                        is_bearer,
+                        return_raw_bytes,
+                        response_tx,
+                        referer,
+                        locale,
+                        timezone,
+                        profile,
+                    } = *request;
                     let client = self.client.clone();
                     let buckets = self.buckets.clone();
                     let global = self.global_reset_at.clone();
@@ -132,8 +133,11 @@ impl RateLimiterActor {
                         };
 
                         loop {
-                            // Jitter to prevent thundering herd
-                            let jitter = rand::thread_rng().gen_range(50..250);
+                            // 1. Human-Behavior Simulation (Simulated Gaussian Jitter)
+                            let jitter = {
+                                let mut rng = rand::thread_rng();
+                                (0..3).map(|_| rng.gen_range(0..100)).sum::<u64>() + 50
+                            };
                             tokio::time::sleep(Duration::from_millis(jitter)).await;
 
                             let now = Instant::now();
@@ -199,19 +203,6 @@ impl RateLimiterActor {
                                 rb = rb.json(&b);
                             }
 
-                            // Use Manager trait to check state
-                            let op_manager = app_handle.state::<OperationManager>();
-                            if op_manager.state.is_running.load(Ordering::SeqCst) {
-                                Logger::debug(
-                                    &app_handle,
-                                    &format!(
-                                        "[LIM] Dispatching request under active operation context: {}",
-                                        route
-                                    ),
-                                    None,
-                                );
-                            }
-
                             match rb.send().await {
                                 Ok(resp) => {
                                     let status = resp.status();
@@ -228,7 +219,6 @@ impl RateLimiterActor {
                                         continue;
                                     }
 
-                                    // Circuit breaker reset
                                     global_429_count.store(0, Ordering::SeqCst);
 
                                     let result = if status.is_success() {
@@ -308,7 +298,6 @@ impl RateLimiterActor {
                 .and_then(|s| s.parse::<f64>().ok())
                 .unwrap_or(1.0);
 
-            // Circuit breaker check
             if global_429_count.fetch_add(1, Ordering::SeqCst) > 10 {
                 let mut g = global_throttle.lock().await;
                 *g = now + Duration::from_secs(60);
@@ -320,7 +309,6 @@ impl RateLimiterActor {
                 global_429_count.store(0, Ordering::SeqCst);
             }
 
-            // Exponential backoff for this bucket
             let backoff = Duration::from_secs_f64(retry_after)
                 + Duration::from_secs(2u64.pow(bucket.consecutive_429s.min(6)));
             bucket.reset_at = now + backoff;

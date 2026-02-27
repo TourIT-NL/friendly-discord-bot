@@ -1,6 +1,6 @@
 // src-tauri/src/api/discord/bulk/guilds.rs
 
-use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
+use crate::api::rate_limiter::ApiHandle;
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::op_manager::OperationManager;
@@ -20,7 +20,7 @@ pub async fn bulk_leave_guilds(
     op_manager_state.prepare();
     op_manager_state.is_running.store(true, Ordering::SeqCst);
 
-    let guilds_json = api_handle
+    let all_guilds_json = api_handle
         .send_request_json(
             reqwest::Method::GET,
             "https://discord.com/api/v9/users/@me/guilds",
@@ -31,12 +31,15 @@ pub async fn bulk_leave_guilds(
         )
         .await?;
 
-    let guilds: Vec<crate::api::discord::types::Guild> =
-        serde_json::from_value(guilds_json).map_err(AppError::from)?;
+    let all_guilds: Vec<crate::api::discord::types::Guild> =
+        serde_json::from_value(all_guilds_json).map_err(AppError::from)?;
 
     Logger::info(
         &app_handle,
-        &format!("[OP] Initiating severance from {} nodes", guild_ids.len()),
+        &format!(
+            "[OP] Bulk leave initialized for {} guilds (CONCURRENT)",
+            guild_ids.len()
+        ),
         None,
     );
 
@@ -47,65 +50,72 @@ pub async fn bulk_leave_guilds(
         let window_clone = window.clone();
         let token_clone = token.clone();
         let api_handle_clone = api_handle.clone();
-        let op_state = op_manager_state.clone();
+        let current_op_state = op_manager_state.clone();
         let tx_clone = tx.clone();
         let total = guild_ids.len();
 
-        let is_owner = guilds
+        let guild_name = all_guilds
+            .iter()
+            .find(|g| g.id == guild_id)
+            .map(|g| g.name.clone())
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        let is_owner = all_guilds
             .iter()
             .find(|g| g.id == guild_id)
             .map(|g| g.owner)
             .unwrap_or(false);
 
         tauri::async_runtime::spawn(async move {
-            op_state.wait_if_paused().await;
-            if op_state.should_abort.load(Ordering::SeqCst) || is_owner {
-                if is_owner {
-                    Logger::warn(
-                        &app_handle_clone,
-                        &format!("[OP] Cannot leave owned node {}", guild_id),
-                        None,
-                    );
-                }
+            current_op_state.wait_if_paused().await;
+            if current_op_state.should_abort.load(Ordering::SeqCst) {
+                return;
+            }
+
+            if is_owner {
+                Logger::warn(
+                    &app_handle_clone,
+                    &format!(
+                        "[OP] Skipping guild {} because you are the owner.",
+                        guild_name
+                    ),
+                    None,
+                );
                 return;
             }
 
             let url = format!("https://discord.com/api/v9/users/@me/guilds/{}", guild_id);
-            let res = api_handle_clone
-                .send_request(
+            if api_handle_clone
+                .send_request_json(
                     reqwest::Method::DELETE,
                     &url,
                     None,
                     &token_clone,
                     is_bearer,
-                    false,
-                    None,
-                    None,
-                    None,
                     None,
                 )
-                .await;
-
-            if let Ok(ApiResponseContent::Json(_)) = res {
+                .await
+                .is_ok()
+            {
                 let _ = window_clone.emit(
                     "leave_progress",
-                    serde_json::json!({ "current": i + 1, "total": total, "id": guild_id, "status": "severed" }),
+                    serde_json::json!({
+                        "current": i + 1,
+                        "total": total,
+                        "id": guild_id,
+                        "status": "severed"
+                    }),
                 );
                 let _ = tx_clone.send(()).await;
-            } else if let Err(e) = res {
-                Logger::error(
-                    &app_handle_clone,
-                    &format!("[OP] Failed to leave node {}: {}", guild_id, e.user_message),
-                    None,
-                );
             }
         });
     }
 
     drop(tx);
     while rx.recv().await.is_some() {}
+
     op_manager_state.reset();
     let _ = window.emit("leave_complete", ());
-    Logger::info(&app_handle, "[OP] Bulk leave operation finalized", None);
+    Logger::info(&app_handle, "[OP] Bulk leave operation completed", None);
     Ok(())
 }

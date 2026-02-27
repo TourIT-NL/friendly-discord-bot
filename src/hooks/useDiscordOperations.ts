@@ -490,6 +490,30 @@ export const useDiscordOperations = (
   };
 
   /**
+   * Triggers the Anti-Forensic Burner Protocol.
+   * Shreds all local data files (cache, vault, logs) and resets the app.
+   */
+  const handleBurnEvidence = async () => {
+    if (
+      !confirm(
+        "CRITICAL: This will SHRED all local data (tokens, cache, logs) using a multi-pass overwrite. This is irreversible and will defeat forensic recovery. Proceed?",
+      )
+    )
+      return;
+
+    setLoading(true);
+    try {
+      await invoke("start_burner_protocol");
+      useAuthStore.getState().reset();
+      window.location.reload(); // Force full app reset
+    } catch (err: any) {
+      handleApiError(err, "Burner protocol failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
    * Triggers the "Nuclear Option": A complete digital footprint wipe.
    * Resets profile, privacy settings, leaves all guilds, and removes all friends.
    */
@@ -628,6 +652,7 @@ export const useDiscordOperations = (
     handleGhostProfile,
     handleProcessGdprData,
     handleSetProxy,
+    handleBurnEvidence,
     handleNuclearWipe,
     startAction,
   };

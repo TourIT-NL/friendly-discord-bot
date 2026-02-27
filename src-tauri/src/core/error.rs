@@ -163,3 +163,43 @@ impl From<keyring::Error> for AppError {
         }
     }
 }
+
+impl From<rusqlite::Error> for AppError {
+    fn from(e: rusqlite::Error) -> Self {
+        Self {
+            user_message: "Forensic cache failure.".into(),
+            error_code: "database_error".into(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}
+
+impl From<argon2::Error> for AppError {
+    fn from(e: argon2::Error) -> Self {
+        Self {
+            user_message: "Vault security engine failure.".into(),
+            error_code: "argon2_error".into(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}
+
+impl From<argon2::password_hash::Error> for AppError {
+    fn from(e: argon2::password_hash::Error) -> Self {
+        Self {
+            user_message: "Master password protocol failure.".into(),
+            error_code: "password_hash_error".into(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}
+
+impl From<zip::result::ZipError> for AppError {
+    fn from(e: zip::result::ZipError) -> Self {
+        Self {
+            user_message: "Archive processing failed.".into(),
+            error_code: "zip_error".into(),
+            technical_details: Some(e.to_string()),
+        }
+    }
+}

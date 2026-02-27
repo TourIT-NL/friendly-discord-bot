@@ -1,7 +1,7 @@
 // src-tauri/src/auth/identity.rs
 
 use super::types::DiscordUser;
-use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
+use crate::api::rate_limiter::ApiHandle;
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::vault::{DiscordIdentity, Vault};
@@ -48,41 +48,19 @@ pub async fn validate_token(
     token: &str,
     is_bearer: bool,
 ) -> Result<DiscordUser, AppError> {
-    // 1. Strict Format Validation
-    let token_regex = regex::Regex::new(
-        r"^(mfa\.[a-zA-Z0-9_-]{84}|[a-zA-Z0-9_-]{24,28}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38})$",
-    )
-    .unwrap();
-    if !token_regex.is_match(token) {
-        return Err(AppError::new(
-            "Invalid token format. local fingerprint mismatch.",
-            "invalid_format",
-        ));
-    }
-
     let api_handle = app_handle.state::<ApiHandle>();
-    let response_content = api_handle
-        .send_request(
+    let response_value = api_handle
+        .send_request_json(
             reqwest::Method::GET,
             "https://discord.com/api/v9/users/@me",
             None,
             token,
             is_bearer,
-            false,
             Some("https://discord.com/login".to_string()),
-            None,
-            None,
-            None,
         )
-        .await?;
+        .await?; // Will return serde_json::Value if successful
 
-    match response_content {
-        ApiResponseContent::Json(json) => serde_json::from_value(json).map_err(AppError::from),
-        _ => Err(AppError::new(
-            "Expected JSON, received raw bytes",
-            "unexpected_response_type",
-        )),
-    }
+    serde_json::from_value(response_value).map_err(AppError::from)
 }
 
 #[tauri::command]

@@ -118,7 +118,7 @@ jobs:
         with:
           command: check
           manifest-path: src-tauri/Cargo.toml
-          arguments: --config ../deny.toml
+          command-arguments: --config ../deny.toml
           rust-version: stable
       - name: npm audit
         run: npm audit --audit-level=high

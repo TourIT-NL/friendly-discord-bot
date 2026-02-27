@@ -13,6 +13,7 @@ use tokio_util::sync::CancellationToken;
 
 use super::identity::login_with_token_internal;
 use super::types::{AuthState, MASTER_CLIENT_ID, MASTER_CLIENT_SECRET};
+use crate::api::rate_limiter::fingerprint::FingerprintManager;
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::vault::Vault;
@@ -26,7 +27,7 @@ pub async fn start_qr_login_flow(
     Logger::info(&app_handle, "[QR] Initializing secure handshake...", None);
 
     // Use user credentials if available, otherwise fallback to Master Utility defaults
-    let client_id = Vault::get_credential(&app_handle, "client_id")
+    let _client_id = Vault::get_credential(&app_handle, "client_id")
         .unwrap_or_else(|_| MASTER_CLIENT_ID.to_string());
     let _client_secret = Vault::get_credential(&app_handle, "client_secret")
         .unwrap_or_else(|_| MASTER_CLIENT_SECRET.to_string());
@@ -60,9 +61,21 @@ pub async fn start_qr_login_flow(
 
     let url = "wss://remote-auth-gateway.discord.gg/?v=2";
     let mut request = url.into_client_request().unwrap();
-    request
-        .headers_mut()
-        .insert("Origin", "https://discord.com".parse().unwrap());
+    let profile = FingerprintManager::random_profile();
+    let locale = FingerprintManager::get_system_locale();
+    let headers = request.headers_mut();
+
+    headers.insert("Origin", "https://discord.com".parse().unwrap());
+    headers.insert("User-Agent", profile.user_agent.parse().unwrap());
+    headers.insert(
+        "x-super-properties",
+        FingerprintManager::generate_super_properties(&profile, &locale)
+            .parse()
+            .unwrap(),
+    );
+    for (name, val) in FingerprintManager::generate_client_hints(&profile) {
+        headers.insert(name, val.parse().unwrap());
+    }
 
     Logger::debug(&app_handle, "[QR] Establishing WebSocket link", None);
     let ws_connect_result = timeout(Duration::from_secs(10), connect_async(request)).await;
@@ -123,8 +136,7 @@ pub async fn start_qr_login_flow(
 
                                         let init_payload = serde_json::json!({
                                             "op": "init",
-                                            "encoded_public_key": pub_key_base64,
-                                            "client_id": client_id
+                                            "encoded_public_key": pub_key_base64
                                         });
                                         Logger::debug(&app_handle_clone, "[QR] Sending INIT payload.", None);
                                         let _ = write.send(Message::Text(init_payload.to_string().into())).await;

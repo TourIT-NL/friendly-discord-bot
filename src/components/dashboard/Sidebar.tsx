@@ -14,6 +14,7 @@ import {
   CreditCard,
   Download,
   ShieldAlert,
+  Flame,
 } from "lucide-react";
 import { SectionLabel } from "../common/M3Components";
 import { DiscordIdentity, Guild, DiscordUser } from "../../types/discord";
@@ -33,6 +34,7 @@ interface SidebarProps {
   onStealthWipe: () => void;
   onNitroWipe: () => void;
   onNuclearWipe: () => void;
+  onBurnEvidence: () => void;
   onLogout: () => void;
   onOpenDonateLink: () => void;
 }
@@ -51,6 +53,7 @@ export const Sidebar = ({
   onStealthWipe,
   onNitroWipe,
   onNuclearWipe,
+  onBurnEvidence,
   onLogout,
   onOpenDonateLink,
 }: SidebarProps) => {
@@ -300,6 +303,13 @@ export const Sidebar = ({
           className="w-full flex items-center justify-center gap-3 p-4 rounded-m3-xl bg-m3-errorContainer/20 text-m3-error hover:bg-m3-errorContainer/40 transition-all border border-m3-error/40 font-black uppercase tracking-widest text-[10px] italic"
         >
           <ShieldAlert className="w-4 h-4" /> Nuclear Option
+        </button>
+        <button
+          onClick={onBurnEvidence}
+          className="w-full flex items-center justify-center gap-3 p-4 rounded-m3-xl bg-m3-errorContainer/40 text-m3-error hover:bg-m3-errorContainer/60 transition-all border border-m3-error/60 font-black uppercase tracking-widest text-[10px] italic shadow-[0_0_20px_rgba(179,38,30,0.2)]"
+        >
+          <Flame className="w-4 h-4 animate-pulse" /> Burn Evidence
+          (Anti-Forensic)
         </button>
         <button
           onClick={onLogout}

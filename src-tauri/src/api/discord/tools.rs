@@ -193,3 +193,22 @@ pub async fn open_external_link(app_handle: AppHandle, url: String) -> Result<()
         .open_url(url, None::<String>)
         .map_err(|e| AppError::new(&e.to_string(), "external_link_error"))
 }
+
+#[tauri::command]
+pub async fn sanitize_media_metadata(
+    app_handle: AppHandle,
+    file_path: String,
+) -> Result<(), AppError> {
+    crate::core::forensics::metadata::MetadataStripper::strip_file(
+        &app_handle,
+        std::path::Path::new(&file_path),
+    )
+}
+
+#[tauri::command]
+pub async fn start_burner_protocol(app_handle: AppHandle) -> Result<(), AppError> {
+    crate::core::forensics::burner::BurnerManager::initiate_burner_protocol(&app_handle)?;
+    // After burning, we should probably exit or log out.
+    // The command caller will handle UI state.
+    Ok(())
+}

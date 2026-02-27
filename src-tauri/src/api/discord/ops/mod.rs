@@ -1,10 +1,20 @@
-// src-tauri/src/api/discord/ops.rs
+// src-tauri/src/api/discord/ops/mod.rs
+
+pub mod ghost;
+pub mod purge;
 
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
 use crate::core::op_manager::OperationManager;
+use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager, Window};
+
+pub async fn register_operations(manager: &OperationManager) {
+    manager
+        .register(Arc::new(ghost::GhostProfileOperation))
+        .await;
+}
 
 #[tauri::command]
 pub async fn nuclear_wipe(app_handle: AppHandle, window: Window) -> Result<(), AppError> {
@@ -15,16 +25,16 @@ pub async fn nuclear_wipe(app_handle: AppHandle, window: Window) -> Result<(), A
     );
 
     // 1. Ghost Profile
-    super::privacy::ghost_profile(app_handle.clone()).await?;
+    crate::api::discord::privacy::ghost_profile(app_handle.clone()).await?;
 
     // 2. Max Privacy Settings
-    super::privacy::set_max_privacy_settings(app_handle.clone()).await?;
+    crate::api::discord::privacy::set_max_privacy_settings(app_handle.clone()).await?;
 
     // 3. Relationships cleanup (Remove all friends)
-    let relationships = super::sync::fetch_relationships(app_handle.clone()).await?;
+    let relationships = crate::api::discord::sync::fetch_relationships(app_handle.clone()).await?;
     let friend_ids: Vec<String> = relationships.iter().map(|r| r.id.clone()).collect();
     if !friend_ids.is_empty() {
-        super::bulk::relationships::bulk_cleanup_relationships(
+        crate::api::discord::bulk::relationships::bulk_cleanup_relationships(
             app_handle.clone(),
             window.clone(),
             friend_ids,
@@ -34,11 +44,15 @@ pub async fn nuclear_wipe(app_handle: AppHandle, window: Window) -> Result<(), A
     }
 
     // 4. Leave all guilds (except owned)
-    let guilds = super::sync::fetch_guilds(app_handle.clone()).await?;
+    let guilds = crate::api::discord::sync::fetch_guilds(app_handle.clone()).await?;
     let guild_ids: Vec<String> = guilds.iter().map(|g| g.id.clone()).collect();
     if !guild_ids.is_empty() {
-        super::bulk::guilds::bulk_leave_guilds(app_handle.clone(), window.clone(), guild_ids)
-            .await?;
+        crate::api::discord::bulk::guilds::bulk_leave_guilds(
+            app_handle.clone(),
+            window.clone(),
+            guild_ids,
+        )
+        .await?;
     }
 
     Logger::info(
@@ -78,9 +92,9 @@ pub async fn abort_operation(app_handle: AppHandle) -> Result<(), AppError> {
 #[tauri::command]
 pub async fn get_operation_status(
     app_handle: AppHandle,
-) -> Result<super::types::OperationStatus, AppError> {
+) -> Result<crate::api::discord::types::OperationStatus, AppError> {
     let op_manager = app_handle.state::<OperationManager>();
-    Ok(super::types::OperationStatus {
+    Ok(crate::api::discord::types::OperationStatus {
         is_running: op_manager.state.is_running.load(Ordering::SeqCst),
         is_paused: op_manager.state.is_paused.load(Ordering::SeqCst),
         should_abort: op_manager.state.should_abort.load(Ordering::SeqCst),

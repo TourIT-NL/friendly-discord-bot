@@ -2,14 +2,14 @@
 
 use aes_gcm::{
     Aes256Gcm, Nonce,
-    aead::{Aead, KeyInit, OsRng},
+    aead::{Aead, KeyInit},
 };
 use argon2::{
     Argon2,
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
 };
 use base64::{Engine as _, engine::general_purpose};
-use rand_core::RngCore;
+use rand::{RngCore, rngs::OsRng};
 use zeroize::{Zeroize, Zeroizing};
 
 use crate::core::error::AppError;

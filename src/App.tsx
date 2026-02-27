@@ -204,11 +204,13 @@ function App() {
           }
         }),
       );
+      // ... in useEffect setup ...
       unlisteners.push(
         await listen("deletion_progress", (event) =>
           setProgress(event.payload as Progress),
         ),
       );
+
       unlisteners.push(
         await listen("deletion_complete", () => {
           setIsComplete(true);

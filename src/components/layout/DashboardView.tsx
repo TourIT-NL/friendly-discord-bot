@@ -91,6 +91,7 @@ interface DashboardViewProps {
   handleGhostProfile: () => void;
   handleProcessGdprData: () => void;
   handleSetProxy: (url: string | null) => void;
+  handleBurnEvidence: () => void;
   handleNuclearWipe: () => void;
 }
 
@@ -157,6 +158,7 @@ export const DashboardView = ({
   handleGhostProfile,
   handleProcessGdprData,
   handleSetProxy,
+  handleBurnEvidence,
   handleNuclearWipe,
 }: DashboardViewProps) => (
   <div className="w-full h-full flex gap-10 p-4">
@@ -174,6 +176,7 @@ export const DashboardView = ({
       onStealthWipe={handleStealthWipe}
       onNitroWipe={handleNitroWipe}
       onNuclearWipe={handleNuclearWipe}
+      onBurnEvidence={handleBurnEvidence}
       onLogout={handleLogout}
       onOpenDonateLink={handleOpenDonateLink}
     />

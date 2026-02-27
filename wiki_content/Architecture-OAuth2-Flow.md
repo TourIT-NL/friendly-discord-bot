@@ -45,10 +45,36 @@ We strictly follow the **Principle of Least Privilege**:
 
 ---
 
+## 🔄 Alternative Authentication Flows
+
+While OAuth2 PKCE is the primary method, the utility supports two high-fidelity fallbacks for enhanced resilience.
+
+### 1. QR Login (Remote Auth V2)
+
+A "passwordless" flow using Discord's official Mobile App scanner.
+
+- **Security**: Uses 2048-bit RSA key exchange. The private key never leaves the application.
+- **Genuineness**: The connection utilizes high-fidelity browser fingerprinting (Chrome 144+, Super Properties) to mirror legitimate client behavior.
+- **Workflow**:
+  1. App generates RSA keypair.
+  2. Establishes a Secure WebSocket (WSS) to Discord's gateway.
+  3. Proof-of-nonce is performed via RSA decryption.
+  4. Discord issues a temporary token which is decrypted and promoted to a session.
+
+### 2. Desktop RPC Authorization
+
+Direct interaction with a running Discord Desktop client.
+
+- **Trigger**: Uses the `AUTHORIZE` command via the local RPC socket.
+- **Prompting**: Set to `consent` mode to ensure the user is explicitly presented with a native Discord authorization popup.
+- **Integration**: Seamlessly captures the `access_token` from the local client session without browser redirects.
+
+---
+
 ## ⚠️ Troubleshooting the Flow
 
-- **Port Blocking**: If a firewall blocks the temporary server, the authentication will fail.
+- **Port Blocking**: If a firewall blocks the temporary server or RPC port (6463-6472), the authentication will fail.
 - **Browser Isolation**: The app requires a functional system browser to complete the consent screen.
 - **Clock Skew**: If the user's system time is significantly off, the token exchange might fail due to timestamp verification.
 
-_Last updated: February 25, 2026_
+_Last updated: February 26, 2026_

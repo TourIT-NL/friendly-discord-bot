@@ -11,6 +11,7 @@ use tokio::sync::oneshot;
 #[derive(Debug)]
 pub enum ApiResponseContent {
     Json(serde_json::Value),
+    #[allow(dead_code)]
     Bytes(Bytes),
 }
 
@@ -23,20 +24,22 @@ impl ApiResponseContent {
     }
 }
 
+pub struct StandardRequest {
+    pub method: Method,
+    pub url: String,
+    pub body: Option<serde_json::Value>,
+    pub auth_token: String,
+    pub is_bearer: bool,
+    pub return_raw_bytes: bool,
+    pub response_tx: oneshot::Sender<Result<ApiResponseContent, AppError>>,
+    pub referer: Option<String>,
+    pub locale: Option<String>,
+    pub timezone: Option<String>,
+    pub profile: Option<BrowserProfile>,
+}
+
 pub enum ApiRequest {
-    Standard {
-        method: Method,
-        url: String,
-        body: Option<serde_json::Value>,
-        auth_token: String,
-        is_bearer: bool,
-        return_raw_bytes: bool,
-        response_tx: oneshot::Sender<Result<ApiResponseContent, AppError>>,
-        referer: Option<String>,
-        locale: Option<String>,
-        timezone: Option<String>,
-        profile: Option<BrowserProfile>,
-    },
+    Standard(Box<StandardRequest>),
     RebuildClient,
 }
 

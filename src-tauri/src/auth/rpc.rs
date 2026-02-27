@@ -55,7 +55,7 @@ pub async fn login_with_rpc(
     let nonce = Uuid::new_v4().to_string();
     let auth_payload = serde_json::json!({
         "cmd": "AUTHORIZE",
-        "args": { "client_id": client_id, "scopes": ["identify", "guilds"], "prompt": "none" },
+        "args": { "client_id": client_id, "scopes": ["identify", "guilds"], "prompt": "consent" },
         "nonce": nonce
     });
 

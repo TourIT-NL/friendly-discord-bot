@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package progress;
+
+message OperationProgress {
+    string id = 1;
+    string name = 2;
+    uint32 current = 3;
+    uint32 total = 4;
+    string status = 5;
+    uint64 timestamp = 6;
+}

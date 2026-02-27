@@ -1,27 +1,33 @@
 // src-tauri/src/core/op_manager.rs
 
+use crate::core::error::AppError;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use tauri::AppHandle;
+use tokio::sync::Mutex;
 use tokio::sync::Notify;
 
-/// Manages the runtime state of bulk operations (purges, departures, etc.).
-/// It provides thread-safe primitives for pausing, resuming, and aborting
-/// long-running asynchronous tasks across the Tauri command boundaries.
-#[allow(dead_code)]
-pub struct OperationManager {
-    pub state: Arc<OperationState>,
+/// Standardized trait for all long-running Discord operations.
+#[async_trait::async_trait]
+pub trait Operation: Send + Sync {
+    fn id(&self) -> &str;
+    #[allow(dead_code)]
+    fn name(&self) -> &str;
+    #[allow(dead_code)]
+    async fn run(&self, app: AppHandle, state: Arc<OperationState>) -> Result<(), AppError>;
 }
 
-/// Thread-safe control flags for a running background operation.
-#[allow(dead_code)]
+/// Manages the runtime state and registry of bulk operations.
+pub struct OperationManager {
+    pub state: Arc<OperationState>,
+    pub registry: Mutex<HashMap<String, Arc<dyn Operation>>>,
+}
+
 pub struct OperationState {
-    /// True if an operation is actively executing its loop.
     pub is_running: AtomicBool,
-    /// True if the user has requested a temporary pause.
     pub is_paused: AtomicBool,
-    /// True if the user has requested an immediate termination of all remaining tasks.
     pub should_abort: AtomicBool,
-    /// Notification handle used to wake up the worker thread when an operation is resumed.
     pub pause_notifier: Notify,
 }
 
@@ -34,27 +40,35 @@ impl OperationManager {
                 should_abort: AtomicBool::new(false),
                 pause_notifier: Notify::new(),
             }),
+            registry: Mutex::new(HashMap::new()),
         }
+    }
+
+    pub async fn register(&self, op: Arc<dyn Operation>) {
+        let mut reg = self.registry.lock().await;
+        reg.insert(op.id().to_string(), op);
+    }
+
+    #[allow(dead_code)]
+    pub async fn get_operation(&self, id: &str) -> Option<Arc<dyn Operation>> {
+        let reg = self.registry.lock().await;
+        reg.get(id).cloned()
     }
 }
 
 impl OperationState {
-    /// Blocks the current task if the `is_paused` flag is true.
-    /// Resumes immediately upon notification.
     pub async fn wait_if_paused(&self) {
         while self.is_paused.load(Ordering::SeqCst) {
             self.pause_notifier.notified().await;
         }
     }
 
-    /// Resets all flags to their default state after an operation finishes or is aborted.
     pub fn reset(&self) {
         self.is_running.store(false, Ordering::SeqCst);
         self.is_paused.store(false, Ordering::SeqCst);
         self.should_abort.store(false, Ordering::SeqCst);
     }
 
-    /// Prepares the state for a new operation by clearing pause/abort flags.
     pub fn prepare(&self) {
         self.is_paused.store(false, Ordering::SeqCst);
         self.should_abort.store(false, Ordering::SeqCst);

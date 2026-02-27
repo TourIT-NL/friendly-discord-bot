@@ -1,15 +1,15 @@
 // src-tauri/src/api/discord/bulk/messages.rs
 
-use crate::api::rate_limiter::{ApiHandle, types::ApiResponseContent};
+use crate::api::rate_limiter::ApiHandle;
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
-use crate::core::op_manager::OperationManager;
+use crate::core::op_manager::{OperationManager, OperationState};
 use crate::core::vault::Vault;
 use std::sync::atomic::Ordering;
-use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, Window};
 
-#[derive(serde::Deserialize)]
+#[allow(dead_code)]
+#[derive(serde::Deserialize, Clone)]
 pub struct PurgeOptions {
     #[serde(alias = "channelIds")]
     pub channel_ids: Vec<String>,
@@ -39,267 +39,241 @@ pub async fn bulk_delete_messages(
     let is_bearer = identity.is_oauth;
     let current_user_id = identity.id;
 
-    let api_handle = app_handle.state::<ApiHandle>();
-    let op_manager = app_handle.state::<OperationManager>();
+    let api_handle = app_handle.state::<ApiHandle>().inner();
+    let op_manager = app_handle.state::<OperationManager>().inner();
     op_manager.state.prepare();
     op_manager.state.is_running.store(true, Ordering::SeqCst);
-
-    let mut deleted_total = 0;
-    let total_channels = options.channel_ids.len();
-
-    Logger::info(
-        &app_handle,
-        &format!("[OP] Starting bulk delete in {} nodes", total_channels),
-        None,
-    );
-
-    'channel_loop: for (i, channel_id) in options.channel_ids.iter().enumerate() {
-        op_manager.state.wait_if_paused().await;
-        if op_manager.state.should_abort.load(Ordering::SeqCst) {
-            break;
-        }
-
-        let _ = window.emit(
-            "purge_progress",
-            serde_json::json!({
-                "channel_index": i,
-                "total_channels": total_channels,
-                "channel_id": channel_id,
-                "deleted_count": deleted_total,
-                "status": "scanning"
-            }),
-        );
-
-        let info_url = format!("https://discord.com/api/v9/channels/{}", channel_id);
-        let info_res = api_handle
-            .send_request(
-                reqwest::Method::GET,
-                &info_url,
-                None,
-                &token,
-                is_bearer,
-                false,
-                None,
-                None,
-                None,
-                None,
-            )
-            .await;
-
-        let channel_val = match info_res {
-            Ok(ApiResponseContent::Json(v)) => v,
-            _ => {
-                Logger::warn(
-                    &app_handle,
-                    &format!("[OP] Could not fetch info for channel {}", channel_id),
-                    None,
-                );
-                continue;
-            }
-        };
-        let c_type = channel_val["type"].as_u64().unwrap_or(0);
-
-        // Skip Guild Categories or Voice (unless we want to support them later)
-        if c_type == 4 {
-            continue;
-        }
-
-        let mut last_id: Option<String> = None;
-        let mut messages_in_channel = 0;
-
-        'message_loop: loop {
-            op_manager.state.wait_if_paused().await;
-            if op_manager.state.should_abort.load(Ordering::SeqCst) {
-                break 'channel_loop;
-            }
-
-            let mut url = format!(
-                "https://discord.com/api/v9/channels/{}/messages?limit=100",
-                channel_id
-            );
-            if let Some(id) = &last_id {
-                url.push_str(&format!("&before={}", id));
-            }
-
-            let res = api_handle
-                .send_request(
-                    reqwest::Method::GET,
-                    &url,
-                    None,
-                    &token,
-                    is_bearer,
-                    false,
-                    None,
-                    None,
-                    None,
-                    None,
-                )
-                .await;
-
-            let messages: Vec<serde_json::Value> = match res {
-                Ok(ApiResponseContent::Json(v)) => {
-                    serde_json::from_value(v).map_err(AppError::from)?
-                }
-                _ => break,
-            };
-
-            if messages.is_empty() {
-                break;
-            }
-            last_id = messages
-                .last()
-                .and_then(|m| m["id"].as_str().map(|s| s.to_string()));
-
-            for msg in messages {
-                op_manager.state.wait_if_paused().await;
-                if op_manager.state.should_abort.load(Ordering::SeqCst) {
-                    break 'channel_loop;
-                }
-
-                messages_in_channel += 1;
-
-                if msg["author"]["id"].as_str() != Some(&current_user_id) {
-                    continue;
-                }
-
-                let msg_id = msg["id"].as_str().unwrap_or_default();
-                let content = msg["content"].as_str().unwrap_or_default();
-                let ts_str = msg["timestamp"].as_str().unwrap_or_default();
-                let ts = chrono::DateTime::parse_from_rfc3339(ts_str)
-                    .map(|dt| dt.timestamp_millis() as u64)
-                    .unwrap_or(0);
-
-                if let Some(start) = options.start_time
-                    && ts < start
-                {
-                    if last_id.is_some() {
-                        break 'message_loop;
-                    } else {
-                        continue;
-                    }
-                }
-                if let Some(end) = options.end_time
-                    && ts > end
-                {
-                    continue;
-                }
-
-                let has_att = msg["attachments"]
-                    .as_array()
-                    .map(|a| !a.is_empty())
-                    .unwrap_or(false);
-                if options.only_attachments && !has_att {
-                    continue;
-                }
-
-                let matches = options
-                    .search_query
-                    .as_ref()
-                    .map(|q| content.to_lowercase().contains(&q.to_lowercase()))
-                    .unwrap_or(true);
-
-                if !options.simulation && matches {
-                    if options.purge_reactions
-                        && let Some(reactions) = msg["reactions"].as_array()
-                    {
-                        for r in reactions {
-                            if r["me"].as_bool().unwrap_or(false) {
-                                let emoji = r["emoji"]["name"].as_str().unwrap_or("");
-                                let eid = r["emoji"]["id"].as_str().unwrap_or("");
-                                let param = if eid.is_empty() {
-                                    emoji.to_string()
-                                } else {
-                                    format!("{}:{}", emoji, eid)
-                                };
-                                let url = format!(
-                                    "https://discord.com/api/v9/channels/{}/messages/{}/reactions/{}/@me",
-                                    channel_id, msg_id, param
-                                );
-                                let _ = api_handle
-                                    .send_request(
-                                        reqwest::Method::DELETE,
-                                        &url,
-                                        None,
-                                        &token,
-                                        is_bearer,
-                                        false,
-                                        None,
-                                        None,
-                                        None,
-                                        None,
-                                    )
-                                    .await;
-                            }
-                        }
-                    }
-
-                    let url = format!(
-                        "https://discord.com/api/v9/channels/{}/messages/{}",
-                        channel_id, msg_id
-                    );
-                    if api_handle
-                        .send_request(
-                            reqwest::Method::DELETE,
-                            &url,
-                            None,
-                            &token,
-                            is_bearer,
-                            false,
-                            None,
-                            None,
-                            None,
-                            None,
-                        )
-                        .await
-                        .is_ok()
-                    {
-                        deleted_total += 1;
-                    }
-                } else if matches {
-                    deleted_total += 1;
-                }
-
-                // Throttle a bit to prevent overwhelming the local task pool
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
-        }
-
-        // Elaborate close_empty_dms
-        if options.close_empty_dms && (c_type == 1 || c_type == 3) && messages_in_channel == 0 {
-            Logger::debug(
-                &app_handle,
-                &format!("[OP] Closing empty DM node {}", channel_id),
-                None,
-            );
-            let _ = api_handle
-                .send_request(
-                    reqwest::Method::DELETE,
-                    &format!("https://discord.com/api/v9/channels/{}", channel_id),
-                    None,
-                    &token,
-                    is_bearer,
-                    false,
-                    None,
-                    None,
-                    None,
-                    None,
-                )
-                .await;
-        }
-    }
 
     Logger::info(
         &app_handle,
         &format!(
-            "[OP] Bulk delete complete. {} messages processed",
-            deleted_total
+            "[OP] Concurrency-enabled purge started for {} nodes",
+            options.channel_ids.len()
         ),
         None,
     );
+
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<usize>(options.channel_ids.len());
+
+    for (i, channel_id) in options.channel_ids.iter().cloned().enumerate() {
+        let app_clone = app_handle.clone();
+        let window_clone = window.clone();
+        let opt_clone = options.clone();
+        let token_clone = token.clone();
+        let uid_clone = current_user_id.clone();
+        let api_clone = api_handle.clone();
+        let state_clone = op_manager.state.clone();
+        let tx_clone = tx.clone();
+
+        tauri::async_runtime::spawn(async move {
+            let count = process_channel_task(
+                &app_clone,
+                &window_clone,
+                &opt_clone,
+                &channel_id,
+                i,
+                &token_clone,
+                is_bearer,
+                &uid_clone,
+                &api_clone,
+                &state_clone,
+            )
+            .await
+            .unwrap_or(0);
+            let _ = tx_clone.send(count).await;
+        });
+    }
+
+    drop(tx);
+    let mut total_deleted = 0;
+    while let Some(count) = rx.recv().await {
+        total_deleted += count;
+    }
+
     op_manager.state.reset();
-    let _ = window.emit(
-        "deletion_complete",
-        serde_json::json!({ "total": deleted_total }),
+    let _ = window.emit("deletion_complete", total_deleted);
+    Logger::info(
+        &app_handle,
+        &format!("[OP] Purge finished. Total nullified: {}", total_deleted),
+        None,
     );
     Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn process_channel_task(
+    _app: &AppHandle,
+    window: &Window,
+    options: &PurgeOptions,
+    channel_id: &str,
+    index: usize,
+    token: &str,
+    is_bearer: bool,
+    user_id: &str,
+    api: &ApiHandle,
+    state: &OperationState,
+) -> Result<usize, AppError> {
+    state.wait_if_paused().await;
+    if state.should_abort.load(Ordering::SeqCst) {
+        return Ok(0);
+    }
+
+    let mut deleted = 0;
+
+    // 1. Search API Pass (Optimized)
+    if !options.simulation {
+        let mut search_url = format!(
+            "https://discord.com/api/v9/channels/{}/messages/search?author_id={}",
+            channel_id, user_id
+        );
+        if let Some(q) = &options.search_query {
+            search_url.push_str(&format!("&content={}", urlencoding::encode(q)));
+        }
+
+        if let Ok(res) = api
+            .send_request_json(
+                reqwest::Method::GET,
+                &search_url,
+                None,
+                token,
+                is_bearer,
+                None,
+            )
+            .await
+            && let Some(messages) = res["messages"].as_array()
+        {
+            for batch in messages {
+                if let Some(msg_array) = batch.as_array() {
+                    for msg in msg_array {
+                        state.wait_if_paused().await;
+                        if state.should_abort.load(Ordering::SeqCst) {
+                            break;
+                        }
+
+                        if let Some(id) = msg["id"].as_str() {
+                            let del_url = format!(
+                                "https://discord.com/api/v9/channels/{}/messages/{}",
+                                channel_id, id
+                            );
+                            if api
+                                .send_request_json(
+                                    reqwest::Method::DELETE,
+                                    &del_url,
+                                    None,
+                                    token,
+                                    is_bearer,
+                                    None,
+                                )
+                                .await
+                                .is_ok()
+                            {
+                                deleted += 1;
+                                let _ = window.emit(
+                                    "deletion_progress",
+                                    serde_json::json!({
+                                        "current": index + 1,
+                                        "total": 0,
+                                        "id": channel_id,
+                                        "deleted_count": deleted,
+                                        "status": "purging_optimized"
+                                    }),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Linear Scan Pass (Safety Net)
+    let mut last_id: Option<String> = None;
+    'message_loop: loop {
+        state.wait_if_paused().await;
+        if state.should_abort.load(Ordering::SeqCst) {
+            break 'message_loop;
+        }
+
+        let mut url = format!(
+            "https://discord.com/api/v9/channels/{}/messages?limit=100",
+            channel_id
+        );
+        if let Some(id) = &last_id {
+            url.push_str(&format!("&before={}", id));
+        }
+
+        let res = api
+            .send_request_json(reqwest::Method::GET, &url, None, token, is_bearer, None)
+            .await;
+        let messages: Vec<serde_json::Value> = match res {
+            Ok(v) => serde_json::from_value(v).map_err(AppError::from)?,
+            _ => break,
+        };
+
+        if messages.is_empty() {
+            break;
+        }
+        last_id = messages
+            .last()
+            .and_then(|m| m["id"].as_str().map(|s| s.to_string()));
+
+        for msg in messages {
+            state.wait_if_paused().await;
+            if state.should_abort.load(Ordering::SeqCst) {
+                break 'message_loop;
+            }
+
+            if msg["author"]["id"].as_str() != Some(user_id) {
+                continue;
+            }
+
+            let msg_id = msg["id"].as_str().unwrap_or_default();
+            let matches = options
+                .search_query
+                .as_ref()
+                .map(|q| {
+                    msg["content"]
+                        .as_str()
+                        .unwrap_or("")
+                        .to_lowercase()
+                        .contains(&q.to_lowercase())
+                })
+                .unwrap_or(true);
+
+            if !options.simulation && matches {
+                let del_url = format!(
+                    "https://discord.com/api/v9/channels/{}/messages/{}",
+                    channel_id, msg_id
+                );
+                if api
+                    .send_request_json(
+                        reqwest::Method::DELETE,
+                        &del_url,
+                        None,
+                        token,
+                        is_bearer,
+                        None,
+                    )
+                    .await
+                    .is_ok()
+                {
+                    deleted += 1;
+                    let _ = window.emit(
+                        "deletion_progress",
+                        serde_json::json!({
+                            "current": index + 1,
+                            "total": 0,
+                            "id": channel_id,
+                            "deleted_count": deleted,
+                            "status": "purging_scan"
+                        }),
+                    );
+                }
+            } else if matches {
+                deleted += 1;
+            }
+        }
+    }
+
+    Ok(deleted)
 }
