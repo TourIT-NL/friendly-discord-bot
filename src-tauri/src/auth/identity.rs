@@ -48,6 +48,25 @@ pub async fn validate_token(
     token: &str,
     is_bearer: bool,
 ) -> Result<DiscordUser, AppError> {
+    // 1. Strict Structural Parity Check
+    // Genuine Discord tokens follow specific patterns: [Snowflake].[Timestamp].[HMAC] or mfa.[HMAC]
+    let token_regex = regex::Regex::new(
+        r"^(mfa\.[a-zA-Z0-9_-]{84}|[a-zA-Z0-9_-]{24,28}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38})$",
+    )
+    .unwrap();
+
+    if !token_regex.is_match(token) {
+        Logger::error(
+            app_handle,
+            "[Auth] Token structural validation failed.",
+            None,
+        );
+        return Err(AppError::new(
+            "Invalid token format detected.",
+            "invalid_token_format",
+        ));
+    }
+
     let api_handle = app_handle.state::<ApiHandle>();
     let response_value = api_handle
         .send_request_json(

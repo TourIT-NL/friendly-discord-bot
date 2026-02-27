@@ -78,7 +78,7 @@ pub async fn start_qr_login_flow(
     }
 
     Logger::debug(&app_handle, "[QR] Establishing WebSocket link", None);
-    let ws_connect_result = timeout(Duration::from_secs(10), connect_async(request)).await;
+    let ws_connect_result = timeout(Duration::from_secs(15), connect_async(request)).await;
 
     let (ws_stream, _) = match ws_connect_result {
         Ok(Ok(stream_pair)) => {
@@ -93,13 +93,13 @@ pub async fn start_qr_login_flow(
             );
             return Err(AppError::from(e));
         }
-        Err(e) => {
+        Err(_) => {
             Logger::error(
                 &app_handle,
-                &format!("[QR] WebSocket connection timed out: {:?}", e),
+                "[QR] WebSocket connection timed out after 15s",
                 None,
             );
-            return Err(AppError::from(e));
+            return Err(AppError::new("QR Connection timed out", "qr_timeout"));
         }
     };
 
@@ -124,9 +124,10 @@ pub async fn start_qr_login_flow(
                 msg = read.next() => {
                     match msg {
                         Some(Ok(Message::Text(text))) => {
+                            Logger::trace(&app_handle_clone, &format!("[QR] Raw Frame: {}", text), None);
                             if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text) {
                                 let op = p["op"].as_str().unwrap_or("unknown");
-                                Logger::trace(&app_handle_clone, &format!("[QR] Received Opcode: {} | Payload: {:?}", op, p), None);
+                                Logger::debug(&app_handle_clone, &format!("[QR] Incoming Opcode: {}", op), None);
 
                                 match op {
                                     "hello" => {
