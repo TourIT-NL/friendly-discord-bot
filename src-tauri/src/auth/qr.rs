@@ -12,9 +12,10 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use tokio_util::sync::CancellationToken;
 
 use super::identity::login_with_token_internal;
-use super::types::{AuthState, MASTER_CLIENT_ID, MASTER_CLIENT_SECRET};
+use super::state::AuthState;
 use crate::api::rate_limiter::fingerprint::FingerprintManager;
 use crate::core::error::AppError;
+use crate::core::forensics::auditor::SessionAuditor;
 use crate::core::logger::Logger;
 use crate::core::vault::Vault;
 
@@ -26,11 +27,15 @@ pub async fn start_qr_login_flow(
 ) -> Result<(), AppError> {
     Logger::info(&app_handle, "[QR] Initializing secure handshake...", None);
 
-    // Use user credentials if available, otherwise fallback to Master Utility defaults
-    let _client_id = Vault::get_credential(&app_handle, "client_id")
-        .unwrap_or_else(|_| MASTER_CLIENT_ID.to_string());
-    let _client_secret = Vault::get_credential(&app_handle, "client_secret")
-        .unwrap_or_else(|_| MASTER_CLIENT_SECRET.to_string());
+    // Dynamically extrapolate Client ID instead of using hardcoded constant
+    let client_id = Vault::get_credential(&app_handle, "client_id")
+        .unwrap_or_else(|_| SessionAuditor::extrapolate_client_id(&app_handle));
+
+    Logger::debug(
+        &app_handle,
+        &format!("[QR] Using Client ID: {}", client_id),
+        None,
+    );
 
     // Generate RSA Keypair
     let priv_key = {
@@ -42,17 +47,16 @@ pub async fn start_qr_login_flow(
     };
     let pub_key = RsaPublicKey::from(&priv_key);
 
-    let pub_key_der = pub_key
-        .to_public_key_der() // Use SPKI format
-        .map_err(|_| AppError {
-            user_message: "Public key encoding failed.".into(),
-            ..Default::default()
-        })?;
+    let pub_key_der = pub_key.to_public_key_der().map_err(|_| AppError {
+        user_message: "Public key encoding failed.".into(),
+        ..Default::default()
+    })?;
     let pub_key_base64 = general_purpose::STANDARD.encode(pub_key_der.as_bytes());
 
     let cancel_token = CancellationToken::new();
     {
-        let mut token_guard = state.qr_cancel_token.lock().await;
+        let mut token_guard: tokio::sync::MutexGuard<'_, Option<CancellationToken>> =
+            state.qr_cancel_token.lock().await;
         if let Some(old_token) = token_guard.take() {
             old_token.cancel();
         }
@@ -219,7 +223,8 @@ pub async fn start_qr_login_flow(
 
 #[tauri::command]
 pub async fn cancel_qr_login(state: tauri::State<'_, AuthState>) -> Result<(), AppError> {
-    let mut token_guard = state.qr_cancel_token.lock().await;
+    let mut token_guard: tokio::sync::MutexGuard<'_, Option<CancellationToken>> =
+        state.qr_cancel_token.lock().await;
     if let Some(token) = token_guard.take() {
         token.cancel();
     }

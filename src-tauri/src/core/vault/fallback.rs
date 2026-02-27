@@ -78,13 +78,11 @@ impl FallbackManager {
                         return Err(AppError::from(e));
                     }
                 }
-            } else {
-                Logger::warn(app, &format!("[Vault] File not found: {:?}", path), None);
             }
         }
         Err(AppError {
-            user_message: "Credential not found in local storage.".into(),
-            error_code: "credentials_missing".into(),
+            user_message: format!("Credential '{}' not found in local storage.", key).into(),
+            error_code: "vault_credentials_missing".into(),
             ..Default::default()
         })
     }

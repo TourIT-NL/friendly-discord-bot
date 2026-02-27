@@ -154,6 +154,7 @@ impl RateLimiterActor {
                                     continue;
                                 }
                                 b.remaining -= 1;
+                                b.last_request_at = now;
                             }
 
                             let mut rb = client.request(req.method.clone(), &req.url);
@@ -273,6 +274,13 @@ impl RateLimiterActor {
         let headers = response.headers();
         let mut bucket = bucket_arc.lock().await;
         let now = Instant::now();
+
+        if let Some(bid) = headers
+            .get("x-ratelimit-bucket")
+            .and_then(|v| v.to_str().ok())
+        {
+            bucket.bucket_id = Some(bid.to_string());
+        }
 
         if let Some(limit) = headers
             .get("x-ratelimit-limit")

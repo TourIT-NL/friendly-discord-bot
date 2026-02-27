@@ -45,6 +45,7 @@ impl Crypto {
                 user_message: "Key derivation failed.".into(),
                 error_code: "crypto_kdf_failed".into(),
                 technical_details: Some(e.to_string()),
+                ..Default::default()
             })?;
 
         Ok(Zeroizing::new(key))
@@ -72,6 +73,7 @@ impl Crypto {
                 user_message: "Password hashing failed.".into(),
                 error_code: "crypto_hash_failed".into(),
                 technical_details: Some(e.to_string()),
+                ..Default::default()
             })
     }
 
@@ -93,6 +95,7 @@ impl Crypto {
                 user_message: "Encryption failed.".into(),
                 error_code: "crypto_encrypt_failed".into(),
                 technical_details: Some(e.to_string()),
+                ..Default::default()
             })?;
 
         let mut result = nonce_bytes.to_vec();
@@ -116,6 +119,7 @@ impl Crypto {
                 user_message: "Encryption failed.".into(),
                 error_code: "crypto_encrypt_failed".into(),
                 technical_details: Some(e.to_string()),
+                ..Default::default()
             })?;
 
         let mut result = nonce_bytes.to_vec();
@@ -140,6 +144,7 @@ impl Crypto {
                 user_message: "Decryption failed: invalid data length.".into(),
                 error_code: "crypto_decrypt_invalid_len".into(),
                 technical_details: None,
+                ..Default::default()
             });
         }
 
@@ -152,6 +157,7 @@ impl Crypto {
                 user_message: "Decryption failed.".into(),
                 error_code: "crypto_decrypt_failed".into(),
                 technical_details: Some(e.to_string()),
+                ..Default::default()
             }
         })?;
 
@@ -170,6 +176,7 @@ impl Crypto {
                 user_message: "Decryption failed: invalid data length.".into(),
                 error_code: "crypto_decrypt_invalid_len".into(),
                 technical_details: None,
+                ..Default::default()
             });
         }
 
@@ -180,6 +187,7 @@ impl Crypto {
             user_message: "Decryption failed.".into(),
             error_code: "crypto_decrypt_failed".into(),
             technical_details: Some(e.to_string()),
+            ..Default::default()
         })?;
 
         Ok(String::from_utf8(plaintext_bytes)?)
