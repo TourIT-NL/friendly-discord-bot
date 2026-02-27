@@ -71,12 +71,16 @@ impl RateLimiterActor {
                 h
             });
 
-        if let Ok(proxy) = Vault::get_credential(app_handle, "proxy_url") {
-            if !proxy.is_empty() {
-                if let Ok(p) = reqwest::Proxy::all(&proxy) {
-                    builder = builder.proxy(p);
-                }
-            }
+        if let Ok(proxy_url) = Vault::get_credential(app_handle, "proxy_url")
+            && !proxy_url.is_empty()
+            && let Ok(proxy) = reqwest::Proxy::all(&proxy_url)
+        {
+            builder = builder.proxy(proxy);
+            Logger::debug(
+                app_handle,
+                "[LIM] Proxy configuration injected into engine",
+                None,
+            );
         }
 
         builder.build().unwrap()
@@ -117,7 +121,7 @@ impl RateLimiterActor {
                     let active_locale = req
                         .locale
                         .clone()
-                        .unwrap_or_else(|| FingerprintManager::get_system_locale());
+                        .unwrap_or_else(FingerprintManager::get_system_locale);
                     let active_tz = req.timezone.clone().unwrap_or_else(|| "UTC".to_string());
 
                     tokio::spawn(async move {

@@ -59,29 +59,27 @@ impl FallbackManager {
 
     /// Reads and decrypts a value from the fallback disk storage.
     pub fn read_fallback(app: &AppHandle, key: &str) -> Result<String, AppError> {
-        if let Some(path) = Self::get_fallback_path(app, key) {
-            if path.exists() {
-                match fs::read_to_string(&path) {
-                    Ok(encrypted_s) => {
-                        let enc_key =
-                            super::encryption::EncryptionManager::get_or_create_encryption_key(
-                                app,
-                            )?;
-                        return Crypto::decrypt(&enc_key, &encrypted_s);
-                    }
-                    Err(e) => {
-                        Logger::error(
-                            app,
-                            &format!("[Vault] File read failed for {}: {}", key, e),
-                            None,
-                        );
-                        return Err(AppError::from(e));
-                    }
+        if let Some(path) = Self::get_fallback_path(app, key)
+            && path.exists()
+        {
+            match fs::read_to_string(&path) {
+                Ok(encrypted_s) => {
+                    let enc_key =
+                        super::encryption::EncryptionManager::get_or_create_encryption_key(app)?;
+                    return Crypto::decrypt(&enc_key, &encrypted_s);
+                }
+                Err(e) => {
+                    Logger::error(
+                        app,
+                        &format!("[Vault] File read failed for {}: {}", key, e),
+                        None,
+                    );
+                    return Err(AppError::from(e));
                 }
             }
         }
         Err(AppError {
-            user_message: format!("Credential '{}' not found in local storage.", key).into(),
+            user_message: format!("Credential '{}' not found in local storage.", key),
             error_code: "vault_credentials_missing".into(),
             ..Default::default()
         })

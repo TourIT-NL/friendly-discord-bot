@@ -157,20 +157,16 @@ pub async fn login_with_rpc(
 
     let code_res = match timeout(Duration::from_secs(60), async {
         while let Some(msg) = read.next().await {
-            match msg {
-                Ok(Message::Text(text)) => {
-                    if let Ok(p) = serde_json::from_str::<serde_json::Value>(&text)
-                        && p["nonce"].as_str() == Some(&nonce)
-                    {
-                        if let Some(err) = p["data"]["message"].as_str() {
-                            return Some(Err(err.to_string()));
-                        }
-                        if let Some(code) = p["data"]["code"].as_str() {
-                            return Some(Ok(code.to_string()));
-                        }
-                    }
+            if let Ok(Message::Text(text)) = msg
+                && let Ok(p) = serde_json::from_str::<serde_json::Value>(&text)
+                && p["nonce"].as_str() == Some(&nonce)
+            {
+                if let Some(err) = p["data"]["message"].as_str() {
+                    return Some(Err(err.to_string()));
                 }
-                _ => {}
+                if let Some(code) = p["data"]["code"].as_str() {
+                    return Some(Ok(code.to_string()));
+                }
             }
         }
         None
