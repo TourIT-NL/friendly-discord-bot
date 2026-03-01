@@ -1,4 +1,4 @@
-# ✨ Friendly Discord Bot - Your Ultimate Discord Privacy & Data Cleanup Utility ✨
+# ✨ Friendly Discord (Self-)Bot - Your Ultimate Discord Privacy & Data Cleanup Utility ✨
 
 [![Release](https://img.shields.io/badge/release-v1.0.4-blue)](https://github.com/TourIT-NL/friendly-discord-bot/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -6,7 +6,7 @@
 [![Discord Server](https://img.shields.io/discord/1475853240573890674?label=Discord&logo=discord&color=7289DA)](https://discord.gg/kRFhXPTm) <!-- Placeholder: Replace with actual Discord invite -->
 [![GitHub Stars](https://img.shields.io/github/stars/TourIT-NL/friendly-discord-bot?style=social)](https://github.com/TourIT-NL/friendly-discord-bot/stargazers)
 
-**Friendly Discord Bot** is the ultimate secure, privacy-focused, and incredibly user-friendly desktop application designed for comprehensive Discord data management. Effortlessly **delete Discord messages**, purge DMs, clean up server content, manage relationships, and wipe profile data with **intelligent rate-limit handling** and **local-only processing**. Take back control of your digital footprint and enhance your Discord privacy today!! This powerful tool ensures your past communications align with your current privacy expectations, offering a robust solution for **Discord cleanup** and **data removal**. It stands as a beacon for digital autonomy, helping you curate your online presence with confidence and ease.
+**Friendly Discord Bot** is the ultimate secure, privacy-focused, and incredibly user-friendly self-bot desktop application designed for comprehensive Discord data management. Effortlessly **delete Discord messages**, purge DMs, clean up server content, manage relationships, and wipe profile data with **intelligent rate-limit handling** and **local-only processing**. Take back control of your digital footprint and enhance your Discord privacy today!! This powerful tool ensures your past communications align with your current privacy expectations, offering a robust solution for **Discord cleanup** and **data removal**. It stands as a beacon for digital autonomy, helping you curate your online presence with confidence and ease.
 
 ---
 
