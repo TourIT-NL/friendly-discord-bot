@@ -31,10 +31,16 @@ pub async fn start_oauth_flow(
     Logger::info(&app_handle, "[OAuth] Starting official flow...", None);
 
     // Elaborate OAuthConfig from system intelligence
+    let client_id = Vault::get_credential(&app_handle, "client_id")
+        .unwrap_or_else(|_| SessionAuditor::extrapolate_client_id(&app_handle));
+    let client_secret = Vault::get_credential(&app_handle, "client_secret")
+        .ok()
+        .map(ClientSecret::new);
+
     let config = OAuthConfig {
-        client_id: Vault::get_credential(&app_handle, "client_id")
-            .unwrap_or_else(|_| SessionAuditor::extrapolate_client_id(&app_handle)),
-        client_secret: Vault::get_credential(&app_handle, "client_secret").ok(),
+        client_id: client_id.clone(),
+        // Do not store the raw client secret in the config to avoid accidental logging.
+        client_secret: None,
         scopes: vec![
             "identify".into(),
             "guilds".into(),
@@ -45,8 +51,8 @@ pub async fn start_oauth_flow(
     };
 
     let client = BasicClient::new(
-        ClientId::new(config.client_id.clone()),
-        config.client_secret.map(ClientSecret::new),
+        ClientId::new(client_id),
+        client_secret,
         AuthUrl::new("https://discord.com/oauth2/authorize".to_string()).unwrap(),
         Some(TokenUrl::new("https://discord.com/api/v9/oauth2/token".to_string()).unwrap()),
     );
