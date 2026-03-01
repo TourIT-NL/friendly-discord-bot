@@ -14,11 +14,11 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-message: |
-            ## Welcome to Friendly Discord Bot! 🚀
+            ## Welcome to Ultimate Discord Selfbot! 🚀
 
             Thank you for opening your first issue! We are excited to have you here. 
 
-            Please make sure you've checked the [Wiki](https://github.com/TourIT-NL/friendly-discord-bot/wiki) and existing issues to ensure this isn't a duplicate.
+            Please make sure you've checked the [Wiki](https://github.com/TourIT-NL/Ultimate-Discord-Selfbot/wiki) and existing issues to ensure this isn't a duplicate.
 
             Our maintainers will review this shortly. In the meantime, feel free to join our [Discord Community](https://discord.gg/kRFhXPTm).
 

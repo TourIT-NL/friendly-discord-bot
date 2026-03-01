@@ -65,8 +65,8 @@ _Current Status_: **Phase 1 Complete**. All core features are functional, and th
 
 ## 🆘 Getting Help & Contributing
 
-- **Bugs**: Report issues on our [GitHub Issue Tracker](https://github.com/TourIT-NL/friendly-discord-bot/issues).
-- **Discussions**: Join the conversation in our [Discussions tab](https://github.com/TourIT-NL/friendly-discord-bot/discussions).
+- **Bugs**: Report issues on our [GitHub Issue Tracker](https://github.com/TourIT-NL/Ultimate-Discord-Selfbot/issues).
+- **Discussions**: Join the conversation in our [Discussions tab](https://github.com/TourIT-NL/Ultimate-Discord-Selfbot/discussions).
 - **Community**: Connect with us on our [Official Discord Server](https://discord.gg/kRFhXPTm).
 - **Developers**: Check out our [Contributing Guide](../CONTRIBUTING.md) to start building.
 

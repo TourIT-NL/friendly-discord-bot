@@ -12,14 +12,14 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 There are several ways you can contribute:
 
-1.  **Reporting Bugs:** If you find a bug, please open an issue on our [GitHub Issue Tracker](https://github.com/TourIT-NL/friendly-discord-bot/issues).
+1.  **Reporting Bugs:** If you find a bug, please open an issue on our [GitHub Issue Tracker](https://github.com/TourIT-NL/Ultimate-Discord-Selfbot/issues).
     - Provide a clear and concise description of the bug.
     - Include steps to reproduce the issue.
     - Mention your operating system and application version.
     - (Optional) Include screenshots or error logs.
 
 2.  **Suggesting Features:** Have an idea for a new feature or improvement?
-    - Open an issue on the [GitHub Issue Tracker](https://github.com/TourIT-NL/friendly-discord-bot/issues).
+    - Open an issue on the [GitHub Issue Tracker](https://github.com/TourIT-NL/Ultimate-Discord-Selfbot/issues).
     - Clearly describe the feature and its benefits.
     - Explain how it would be used.
 
@@ -32,8 +32,8 @@ We follow a feature-branch workflow to keep our `main` branch stable and to faci
 1.  **Fork the Repository:** Start by forking the official repository to your GitHub account.
 2.  **Clone Your Fork:** Clone your forked repository to your local machine:
     ```bash
-    git clone https://github.com/YOUR_USERNAME/friendly-discord-bot.git
-    cd friendly-discord-bot/discord-privacy-util
+    git clone https://github.com/YOUR_USERNAME/Ultimate-Discord-Selfbot.git
+    cd Ultimate-Discord-Selfbot/discord-privacy-util
     ```
 3.  **Create a New Branch:**
     - From the `main` branch, create a new branch for your feature or bug fix. Use descriptive names:
@@ -97,7 +97,7 @@ Once your changes are complete, thoroughly tested, and adhere to the commit guid
 
 1.  **Push Your Branch:** Push your feature/bugfix branch to your forked repository on GitHub.
 2.  **Open a Pull Request (PR):**
-    - Go to the original `friendly-discord-bot` repository on GitHub.
+    - Go to the original `Ultimate-Discord-Selfbot` repository on GitHub.
     - You should see a prompt to open a Pull Request from your branch.
     - Ensure your PR targets the `main` branch of the upstream repository.
 3.  **Provide Details:** In your Pull Request description, provide:
