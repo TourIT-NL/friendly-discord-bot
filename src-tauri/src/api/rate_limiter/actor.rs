@@ -2,11 +2,10 @@
 
 use crate::api::discord_routes::get_discord_route;
 use crate::api::rate_limiter::fingerprint::{BrowserProfile, FingerprintManager};
-use crate::api::rate_limiter::types::{
-    ApiRequest, ApiResponseContent, BucketInfo, StandardRequest,
-};
+use crate::api::rate_limiter::types::{ApiRequest, ApiResponseContent, BucketInfo};
 use crate::core::error::AppError;
 use crate::core::logger::Logger;
+use crate::core::op_manager::OperationManager;
 use crate::core::vault::Vault;
 use rand::Rng;
 use reqwest::{Client, Response, header};
@@ -14,6 +13,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{Duration, Instant};
+use tauri::Manager;
 use tokio::sync::{Mutex, mpsc};
 
 pub struct RateLimiterActor {
@@ -45,17 +45,21 @@ impl RateLimiterActor {
         }
     }
 
-    fn build_client(app: &tauri::AppHandle, profile: &BrowserProfile, locale: &str) -> Client {
+    fn build_client(
+        app_handle: &tauri::AppHandle,
+        profile: &BrowserProfile,
+        locale: &str,
+    ) -> Client {
+        let super_props = FingerprintManager::generate_super_properties(profile, locale);
+
         let mut builder = Client::builder()
+            .timeout(Duration::from_secs(30))
             .user_agent(&profile.user_agent)
             .default_headers({
                 let mut h = header::HeaderMap::new();
                 h.insert(
                     "x-super-properties",
-                    header::HeaderValue::from_str(&FingerprintManager::generate_super_properties(
-                        profile, locale,
-                    ))
-                    .unwrap(),
+                    header::HeaderValue::from_str(&super_props).unwrap(),
                 );
                 h.insert(
                     "origin",
@@ -67,11 +71,16 @@ impl RateLimiterActor {
                 h
             });
 
-        if let Ok(proxy) = Vault::get_credential(app, "proxy_url")
-            && !proxy.is_empty()
-            && let Ok(p) = reqwest::Proxy::all(&proxy)
+        if let Ok(proxy_url) = Vault::get_credential(app_handle, "proxy_url")
+            && !proxy_url.is_empty()
+            && let Ok(proxy) = reqwest::Proxy::all(&proxy_url)
         {
-            builder = builder.proxy(p);
+            builder = builder.proxy(proxy);
+            Logger::debug(
+                app_handle,
+                "[LIM] Proxy configuration injected into engine",
+                None,
+            );
         }
 
         builder.build().unwrap()
@@ -84,8 +93,8 @@ impl RateLimiterActor {
             None,
         );
 
-        while let Some(req) = self.inbox.recv().await {
-            match req {
+        while let Some(request) = self.inbox.recv().await {
+            match request {
                 ApiRequest::RebuildClient => {
                     self.profile = FingerprintManager::random_profile();
                     self.client = Self::build_client(
@@ -99,30 +108,21 @@ impl RateLimiterActor {
                         None,
                     );
                 }
-                ApiRequest::Standard(request) => {
-                    let StandardRequest {
-                        method,
-                        url,
-                        body,
-                        auth_token,
-                        is_bearer,
-                        return_raw_bytes,
-                        response_tx,
-                        referer,
-                        locale,
-                        timezone,
-                        profile,
-                    } = *request;
+                ApiRequest::Standard(req) => {
                     let client = self.client.clone();
                     let buckets = self.buckets.clone();
                     let global = self.global_reset_at.clone();
                     let app_handle = self.app_handle.clone();
-                    let route = get_discord_route(&url).to_string();
-                    let active_profile = profile.unwrap_or_else(|| self.profile.clone());
-                    let active_locale =
-                        locale.unwrap_or_else(FingerprintManager::get_system_locale);
-                    let active_tz = timezone.unwrap_or_else(|| "UTC".to_string());
+                    let route = get_discord_route(&req.url).to_string();
                     let global_429_count = self.global_429_count.clone();
+
+                    let active_profile =
+                        req.profile.clone().unwrap_or_else(|| self.profile.clone());
+                    let active_locale = req
+                        .locale
+                        .clone()
+                        .unwrap_or_else(FingerprintManager::get_system_locale);
+                    let active_tz = req.timezone.clone().unwrap_or_else(|| "UTC".to_string());
 
                     tokio::spawn(async move {
                         let bucket_arc = {
@@ -133,11 +133,7 @@ impl RateLimiterActor {
                         };
 
                         loop {
-                            // 1. Human-Behavior Simulation (Simulated Gaussian Jitter)
-                            let jitter = {
-                                let mut rng = rand::thread_rng();
-                                (0..3).map(|_| rng.gen_range(0..100)).sum::<u64>() + 50
-                            };
+                            let jitter = rand::thread_rng().gen_range(50..250);
                             tokio::time::sleep(Duration::from_millis(jitter)).await;
 
                             let now = Instant::now();
@@ -162,9 +158,10 @@ impl RateLimiterActor {
                                     continue;
                                 }
                                 b.remaining -= 1;
+                                b.last_request_at = now;
                             }
 
-                            let mut rb = client.request(method.clone(), &url);
+                            let mut rb = client.request(req.method.clone(), &req.url);
 
                             rb = rb.header("user-agent", &active_profile.user_agent);
                             rb = rb.header(
@@ -191,16 +188,30 @@ impl RateLimiterActor {
                                 rb = rb.header(name, val);
                             }
 
-                            if let Some(r) = referer.clone() {
+                            if let Some(r) = req.referer.clone() {
                                 rb = rb.header("referer", r);
+                            } else if req.url.contains("/messages") {
+                                rb = rb.header("referer", "https://discord.com/channels/@me");
                             }
-                            if is_bearer {
-                                rb = rb.header("authorization", format!("Bearer {}", auth_token));
+
+                            if req.is_bearer {
+                                rb = rb
+                                    .header("authorization", format!("Bearer {}", req.auth_token));
                             } else {
-                                rb = rb.header("authorization", &auth_token);
+                                rb = rb.header("authorization", &req.auth_token);
                             }
-                            if let Some(b) = body.clone() {
+                            if let Some(b) = req.body.clone() {
                                 rb = rb.json(&b);
+                            }
+
+                            // Elaborate OperationManager integration
+                            let op_manager = app_handle.state::<OperationManager>();
+                            if op_manager.state.is_running.load(Ordering::SeqCst) {
+                                Logger::trace(
+                                    &app_handle,
+                                    &format!("[LIM] Request linked to active operation: {}", route),
+                                    None,
+                                );
                             }
 
                             match rb.send().await {
@@ -222,7 +233,7 @@ impl RateLimiterActor {
                                     global_429_count.store(0, Ordering::SeqCst);
 
                                     let result = if status.is_success() {
-                                        if return_raw_bytes {
+                                        if req.return_raw_bytes {
                                             resp.bytes()
                                                 .await
                                                 .map(ApiResponseContent::Bytes)
@@ -242,11 +253,11 @@ impl RateLimiterActor {
                                             .unwrap_or_default();
                                         Err(AppError::from_discord_json(&json))
                                     };
-                                    let _ = response_tx.send(result);
+                                    let _ = req.response_tx.send(result);
                                     break;
                                 }
                                 Err(e) => {
-                                    let _ = response_tx.send(Err(AppError::from(e)));
+                                    let _ = req.response_tx.send(Err(AppError::from(e)));
                                     break;
                                 }
                             }
@@ -267,6 +278,13 @@ impl RateLimiterActor {
         let headers = response.headers();
         let mut bucket = bucket_arc.lock().await;
         let now = Instant::now();
+
+        if let Some(bid) = headers
+            .get("x-ratelimit-bucket")
+            .and_then(|v| v.to_str().ok())
+        {
+            bucket.bucket_id = Some(bid.to_string());
+        }
 
         if let Some(limit) = headers
             .get("x-ratelimit-limit")

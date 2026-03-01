@@ -183,6 +183,8 @@ fn main() {
             api::discord::tools::open_discord_url_for_action,
             api::discord::tools::sanitize_media_metadata,
             api::discord::tools::start_burner_protocol,
+            api::discord::tools::scan_for_pii,
+            api::discord::tools::start_forensic_export,
             api::discord::trigger_data_harvest,
             api::discord::get_harvest_status,
             api::discord::process_gdpr_data,

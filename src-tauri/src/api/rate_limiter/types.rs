@@ -45,19 +45,23 @@ pub enum ApiRequest {
 
 #[derive(Clone, Debug)]
 pub struct BucketInfo {
+    pub bucket_id: Option<String>,
     pub remaining: u32,
     pub reset_at: Instant,
     pub limit: u32,
     pub consecutive_429s: u32,
+    pub last_request_at: Instant,
 }
 
 impl Default for BucketInfo {
     fn default() -> Self {
         Self {
+            bucket_id: None,
             remaining: 1,
             reset_at: Instant::now(),
             limit: 1,
             consecutive_429s: 0,
+            last_request_at: Instant::now(),
         }
     }
 }

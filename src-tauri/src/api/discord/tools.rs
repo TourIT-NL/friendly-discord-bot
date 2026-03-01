@@ -208,7 +208,20 @@ pub async fn sanitize_media_metadata(
 #[tauri::command]
 pub async fn start_burner_protocol(app_handle: AppHandle) -> Result<(), AppError> {
     crate::core::forensics::burner::BurnerManager::initiate_burner_protocol(&app_handle)?;
-    // After burning, we should probably exit or log out.
-    // The command caller will handle UI state.
     Ok(())
+}
+
+#[tauri::command]
+pub async fn scan_for_pii(
+    app_handle: AppHandle,
+) -> Result<Vec<crate::core::forensics::pii::PIIResult>, AppError> {
+    crate::core::forensics::pii::PIIClassifier::scan_cache(&app_handle)
+}
+
+#[tauri::command]
+pub async fn start_forensic_export(
+    app_handle: AppHandle,
+    output_path: String,
+) -> Result<(), AppError> {
+    crate::core::forensics::export::ExportForensics::generate_json_ld(&app_handle, &output_path)
 }

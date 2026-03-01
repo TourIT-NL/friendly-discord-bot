@@ -49,7 +49,7 @@ regex = "1.12.3"
 rand_distr = "0.4.3"
 
 is_elevated = "0.1.2"
-windows-sys = { version = "0.61", features = ["Win32_UI_Shell", "Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61", features = ["Win32_UI_Shell", "Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_Security_Cryptography"] }
 argon2 = { version = "0.5.3", features = ["zeroize"] }
 zeroize = { version = "1.8.2", features = ["derive"] }
 

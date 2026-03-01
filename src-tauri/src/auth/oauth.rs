@@ -17,8 +17,9 @@ use tokio::{
 use url::Url;
 
 use super::identity::login_with_token_internal;
-use super::types::DiscordUser;
+use super::types::{DiscordUser, OAuthConfig};
 use crate::core::error::AppError;
+use crate::core::forensics::auditor::SessionAuditor;
 use crate::core::logger::Logger;
 use crate::core::vault::Vault;
 
@@ -28,20 +29,24 @@ pub async fn start_oauth_flow(
     window: Window,
 ) -> Result<DiscordUser, AppError> {
     Logger::info(&app_handle, "[OAuth] Starting official flow...", None);
-    let client_id = match Vault::get_credential(&app_handle, "client_id") {
-        Ok(id) => id,
-        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
-        Err(e) => return Err(e),
-    };
-    let client_secret = match Vault::get_credential(&app_handle, "client_secret") {
-        Ok(secret) => secret,
-        Err(e) if e.error_code == "vault_credentials_missing" => return Err(e),
-        Err(e) => return Err(e),
+
+    // Elaborate OAuthConfig from system intelligence
+    let config = OAuthConfig {
+        client_id: Vault::get_credential(&app_handle, "client_id")
+            .unwrap_or_else(|_| SessionAuditor::extrapolate_client_id(&app_handle)),
+        client_secret: Vault::get_credential(&app_handle, "client_secret").ok(),
+        scopes: vec![
+            "identify".into(),
+            "guilds".into(),
+            "messages.read".into(),
+            "guilds.members.read".into(),
+        ],
+        redirect_uri: "http://127.0.0.1".into(),
     };
 
     let client = BasicClient::new(
-        ClientId::new(client_id.clone()),
-        Some(ClientSecret::new(client_secret)),
+        ClientId::new(config.client_id.clone()),
+        config.client_secret.map(ClientSecret::new),
         AuthUrl::new("https://discord.com/oauth2/authorize".to_string()).unwrap(),
         Some(TokenUrl::new("https://discord.com/api/v9/oauth2/token".to_string()).unwrap()),
     );
@@ -82,20 +87,17 @@ pub async fn start_oauth_flow(
         None,
     );
 
-    let (auth_url, csrf) = client
-        .authorize_url(CsrfToken::new_random)
-        .add_scope(oauth2::Scope::new("identify".into()))
-        .add_scope(oauth2::Scope::new("guilds".into()))
-        .add_scope(oauth2::Scope::new("messages.read".into()))
-        .add_scope(oauth2::Scope::new("guilds.members.read".into()))
-        .set_pkce_challenge(pkce_ch)
-        .url();
+    let mut auth_req = client.authorize_url(CsrfToken::new_random);
+    for scope in &config.scopes {
+        auth_req = auth_req.add_scope(oauth2::Scope::new(scope.clone()));
+    }
+    let (auth_url, csrf) = auth_req.set_pkce_challenge(pkce_ch).url();
 
     let (tx, rx) = oneshot::channel::<String>();
     let csrf_secret = csrf.secret().clone();
 
     let listener: std::net::TcpListener = listener.into();
-    let app_clone = app_handle.clone(); // Revert app_clone position
+    let app_clone = app_handle.clone();
 
     tauri::async_runtime::spawn(async move {
         let listener = tokio::net::TcpListener::from_std(listener)?;
