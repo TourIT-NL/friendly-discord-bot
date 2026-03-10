@@ -24,6 +24,8 @@ function App() {
     toggleDevLog,
     setAuthenticated,
     setUnauthenticated,
+    setView,
+    setLoading,
   } = useAuthStore();
 
   const { checkStatus, fetchIdentities, handleApiError } = useDiscordAuth();
@@ -43,6 +45,7 @@ function App() {
   // --- Global Setup Effects ---
   useEffect(() => {
     const restoreSession = async () => {
+      setLoading(true);
       try {
         const user = await invoke("get_current_user");
         // @ts-expect-error: The backend returns a DiscordUser object, but the type is not explicitly defined in the invoke call
@@ -50,6 +53,12 @@ function App() {
       } catch (err) {
         console.log("No active session to restore.");
         setUnauthenticated();
+        // Force back to manual or auth view if session restoration failed
+        if (view === "dashboard") {
+          setView("auth");
+        }
+      } finally {
+        setLoading(false);
       }
     };
     restoreSession();
@@ -67,7 +76,19 @@ function App() {
     getOperationStatus,
     setAuthenticated,
     setUnauthenticated,
+    setView,
+    setLoading,
   ]);
+
+  if (isLoading && !isAuthenticated) {
+    return (
+      <div className="w-screen h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-white text-lg font-bold animate-pulse">
+          Initializing Engine...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full">

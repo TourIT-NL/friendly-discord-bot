@@ -103,11 +103,10 @@ export function GlobalListeners() {
       }
 
       unlisteners.push(
-        await getCurrentWindow().onCloseRequested(async () => {
-          if (useAuthStore.getState().isLoading) {
-            console.log("App closing during loading state.");
-          }
-          await getCurrentWindow().close();
+        await getCurrentWindow().onCloseRequested(async (event) => {
+          console.log("Window close requested. Performing cleanup...");
+          // If we had critical async cleanup, we'd do it here and use event.preventDefault()
+          // But since we just want to close, we'll let it proceed.
         }),
       );
     };

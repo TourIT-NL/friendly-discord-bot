@@ -31,18 +31,33 @@ pub async fn start_oauth_flow(
     Logger::info(&app_handle, "[OAuth] Starting official flow...", None);
 
     // Elaborate OAuthConfig from system intelligence
-    let client_id = if let Ok(id) = Vault::get_credential(&app_handle, "client_id") {
-        Logger::debug(&app_handle, "[OAuth] Using client_id from vault.", None);
-        id
-    } else {
-        Logger::debug(
-            &app_handle,
-            "[OAuth] Client ID not in vault, attempting extrapolation.",
-            None,
-        );
-        // This can now return AppError::client_id_extrapolation_needed
-        SessionAuditor::extrapolate_client_id(&app_handle)?
+    let client_id = match Vault::get_credential(&app_handle, "client_id") {
+        Ok(id) => {
+            Logger::debug(&app_handle, "[OAuth] Using client_id from vault.", None);
+            id
+        }
+        Err(_) => {
+            Logger::debug(
+                &app_handle,
+                "[OAuth] Client ID not in vault, attempting extrapolation.",
+                None,
+            );
+            match SessionAuditor::extrapolate_client_id(&app_handle) {
+                Ok(id) => id,
+                Err(e) if e.error_code == "client_id_extrapolation_needed" => {
+                    e.client_id_for_confirmation.unwrap_or_default()
+                }
+                Err(e) => return Err(e),
+            }
+        }
     };
+
+    if client_id.is_empty() {
+        return Err(AppError::new(
+            "No Client ID found. Please set one in Setup.",
+            "client_id_not_found",
+        ));
+    }
     let client_secret = Vault::get_credential(&app_handle, "client_secret")
         .ok()
         .map(ClientSecret::new);
