@@ -240,6 +240,8 @@ impl SessionAuditor {
 
                                 if all_files_in_core_found {
                                     core_module_found = true;
+                                    // 3. Scan for malicious modifications within this module
+                                    Self::scan_for_malicious_modifications(app, &index_js);
                                     break; // Found and verified, we are done with this module scan
                                 }
                             }
@@ -276,6 +278,58 @@ impl SessionAuditor {
                 "Failed to verify Discord client integrity across all found installations.",
                 "discord_integrity_check_failed",
             ))
+        }
+    }
+
+    /// Scans a specific index.js file for common token stealer patterns.
+    fn scan_for_malicious_modifications(app: &tauri::AppHandle, path: &std::path::Path) {
+        if let Ok(content) = fs::read_to_string(path) {
+            let mut detected = false;
+            let suspicious_keywords = [
+                "webhook",
+                "http",
+                "https",
+                "axios",
+                "fetch",
+                "XMLHttpRequest",
+                "LOCALAPPDATA",
+                "Roaming",
+                "leveldb",
+                "tokens",
+                "password",
+                "mfa",
+                "ND...",
+                "OT...",
+            ];
+
+            // A typical Discord index.js is very small. If it's over 1KB and contains webhooks, it's suspicious.
+            let size = content.len();
+            if size > 1500 {
+                for kw in &suspicious_keywords {
+                    if content.contains(kw) {
+                        Logger::warn(
+                            app,
+                            &format!(
+                                "[SECURITY] Detected suspicious payload in Discord module index.js: '{}' at {:?}",
+                                kw, path
+                            ),
+                            Some(serde_json::json!({"file_size": size, "pattern": kw})),
+                        );
+                        detected = true;
+                    }
+                }
+            }
+
+            if !detected {
+                Logger::debug(
+                    app,
+                    &format!(
+                        "[Forensics] No immediate malicious patterns found in {:?}",
+                        path
+                    ),
+                    None,
+                );
+            }
         }
     }
 

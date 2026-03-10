@@ -206,6 +206,7 @@ fn main() {
             api::discord::terminate_all_sessions,
             api::discord::terminate_session,
             api::discord::fetch_application_identities,
+            api::discord::fetch_user_connections,
             api::discord::fetch_payment_sources,
             api::discord::fetch_billing_subscriptions,
             api::discord::fetch_entitlements,

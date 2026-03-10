@@ -141,6 +141,29 @@ pub async fn terminate_session(app_handle: AppHandle, session_id: String) -> Res
 }
 
 #[tauri::command]
+pub async fn fetch_user_connections(app_handle: AppHandle) -> Result<serde_json::Value, AppError> {
+    let (token, is_bearer) = Vault::get_active_token(&app_handle)?;
+    let api_handle = app_handle.state::<ApiHandle>();
+
+    Logger::info(
+        &app_handle,
+        "[SECURITY] Auditing external connections",
+        None,
+    );
+
+    api_handle
+        .send_request_json(
+            Method::GET,
+            "https://discord.com/api/v9/users/@me/connections",
+            None,
+            &token,
+            is_bearer,
+            None,
+        )
+        .await
+}
+
+#[tauri::command]
 pub async fn fetch_application_identities(
     app_handle: AppHandle,
 ) -> Result<serde_json::Value, AppError> {
